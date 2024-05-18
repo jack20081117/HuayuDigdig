@@ -12,13 +12,13 @@ def init():
     execute('data.db',updateDigable%(True))
     execute('data.db',updateTime%(0))
 
-def extract(uid,mineralNum,mineID):
+def extract(uid:str,mineralNum:int,mineID:int)->str:
     usedTimes:int=select('data.db',selectTimeByID%(mineID))[0][0]
     user:tuple=select('data.db',selectUserByqq%uid)[0]
     mineral:str=user[3]
     extractTech:float=user[5]
     digable:bool=user[6]
-    if not int(digable):
+    if not digable:
         ans='开采失败:您必须等到下一个整点才能再次开采矿井！'
         return ans
     if usedTimes==0:
@@ -30,9 +30,10 @@ def extract(uid,mineralNum,mineID):
         execute('data.db',updateDigableByqq%(False,uid))
     else:
         ans='开采成功！您获得了编号为%d的矿石！'%mineralNum
-        new_mineral_list:list=list(eval(mineral))
-        new_mineral_list.append(mineralNum)
-        new_mineral:str=str(new_mineral_list)
+        new_mineral_dict:list=dict(eval(mineral))
+        if mineralNum not in new_mineral_dict:new_mineral_dict[mineralNum]=0
+        new_mineral_dict[mineralNum]+=1
+        new_mineral:str=str(new_mineral_dict)
         execute('data.db',updateMineByqq%(new_mineral,uid))
         execute('data.db',updateTimeByID%(usedTimes+1,mineID))
     return ans
@@ -62,8 +63,24 @@ def handle(res,group):
                 ans='注册失败:您已经注册过，无法重复注册！'
                 send(gid,ans,group=True)
                 return None
-            execute('data.db',insertUser%(uid,schoolID,0,[],0.0,0.0,True))
+            execute('data.db',insertUser%(uid,schoolID,0,{},0.0,0.0,True))
             ans='注册成功！'
+        elif func_str=='开采':
+            if len(message_list)!=2:
+                ans='开采失败:请指定要开采的矿井！'
+                send(gid,ans,group=True)
+                return None
+            mineralID:int=int(message_list[1])
+            if mineralID==1:
+                mineralNum=np.random.randint(2,28900)
+                ans=extract(uid,mineralNum,1)
+            elif mineralID==2:
+                mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(28900)*1000))/1000))
+                ans=extract(uid,mineralNum,2)
+            else:
+                ans='开采失败:不存在此矿井！'
+                send(gid,ans,group=True)
+                return None
         elif func_str=='帮助':
             ans='您好！欢迎使用森bot！\n'
             ans+='您可以使用如下功能：\n'
@@ -87,7 +104,7 @@ def handle(res,group):
                 ans='注册失败:您已经注册过，无法重复注册！'
                 send(uid,ans,group=False)
                 return None
-            execute('data.db',insertUser%(uid,schoolID,0,[],0.0,0.0,True))
+            execute('data.db',insertUser%(uid,schoolID,0,{},0.0,0.0,True))
             ans='注册成功！'
         elif func_str=='开采':
             if len(message_list)!=2:
@@ -110,6 +127,9 @@ def handle(res,group):
             ans+='您可以使用如下功能：\n'
             ans+='1:查询时间：输入 time\n'
             ans+='2:注册账号：输入 注册 `学号`\n'
+            ans+='3:开采矿石：输入 开采 `编号`\n'
+            ans+='3.1 矿井1号会生成从2-28900均匀分布的随机整数矿石\n'
+            ans+='3.2 矿井2号会生成从2-28900对数均匀分布的随机整数矿石\n'
         send(uid,ans,group=False)
 
 def send(id,message,group=False):
