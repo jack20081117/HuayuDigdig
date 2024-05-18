@@ -1,7 +1,6 @@
 import sqlite3
 
 createUser='create table users (' \
-           'userid int primary key auto_increment not null,' \
            'qq varchar(10),' \
            'schoolID varchar(5),' \
            'money int,' \

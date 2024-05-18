@@ -81,23 +81,68 @@ def handle(res,group):
                 return None
             mineralID:int=int(message_list[1])
             if mineralID==1:
-                mineralNum=np.random.randint(2,28900)
+                mineralNum=np.random.randint(2,30000)
                 ans=extract(uid,mineralNum,1)
             elif mineralID==2:
-                mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(28900)*1000))/1000))
+                mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(30000)*1000))/1000))
                 ans=extract(uid,mineralNum,2)
+            elif mineralID==3:
+                mineralNum=np.random.randint(2,300)
+                ans=extract(uid,mineralNum,3)
+            elif mineralID==4:
+                mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(300)*1000))/1000))
+                ans=extract(uid,mineralNum,4)
+            elif mineralID==5:
+                mineralNum=np.random.randint(2,300000)
+                ans=extract(uid,mineralNum,5)
+            elif mineralID==6:
+                mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(300000)*1000))/1000))
+                ans=extract(uid,mineralNum,6)
             else:
                 ans='开采失败:不存在此矿井！'
                 send(gid,ans,group=True)
                 return None
+        elif funcStr=='兑换':
+            if len(message_list)!=2:
+                ans='兑换失败:请指定要兑换的矿石！'
+                send(gid,ans,group=True)
+                return None
+            mineralNum:int=int(message_list[1])
+            user:tuple=select('data.db',selectUserByqq%uid)[0]
+            schoolID:str=user[1]
+            money:int=user[2]
+            mineralDict:dict=dict(eval(user[3]))
+            if mineralNum not in mineralDict:
+                ans='兑换失败:您不具备此矿石！'
+                send(gid,ans,group=True)
+                return None
+            if int(schoolID)%mineralNum \
+            and int(schoolID[:3])%mineralNum \
+            and int(schoolID[2:])%mineralNum \
+            and int(schoolID[:2]+'0'+schoolID[:3])%mineralNum:
+                ans='兑换失败:您不能够兑换此矿石！'
+                send(gid,ans,group=True)
+                return None
+            mineralDict[mineralNum]-=1
+            if mineralDict[mineralNum]<=0:
+                mineralDict.pop(mineralNum)
+            execute('data.db',updateMineByqq%(mineralDict,uid))
+            money+=mineralNum
+            execute('data.db',updateMoneyByqq%(money,uid))
+            ans='兑换成功！'
         elif funcStr=='帮助':
             ans='您好！欢迎使用森bot！\n'
             ans+='您可以使用如下功能：\n'
             ans+='1:查询时间：输入 time\n'
             ans+='2:注册账号：输入 注册 `学号`\n'
-            ans+='3:开采矿石：输入 开采 `编号`\n'
-            ans+='3.1 矿井1号会生成从2-28900均匀分布的随机整数矿石\n'
-            ans+='3.2 矿井2号会生成从2-28900对数均匀分布的随机整数矿石\n'
+            ans+='3:开采矿石：输入 开采 `矿井编号`\n'
+            ans+='3.1 矿井1号会生成从2-30000均匀分布的随机整数矿石\n'
+            ans+='3.2 矿井2号会生成从2-30000对数均匀分布的随机整数矿石\n'
+            ans+='3.3 矿井3号会生成从2-300均匀分布的随机整数矿石\n'
+            ans+='3.4 矿井4号会生成从2-300对数均匀分布的随机整数矿石\n'
+            ans+='3.5 矿井5号会生成从2-300000均匀分布的随机整数矿石\n'
+            ans+='3.6 矿井6号会生成从2-300000对数均匀分布的随机整数矿石\n'
+            ans+='4:兑换矿石：输入 兑换 `矿石编号` 只有在矿石编号为3、5、6位学号的因数或班级因数时才可兑换！'
         send(gid,ans,group=True)
     else:
         message:str=res.get("raw_message")
@@ -125,11 +170,23 @@ def handle(res,group):
                 return None
             mineralID:int=int(message_list[1])
             if mineralID==1:
-                mineralNum=np.random.randint(2,28900)
+                mineralNum=np.random.randint(2,30000)
                 ans=extract(uid,mineralNum,1)
             elif mineralID==2:
-                mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(28900)*1000))/1000))
+                mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(30000)*1000))/1000))
                 ans=extract(uid,mineralNum,2)
+            elif mineralID==3:
+                mineralNum=np.random.randint(2,300)
+                ans=extract(uid,mineralNum,3)
+            elif mineralID==4:
+                mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(300)*1000))/1000))
+                ans=extract(uid,mineralNum,4)
+            elif mineralID==5:
+                mineralNum=np.random.randint(2,300000)
+                ans=extract(uid,mineralNum,5)
+            elif mineralID==6:
+                mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(300000)*1000))/1000))
+                ans=extract(uid,mineralNum,6)
             else:
                 ans='开采失败:不存在此矿井！'
                 send(uid,ans,group=False)
@@ -168,8 +225,12 @@ def handle(res,group):
             ans+='1:查询时间：输入 time\n'
             ans+='2:注册账号：输入 注册 `学号`\n'
             ans+='3:开采矿石：输入 开采 `矿井编号`\n'
-            ans+='3.1 矿井1号会生成从2-28900均匀分布的随机整数矿石\n'
-            ans+='3.2 矿井2号会生成从2-28900对数均匀分布的随机整数矿石\n'
+            ans+='3.1 矿井1号会生成从2-30000均匀分布的随机整数矿石\n'
+            ans+='3.2 矿井2号会生成从2-30000对数均匀分布的随机整数矿石\n'
+            ans+='3.3 矿井3号会生成从2-300均匀分布的随机整数矿石\n'
+            ans+='3.4 矿井4号会生成从2-300对数均匀分布的随机整数矿石\n'
+            ans+='3.5 矿井5号会生成从2-300000均匀分布的随机整数矿石\n'
+            ans+='3.6 矿井6号会生成从2-300000对数均匀分布的随机整数矿石\n'
             ans+='4:兑换矿石：输入 兑换 `矿石编号` 只有在矿石编号为3、5、6位学号的因数或班级因数时才可兑换！'
         send(uid,ans,group=False)
 
