@@ -139,9 +139,9 @@ def handle(res,group):
                 send(uid,ans,group=False)
                 return None
             if int(schoolID)%mineralNum \
-            and int(schoolID[:3]%mineralNum) \
-            and int(schoolID[2:]%mineralNum) \
-            and int(schoolID[:2]+'0'+schoolID[:3]%mineralNum):
+            and int(schoolID[:3])%mineralNum \
+            and int(schoolID[2:])%mineralNum \
+            and int(schoolID[:2]+'0'+schoolID[:3])%mineralNum:
                 ans='兑换失败:您不能够兑换此矿石！'
                 send(uid,ans,group=False)
                 return None
