@@ -1,29 +1,31 @@
 import sqlite3
 
-createUser='create table users (' \
-           'qq varchar(10),' \
+createUserTable = 'create table users (' \
+           'qid varchar(10),' \
            'schoolID varchar(5),' \
            'money int,' \
            'mineral varchar(1000),' \
            'process_tech double,' \
            'extract_tech double,' \
            'digable boolean' \
-           ')'
+           ') default charset utf8'  # 建表users
 
-insertUser="insert into users " \
-           "(qq,schoolID,money,mineral,process_tech,extract_tech,digable) " \
-           "values ('%s','%s',%s,'%s',%f,%f,%s)"
+createUser = "insert into users " \
+           "(qid,schoolID,money,mineral,process_tech,extract_tech,digable) " \
+           "values ('%s','%s',%s,'%s',%f,%f,%s)" # 创建用户
+           # 拥有的矿石 加工科技 开采科技 是否能继续挖矿 (最后四个)
 
-selectUserByID="select * from users where schoolID='%s'"
-selectUserByqq="select * from users where qq='%s'"
+selectUserBySchoolID="select * from users where schoolID='%s'" # 获取用户信息
+selectUserByQQ="select * from users where qid='%s'" # 获取用户信息
+selectUserByUserID = "select * from users where userid=%d"
 
-updateMoneyByqq="update users set money=%d where qq='%s'"
-updateMineByqq="update users set mineral='%s' where qq='%s'"
-updateDigableByqq="update users set digable=%s where qq='%s'"
-updateDigable="update users set digable=%s"
+updateMoneyByqq="update users set money=%d where qid='%s'"
+updateMineByQQ ="update users set mineral='%s' where qid='%s'"
+updateDigableByQQ ="update users set digable=%s where qid='%s'"
+updateDigableAll="update users set digable=%s"
 
-createMine='create table mine (' \
-           'mineID int,' \
+createMine='create table mines (' \
+           'mineid int primary key,' \
            'abundance float' \
            ')'
 
