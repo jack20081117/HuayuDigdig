@@ -13,7 +13,7 @@ def init():
     在矿井刷新时进行初始化
     '''
     execute('data.db',updateDigable%(True))
-    execute('data.db',updateTime%(0))
+    execute('data.db',updateAbundance%(0.0))
 
 def extract(uid:str,mineralNum:int,mineID:int)->str:
     '''
@@ -31,9 +31,8 @@ def extract(uid:str,mineralNum:int,mineID:int)->str:
         ans='开采失败:您必须等到下一个整点才能再次开采矿井！'
         return ans
     prob:float=0#开采成功的概率
-    if abundance==0:
+    if abundance==0.0:
         prob=1.0
-        abundance=1
     else:
         prob=abundance*extractTech
     if np.random.random()>prob:
