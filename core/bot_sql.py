@@ -57,3 +57,7 @@ if __name__ == '__main__':
     execute('data.db',createMine)
     execute('data.db',insertMine%(1,0))
     execute('data.db',insertMine%(2,0))
+    execute('data.db',insertMine%(3,0))
+    execute('data.db',insertMine%(4,0))
+    execute('data.db',insertMine%(5,0))
+    execute('data.db',insertMine%(6,0))
