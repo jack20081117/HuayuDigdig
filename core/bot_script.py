@@ -12,6 +12,31 @@ def init():
     execute('data.db',updateDigable%(True))
     execute('data.db',updateTime%(0))
 
+def extract(uid,mineralNum,mineID):
+    usedTimes:int=select('data.db',selectTimeByID%(mineID))[0][0]
+    user:tuple=select('data.db',selectUserByqq%uid)[0]
+    mineral:str=user[3]
+    extractTech:float=user[5]
+    digable:bool=user[6]
+    if not int(digable):
+        ans='开采失败:您必须等到下一个整点才能再次开采矿井！'
+        return ans
+    if usedTimes==0:
+        prob=1
+    else:
+        prob=np.power(extractTech,usedTimes)
+    if np.random.random()>prob:
+        ans='开采失败:您的运气不佳'
+        execute('data.db',updateDigableByqq%(False,uid))
+    else:
+        ans='开采成功！您获得了编号为%d的矿石！'%mineralNum
+        new_mineral_list:list=list(eval(mineral))
+        new_mineral_list.append(mineralNum)
+        new_mineral:str=str(new_mineral_list)
+        execute('data.db',updateMineByqq%(new_mineral,uid))
+        execute('data.db',updateTimeByID%(usedTimes+1,mineID))
+    return ans
+
 def handle(res,group):
     ans:str=''#回复给用户的内容
     if group:#是群发消息
@@ -69,36 +94,17 @@ def handle(res,group):
                 ans='开采失败:请指定要开采的矿井！'
                 send(uid,ans,group=False)
                 return None
-            mineralID:int=message_list[1]
+            mineralID:int=int(message_list[1])
             if mineralID==1:
                 mineralNum=np.random.randint(2,28900)
+                ans=extract(uid,mineralNum,1)
             elif mineralID==2:
                 mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(28900)*1000))/1000))
+                ans=extract(uid,mineralNum,2)
             else:
                 ans='开采失败:不存在此矿井！'
                 send(uid,ans,group=False)
                 return None
-            usedTimes:int=select('data.db',selectTimeByID%(1))[0][0]
-            user:tuple=select('data.db',selectUserByqq%uid)[0]
-            mineral:str=user[3]
-            extractTech:float=user[5]
-            digable:bool=user[6]
-            if not int(digable):
-                ans='开采失败:您必须等到下一个整点才能再次开采矿井！'
-                send(uid,ans,group=False)
-                return None
-            if usedTimes==0:prob=1
-            else:prob=np.power(extractTech,usedTimes)
-            if np.random.random()>prob:
-                ans='开采失败:您的运气不佳'
-                execute('data.db',updateDigableByqq%('0',uid))
-            else:
-                ans='开采成功！您获得了编号为%d的矿石！'%mineralNum
-                new_mineral_list:list=list(eval(mineral))
-                new_mineral_list.append(mineralNum)
-                new_mineral:str=str(new_mineral_list)
-                execute('data.db',updateMineByqq%(new_mineral,uid))
-                execute('data.db',updateTimeByID%(str(usedTimes+1),'1'))
         elif func_str=='帮助':
             ans='您好！欢迎使用森bot！\n'
             ans+='您可以使用如下功能：\n'
