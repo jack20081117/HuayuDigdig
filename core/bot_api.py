@@ -10,8 +10,7 @@ def post():
     # 这里对消息进行分发，暂时先设置一个简单的分发
     res=request.get_json()
     if 0<=int(datetime.timestamp(datetime.now()))%360<=10:
-        execute('data.db',updateDigable%('1'))
-        execute('data.db',updateTime%('0'))
+        bot_script.init()#刷新
     if res.get('message_type')=='private':  # 说明有好友发送信息过来
         bot_script.handle(res,group=False)
     elif res.get('message_type')=='group':

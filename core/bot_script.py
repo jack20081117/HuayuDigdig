@@ -8,6 +8,10 @@ import os,json,requests,re
 group_ids=[788951477,780474840]
 headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'}
 
+def init():
+    execute('data.db',updateDigable%('1'))
+    execute('data.db',updateTime%('0'))
+
 def handle(res,group):
     ans=''#回复给用户的内容
     if group:#是群发消息
