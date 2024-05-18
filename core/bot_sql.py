@@ -24,18 +24,18 @@ updateDigableByqq="update users set digable=%s where qq='%s'"
 updateDigable="update users set digable=%s"
 
 createMine='create table mine (' \
-           'id int,' \
-           'time int' \
+           'mineID int,' \
+           'abundance float' \
            ')'
 
 insertMine="insert into mine " \
-           "(id,time) " \
-           "values (%d,%d)"
+           "(mineID,abundance) " \
+           "values (%d,%f)"
 
-selectTimeByID="select time from mine where id=%d"
+selectAbundanceByID="select abundance from mine where mineID=%d"
 
-updateTimeByID="update mine set time=%d where id=%d"
-updateTime="update mine set time=%d"
+updateAbundanceByID="update mine set abundance=%f where mineID=%d"
+updateAbundance="update mine set abundance=%f"
 
 def select(database,sql):
     with sqlite3.connect(database) as conn:

@@ -9,11 +9,20 @@ group_ids:list=[788951477]
 headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'}
 
 def init():
+    '''
+    在矿井刷新时进行初始化
+    '''
     execute('data.db',updateDigable%(True))
     execute('data.db',updateTime%(0))
 
 def extract(uid:str,mineralNum:int,mineID:int)->str:
-    usedTimes:int=select('data.db',selectTimeByID%(mineID))[0][0]
+    '''
+    :param uid:开采者的qq号
+    :param mineralNum:开采得矿石的编号
+    :param mineID:矿井编号
+    :return:开采信息
+    '''
+    abundance:float=select('data.db',selectAbundanceByID%(mineID))[0][0]
     user:tuple=select('data.db',selectUserByqq%uid)[0]
     mineral:str=user[3]
     extractTech:float=user[5]
@@ -21,10 +30,12 @@ def extract(uid:str,mineralNum:int,mineID:int)->str:
     if not digable:
         ans='开采失败:您必须等到下一个整点才能再次开采矿井！'
         return ans
-    if usedTimes==0:
-        prob=1
+    prob:float=0#开采成功的概率
+    if abundance==0:
+        prob=1.0
+        abundance=1
     else:
-        prob=np.power(extractTech,usedTimes)
+        prob=abundance*extractTech
     if np.random.random()>prob:
         ans='开采失败:您的运气不佳'
         execute('data.db',updateDigableByqq%(False,uid))
@@ -34,7 +45,7 @@ def extract(uid:str,mineralNum:int,mineID:int)->str:
         if mineralNum not in mineralDict:mineralDict[mineralNum]=0
         mineralDict[mineralNum]+=1
         execute('data.db',updateMineByqq%(mineralDict,uid))
-        execute('data.db',updateTimeByID%(usedTimes+1,mineID))
+        execute('data.db',updateAbundanceByID%(prob,mineID))
     return ans
 
 def handle(res,group):
