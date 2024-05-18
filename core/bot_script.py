@@ -30,10 +30,10 @@ def extract(uid:str,mineralNum:int,mineID:int)->str:
         execute('data.db',updateDigableByqq%(False,uid))
     else:
         ans='开采成功！您获得了编号为%d的矿石！'%mineralNum
-        mineral_dict:dict=dict(eval(mineral))
-        if mineralNum not in mineral_dict:mineral_dict[mineralNum]=0
-        mineral_dict[mineralNum]+=1
-        execute('data.db',updateMineByqq%(mineral_dict,uid))
+        mineralDict:dict=dict(eval(mineral))
+        if mineralNum not in mineralDict:mineralDict[mineralNum]=0
+        mineralDict[mineralNum]+=1
+        execute('data.db',updateMineByqq%(mineralDict,uid))
         execute('data.db',updateTimeByID%(usedTimes+1,mineID))
     return ans
 
@@ -48,11 +48,11 @@ def handle(res,group):
         if "[CQ:at,qq=2470751924]" not in message:#必须在自己被at的情况下才能作出回复
             return None
         message_list:list=message.split(' ')
-        func_str:str=message_list[1]
+        funcStr:str=message_list[1]
         message_list.pop(0)#忽略at本身
-        if func_str=='time':
+        if funcStr=='time':
             ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        elif func_str=='注册':
+        elif funcStr=='注册':
             if len(message_list)!=2 or not re.match(r'\d{5}',message_list[1]) or len(message_list[1])!=5:
                 ans='注册失败:请注意您的输入格式！'
                 send(gid,ans,group=True)
@@ -64,7 +64,7 @@ def handle(res,group):
                 return None
             execute('data.db',insertUser%(uid,schoolID,0,{},0.0,0.0,True))
             ans='注册成功！'
-        elif func_str=='开采':
+        elif funcStr=='开采':
             if len(message_list)!=2:
                 ans='开采失败:请指定要开采的矿井！'
                 send(gid,ans,group=True)
@@ -80,7 +80,7 @@ def handle(res,group):
                 ans='开采失败:不存在此矿井！'
                 send(gid,ans,group=True)
                 return None
-        elif func_str=='帮助':
+        elif funcStr=='帮助':
             ans='您好！欢迎使用森bot！\n'
             ans+='您可以使用如下功能：\n'
             ans+='1:查询时间：输入 time\n'
@@ -93,10 +93,10 @@ def handle(res,group):
         message:str=res.get("raw_message")
         uid:str=res.get('sender').get('user_id')
         message_list:list=message.split(' ')
-        func_str:str=message_list[0]
-        if func_str=='time':
+        funcStr:str=message_list[0]
+        if funcStr=='time':
             ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        elif func_str=='注册':
+        elif funcStr=='注册':
             if len(message_list)!=2 or not re.match(r'\d{5}',message_list[1]) or len(message_list[1])!=5:
                 ans='注册失败:请注意您的输入格式！'
                 send(uid,ans,group=False)
@@ -108,7 +108,7 @@ def handle(res,group):
                 return None
             execute('data.db',insertUser%(uid,schoolID,0,{},0.0,0.0,True))
             ans='注册成功！'
-        elif func_str=='开采':
+        elif funcStr=='开采':
             if len(message_list)!=2:
                 ans='开采失败:请指定要开采的矿井！'
                 send(uid,ans,group=False)
@@ -124,7 +124,7 @@ def handle(res,group):
                 ans='开采失败:不存在此矿井！'
                 send(uid,ans,group=False)
                 return None
-        elif func_str=='兑换':
+        elif funcStr=='兑换':
             if len(message_list)!=2:
                 ans='兑换失败:请指定要兑换的矿石！'
                 send(uid,ans,group=False)
@@ -133,8 +133,8 @@ def handle(res,group):
             user:tuple=select('data.db',selectUserByqq%uid)[0]
             schoolID:str=user[1]
             money:int=user[2]
-            mineral_dict:dict=dict(eval(user[3]))
-            if mineralNum not in mineral_dict:
+            mineralDict:dict=dict(eval(user[3]))
+            if mineralNum not in mineralDict:
                 ans='兑换失败:您不具备此矿石！'
                 send(uid,ans,group=False)
                 return None
@@ -145,14 +145,14 @@ def handle(res,group):
                 ans='兑换失败:您不能够兑换此矿石！'
                 send(uid,ans,group=False)
                 return None
-            mineral_dict[mineralNum]-=1
-            if mineral_dict[mineralNum]<=0:
-                mineral_dict.pop(mineralNum)
-            execute('data.db',updateMineByqq%(mineral_dict,uid))
+            mineralDict[mineralNum]-=1
+            if mineralDict[mineralNum]<=0:
+                mineralDict.pop(mineralNum)
+            execute('data.db',updateMineByqq%(mineralDict,uid))
             money+=mineralNum
             execute('data.db',updateMoneyByqq%(money,uid))
             ans='兑换成功！'
-        elif func_str=='帮助':
+        elif funcStr=='帮助':
             ans='您好！欢迎使用森bot！\n'
             ans+='您可以使用如下功能：\n'
             ans+='1:查询时间：输入 time\n'
