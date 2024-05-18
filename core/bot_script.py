@@ -30,11 +30,10 @@ def extract(uid:str,mineralNum:int,mineID:int)->str:
         execute('data.db',updateDigableByqq%(False,uid))
     else:
         ans='开采成功！您获得了编号为%d的矿石！'%mineralNum
-        new_mineral_dict:list=dict(eval(mineral))
-        if mineralNum not in new_mineral_dict:new_mineral_dict[mineralNum]=0
-        new_mineral_dict[mineralNum]+=1
-        new_mineral:str=str(new_mineral_dict)
-        execute('data.db',updateMineByqq%(new_mineral,uid))
+        mineral_dict:dict=dict(eval(mineral))
+        if mineralNum not in mineral_dict:mineral_dict[mineralNum]=0
+        mineral_dict[mineralNum]+=1
+        execute('data.db',updateMineByqq%(mineral_dict,uid))
         execute('data.db',updateTimeByID%(usedTimes+1,mineID))
     return ans
 
@@ -86,6 +85,9 @@ def handle(res,group):
             ans+='您可以使用如下功能：\n'
             ans+='1:查询时间：输入 time\n'
             ans+='2:注册账号：输入 注册 `学号`\n'
+            ans+='3:开采矿石：输入 开采 `编号`\n'
+            ans+='3.1 矿井1号会生成从2-28900均匀分布的随机整数矿石\n'
+            ans+='3.2 矿井2号会生成从2-28900对数均匀分布的随机整数矿石\n'
         send(gid,ans,group=True)
     else:
         message:str=res.get("raw_message")
@@ -122,6 +124,34 @@ def handle(res,group):
                 ans='开采失败:不存在此矿井！'
                 send(uid,ans,group=False)
                 return None
+        elif func_str=='兑换':
+            if len(message_list)!=2:
+                ans='兑换失败:请指定要兑换的矿石！'
+                send(uid,ans,group=False)
+                return None
+            mineralNum:int=int(message_list[1])
+            user:tuple=select('data.db',selectUserByqq%uid)[0]
+            schoolID:str=user[1]
+            money:int=user[2]
+            mineral_dict:dict=dict(eval(user[3]))
+            if mineralNum not in mineral_dict:
+                ans='兑换失败:您不具备此矿石！'
+                send(uid,ans,group=False)
+                return None
+            if int(schoolID)%mineralNum \
+            and int(schoolID[:3]%mineralNum) \
+            and int(schoolID[2:]%mineralNum) \
+            and int(schoolID[:2]+'0'+schoolID[:3]%mineralNum):
+                ans='兑换失败:您不能够兑换此矿石！'
+                send(uid,ans,group=False)
+                return None
+            mineral_dict[mineralNum]-=1
+            if mineral_dict[mineralNum]<=0:
+                mineral_dict.pop(mineralNum)
+            execute('data.db',updateMineByqq%(mineral_dict,uid))
+            money+=mineralNum
+            execute('data.db',updateMoneyByqq%(money,uid))
+            ans='兑换成功！'
         elif func_str=='帮助':
             ans='您好！欢迎使用森bot！\n'
             ans+='您可以使用如下功能：\n'

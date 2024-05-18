@@ -18,6 +18,7 @@ insertUser="insert into users " \
 selectUserByID="select * from users where schoolID='%s'"
 selectUserByqq="select * from users where qq='%s'"
 
+updateMoneyByqq="update users set money=%d where qq='%s'"
 updateMineByqq="update users set mineral='%s' where qq='%s'"
 updateDigableByqq="update users set digable=%s where qq='%s'"
 updateDigable="update users set digable=%s"
