@@ -25,8 +25,8 @@ help_msg='您好！欢迎使用森bot！\n'\
          '4:开采矿石：输入 开采 `矿井编号`\n'\
          '4.1 矿井1号会生成从2-30000均匀分布的随机整数矿石\n'\
          '4.2 矿井2号会生成从2-30000对数均匀分布的随机整数矿石\n'\
-         '4.3 矿井3号会生成从2-300均匀分布的随机整数矿石\n'\
-         '4.4 矿井4号会生成从2-300对数均匀分布的随机整数矿石\n'\
+         '4.3 矿井3号会生成从2-999均匀分布的随机整数矿石\n'\
+         '4.4 矿井4号会生成从2-999对数均匀分布的随机整数矿石\n'\
          '5:兑换矿石：输入 兑换 `矿石编号` 只有在矿石编号为3、5、6位学号的因数或班级因数时才可兑换！'
 
 info_msg="查询到QQ号为：%s的用户信息\n"\
@@ -113,10 +113,10 @@ def getMineral(message_list,qid):
         mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(30000)*1000))/1000))
         ans=extract(qid,mineralNum,2)
     elif mineralID==3:
-        mineralNum=np.random.randint(2,300)
+        mineralNum=np.random.randint(2,999)
         ans=extract(qid,mineralNum,3)
     elif mineralID==4:
-        mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(300)*1000))/1000))
+        mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(999)*1000))/1000))
         ans=extract(qid,mineralNum,4)
     else:
         ans='开采失败:不存在此矿井！'
