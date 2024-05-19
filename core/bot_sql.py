@@ -19,12 +19,12 @@ selectUserBySchoolID="select * from users where schoolID='%s'" # 获取用户信
 selectUserByQQ="select * from users where qid='%s'" # 获取用户信息
 selectUserByUserID = "select * from users where userid=%d"
 
-updateMoneyByqq="update users set money=%d where qid='%s'"
+updateMoneyByQQ="update users set money=%d where qid='%s'"
 updateMineByQQ ="update users set mineral='%s' where qid='%s'"
 updateDigableByQQ ="update users set digable=%s where qid='%s'"
 updateDigableAll="update users set digable=%s"
 
-createMine='create table mines (' \
+createMineTable='create table mines (' \
            'mineid int primary key,' \
            'abundance float' \
            ')'
@@ -55,8 +55,8 @@ def execute(database,sql):
         cursor.close()
 
 if __name__ == '__main__':
-    execute('data.db',createUser)
-    execute('data.db',createMine)
+    execute('data.db',createUserTable)
+    execute('data.db',createMineTable)
     execute('data.db',insertMine%(1,0))
     execute('data.db',insertMine%(2,0))
     execute('data.db',insertMine%(3,0))

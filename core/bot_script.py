@@ -69,25 +69,34 @@ def extract(qid,mineralNum,mineID):
     return ans
 
 
-def signup(message_list, qid, tf):
+def signup(message_list, qid, tf, gid=0):
     if len(message_list)!=2 or not re.match(r'\d{5}',message_list[1]) or len(message_list[1])!=5:
         ans='注册失败:请注意您的输入格式！'
-        send(qid,ans,group=tf)
+        if tf:
+            send(gid,ans,True)
+        else:
+            send(qid,ans,False)
         return None
     schoolID:str=message_list[1]
     if select('data.db',selectUserBySchoolID%schoolID) or select('data.db',selectUserByQQ%qid):
         ans='注册失败:您已经注册过，无法重复注册！'
-        send(qid,ans,group=tf)
+        if tf:
+            send(gid,ans,True)
+        else:
+            send(qid,ans,False)
         return None
     execute('data.db',createUser%(qid,schoolID,0,{},0.0,0.0,True))
     return ans
 
 
-def getMineral(message_list, tf, qid):
+def getMineral(message_list, tf, qid, gid=0):
     uid = qid
     if len(message_list)!=2:
         ans='开采失败:请指定要开采的矿井！'
-        send(qid,ans,group=True)
+        if tf:
+            send(gid,ans,True)
+        else:
+            send(qid,ans,False)
         return None
     mineralID:int=int(message_list[1])
     if mineralID==1:
@@ -137,19 +146,48 @@ def handle(res,group):
         if funcStr=='time':
             ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         elif funcStr=='注册':
-            ans = signup(message_list, qid, True)
+            ans = signup(message_list, qid, True, gid)
             if not ans:
                 return
         
         elif funcStr=='开采':
-            ans = getMineral(message_list, True, qid)
+            ans = getMineral(message_list, True, qid, gid)
             if not ans:
                 return
             
         elif funcStr=='帮助':
             ans=help_msg
             
-        send(qid,ans,group=True)
+        elif funcStr=='兑换':
+            if len(message_list)!=2:
+                ans='兑换失败:请指定要兑换的矿石！'
+                send(gid,ans,group=True)
+                return None
+            mineralNum:int=int(message_list[1])
+            user:tuple=select('data.db',selectUserByQQ%qid)[0]
+            schoolID:str=user[1]
+            money:int=user[2]
+            mineralDict:dict=dict(eval(user[3]))
+            if mineralNum not in mineralDict:
+                ans='兑换失败:您不具备此矿石！'
+                send(gid,ans,group=True)
+                return None
+            if int(schoolID)%mineralNum \
+            and int(schoolID[:3])%mineralNum \
+            and int(schoolID[2:])%mineralNum \
+            and int(schoolID[:2]+'0'+schoolID[:3])%mineralNum:
+                ans='兑换失败:您不能够兑换此矿石！'
+                send(gid,ans,group=True)
+                return None
+            mineralDict[mineralNum]-=1
+            if mineralDict[mineralNum]<=0:
+                mineralDict.pop(mineralNum)
+            execute('data.db',updateMineByQQ%(str(mineralDict),qid))
+            money+=mineralNum
+            execute('data.db',updateMoneyByQQ%(money,qid))
+            ans='兑换成功！'
+            
+        send(gid,ans,group=True)
         
     else:
         message:str=res.get("raw_message")
@@ -171,6 +209,35 @@ def handle(res,group):
             
         elif funcStr=='帮助':
             ans=help_msg
+            
+        elif funcStr=='兑换':
+            if len(message_list)!=2:
+                ans='兑换失败:请指定要兑换的矿石！'
+                send(qid,ans,group=False)
+                return None
+            mineralNum:int=int(message_list[1])
+            user:tuple=select('data.db',selectUserByQQ%qid)[0]
+            schoolID:str=user[1]
+            money:int=user[2]
+            mineralDict:dict=dict(eval(user[3]))
+            if mineralNum not in mineralDict:
+                ans='兑换失败:您不具备此矿石！'
+                send(qid,ans,group=False)
+                return None
+            if int(schoolID)%mineralNum \
+            and int(schoolID[:3])%mineralNum \
+            and int(schoolID[2:])%mineralNum \
+            and int(schoolID[:2]+'0'+schoolID[:3])%mineralNum:
+                ans='兑换失败:您不能够兑换此矿石！'
+                send(qid,ans,group=False)
+                return None
+            mineralDict[mineralNum]-=1
+            if mineralDict[mineralNum]<=0:
+                mineralDict.pop(mineralNum)
+            execute('data.db',updateMineByQQ%(mineralDict,qid))
+            money+=mineralNum
+            execute('data.db',updateMoneyByQQ%(money,qid))
+            ans='兑换成功！'
         send(qid,ans,group=False)
 
 def send(qid,message,group=False):
