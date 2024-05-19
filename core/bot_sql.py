@@ -68,16 +68,22 @@ selectAbundanceByID="select abundance from mine where mineID=%d"
 updateAbundanceByID="update mine set abundance=%f where mineID=%d"
 updateAbundance="update mine set abundance=%f"
 
-def select(database,sql):
-    with sqlite3.connect(database) as conn:
-        cursor=conn.cursor()
-        cursor.execute(sql)
-        conn.commit()
-        res=cursor.fetchall()
-        cursor.close()
+def select(sql, mysql=False, args=()):
+    if not mysql:
+        with sqlite3.connect("data.db") as conn:
+            cursor=conn.cursor()
+            if args:
+                sql=sql%args
+            cursor.execute(sql)
+            conn.commit()
+            res=cursor.fetchall()
+            cursor.close()
+    else:
+        mysqlcursor.execute(sql,args)
+        res = mysqlcursor.fetchall()
     return res
 
-def execute(sql,mysql=False,args=(None)):
+def execute(sql,mysql=False,args=()):
     if not mysql:
         with sqlite3.connect("data.db") as conn:
             cursor=conn.cursor()

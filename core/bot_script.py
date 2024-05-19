@@ -46,8 +46,8 @@ def extract(qid,mineralNum,mineID):
     :param mineID:矿井编号
     :return:开采信息
     '''
-    abundance:float=select('data.db',selectAbundanceByID%(mineID))[0][0] # 矿井丰度
-    user:tuple=select('data.db',selectUserByQQ%qid)[0] # 用户信息元组
+    abundance:float=select(selectAbundanceByID, mysql, (mineID,))[0][0] # 矿井丰度
+    user:tuple=select(selectUserByQQ, mysql, (qid,))[0] # 用户信息元组
     mineral:str=user[3] # 用户拥有的矿石（str of dict）
     extractTech:float=user[5] # 开采等级
     digable:bool=user[6] # 是否可以开采
@@ -86,7 +86,7 @@ def signup(message_list,qid):
         ans='注册失败:请注意您的输入格式！'
         return ans
     schoolID:str=message_list[1]
-    if select('data.db',selectUserBySchoolID%schoolID) or select('data.db',selectUserByQQ%qid):
+    if select(selectUserBySchoolID, mysql, (schoolID,)) or select(selectUserByQQ, mysql, (qid,)):
         ans='注册失败:您已经注册过，无法重复注册！'
         return ans
     execute(createUser,mysql,(qid,schoolID,0,{},0.0,0.0,True))
@@ -125,7 +125,7 @@ def exchange(message_list,qid):
         ans='兑换失败:请指定要兑换的矿石！'
         return ans
     mineralNum: int=int(message_list[1])
-    user: tuple=select('data.db',selectUserByQQ%qid)[0]
+    user: tuple=select(selectUserByQQ, mysql, (qid,))[0]
     schoolID: str=user[1]
     money: int=user[2]
     mineralDict: dict=dict(eval(user[3]))
@@ -146,6 +146,24 @@ def exchange(message_list,qid):
     execute(updateMoneyByQQ,mysql,(money,qid))
     ans='兑换成功！'
     return ans
+
+def getUserInfo(qid):
+    user:tuple = select(selectUserByQQ, mysql, (qid, ))[0]
+    _,schoolID,money,mineral,process_tech,extract_tech,digable = user
+    mres = ""
+    for mid, mnum in dict(mineral).items():
+        mres += "编号%s的矿石%s个；\n" % (mid, mnum)
+    ans = """
+查询到QQ号为：%s的用户信息
+学号：%s
+当前余额：%s
+加工科技点：%s
+开采科技点：%s
+当前是否可开采：%s
+
+以下为该用户拥有的矿石：  
+%s  
+""" % (qid, schoolID, money, process_tech, extract_tech, digable, mres)
 
 def handle(res,group):
     ans:str=''  #回复给用户的内容
@@ -180,6 +198,9 @@ def handle(res,group):
         elif funcStr=='兑换':
             ans=exchange(message_list,qid)
 
+        elif funcStr=="查询":
+            ans=getUserInfo(qid)
+
         else:
             ans="未知命令：请输入'帮助'以获取帮助信息！"
 
@@ -205,6 +226,9 @@ def handle(res,group):
         elif funcStr=='兑换':
             ans=exchange(message_list,qid)
 
+        elif funcStr=="查询":
+            ans=getUserInfo(qid)
+            
         else:
             ans="未知命令：请输入'帮助'以获取帮助信息！"
         send(qid,ans,group=False)
