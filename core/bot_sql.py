@@ -37,16 +37,16 @@ createUserTableForMySQL='create table if not exists users ('\
 
 createUser="insert into users "\
            "(qid,schoolID,money,mineral,process_tech,extract_tech,digable) "\
-           "values ('%s','%s',%s,'%s',%f,%f,%s)"  # 创建用户
+           "values (%s,%s,%s,%s,%f,%f,%s)"  # 创建用户
 # 拥有的矿石 加工科技 开采科技 是否能继续挖矿 (最后四个)
 
-selectUserBySchoolID="select * from users where schoolID='%s'"  # 获取用户信息
-selectUserByQQ="select * from users where qid='%s'"  # 获取用户信息
+selectUserBySchoolID="select * from users where schoolID=%s"  # 获取用户信息
+selectUserByQQ="select * from users where qid=%s"  # 获取用户信息
 selectUserByUserID="select * from users where userid=%d"
 
-updateMoneyByQQ="update users set money=%d where qid='%s'"
-updateMineByQQ="update users set mineral='%s' where qid='%s'"
-updateDigableByQQ="update users set digable=%s where qid='%s'"
+updateMoneyByQQ="update users set money=%d where qid=%s"
+updateMineByQQ="update users set mineral='%s' where qid=%s"
+updateDigableByQQ="update users set digable=%s where qid=%s"
 updateDigableAll="update users set digable=%s"
 
 createMineTable='create table mine ('\
