@@ -77,7 +77,7 @@ def select(database,sql):
         cursor.close()
     return res
 
-def execute(sql, mysql=False, *args):
+def execute(sql, mysql=False, args=()):
     if not mysql:
         with sqlite3.connect("data.db") as conn:
             cursor=conn.cursor()
