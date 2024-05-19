@@ -43,10 +43,10 @@ info_msg="查询到QQ号为：%s的用户信息\n"\
 commands:dict={}
 
 def handler(funcStr):
-    '''
+    """
     该装饰器装饰的函数会自动加入handle函数
     :param funcStr: 功能
-    '''
+    """
     def real_handler(func):
         commands[funcStr]=func
         return func
@@ -54,20 +54,20 @@ def handler(funcStr):
     return real_handler
 
 def init():
-    '''
+    """
     在矿井刷新时进行初始化
-    '''
+    """
     execute(updateDigableAll,mysql,(1,))
     execute(updateAbundanceAll,mysql,(0.0,))
 
 
 def extract(qid,mineralNum,mineID):
-    '''获取矿石
+    """获取矿石
     :param qid:开采者的qq号
     :param mineralNum:开采得矿石的编号
     :param mineID:矿井编号
     :return:开采信息
-    '''
+    """
     abundance:float=select(selectAbundanceByID,mysql,(mineID,))[0][0]  # 矿井丰度
     user:tuple=select(selectUserByQQ,mysql,(qid,))[0]  # 用户信息元组
     mineral:str=user[3]  # 用户拥有的矿石（str of dict）
