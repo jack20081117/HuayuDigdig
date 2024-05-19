@@ -80,7 +80,7 @@ def extract(qid,mineralNum,mineID):
     return ans
 
 
-def signup(message_list,qid,tf,gid=0):
+def signup(message_list,qid):
     ans=''
     if len(message_list)!=2 or not re.match(r'\d{5}',message_list[1]) or len(message_list[1])!=5:
         ans='注册失败:请注意您的输入格式！'
@@ -93,7 +93,7 @@ def signup(message_list,qid,tf,gid=0):
     ans="注册成功！"
     return ans
 
-def getMineral(message_list,tf,qid,gid=0):
+def getMineral(message_list,qid):
     if len(message_list)!=2:
         ans='开采失败:请指定要开采的矿井！'
         return ans
@@ -143,10 +143,10 @@ def handle(res,group):
         if funcStr=='time':
             ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         elif funcStr=='注册':
-            ans=signup(message_list,qid,True,gid)
+            ans=signup(message_list,qid)
 
         elif funcStr=='开采':
-            ans=getMineral(message_list,True,qid,gid)
+            ans=getMineral(message_list,qid)
 
         elif funcStr=='帮助':
             ans=help_msg
@@ -194,10 +194,10 @@ def handle(res,group):
             ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         elif funcStr=='注册':
-            ans=signup(message_list,qid,False)
+            ans=signup(message_list,qid)
 
         elif funcStr=='开采':
-            ans=getMineral(message_list,False,qid)
+            ans=getMineral(message_list,qid)
 
         elif funcStr=='帮助':
             ans=help_msg
