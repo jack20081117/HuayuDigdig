@@ -17,18 +17,24 @@ if env=="prod":
 else:
     mysql=False
 
-help_msg='您好！欢迎使用森bot！\n'
-help_msg+='您可以使用如下功能：\n'
-help_msg+='1:查询时间：输入 time\n'
-help_msg+='2:注册账号：输入 注册 `学号`\n'
-help_msg+='3.1 矿井1号会生成从2-30000均匀分布的随机整数矿石\n'
-help_msg+='3.2 矿井2号会生成从2-30000对数均匀分布的随机整数矿石\n'
-help_msg+='3.3 矿井3号会生成从2-300均匀分布的随机整数矿石\n'
-help_msg+='3.4 矿井4号会生成从2-300对数均匀分布的随机整数矿石\n'
-help_msg+='3.5 矿井5号会生成从2-300000均匀分布的随机整数矿石\n'
-help_msg+='3.6 矿井6号会生成从2-300000对数均匀分布的随机整数矿石\n'
-help_msg+='4:兑换矿石：输入 兑换 `矿石编号` 只有在矿石编号为3、5、6位学号的因数或班级因数时才可兑换！'
+help_msg='您好！欢迎使用森bot！\n'\
+         '您可以使用如下功能：\n'\
+         '1:查询时间：输入 time\n'\
+         '2:注册账号：输入 注册 `学号`\n'\
+         '3.1 矿井1号会生成从2-30000均匀分布的随机整数矿石\n'\
+         '3.2 矿井2号会生成从2-30000对数均匀分布的随机整数矿石\n'\
+         '3.3 矿井3号会生成从2-300均匀分布的随机整数矿石\n'\
+         '3.4 矿井4号会生成从2-300对数均匀分布的随机整数矿石\n'\
+         '4:兑换矿石：输入 兑换 `矿石编号` 只有在矿石编号为3、5、6位学号的因数或班级因数时才可兑换！'
 
+info_msg="查询到QQ号为：%s的用户信息\n"\
+         "学号：%s\n"\
+         "当前余额：%s\n"\
+         "加工科技点：%s\n"\
+         "开采科技点：%s\n"\
+         "当前是否可开采：%s\n"\
+         "以下为该用户拥有的矿石：\n"\
+         "%s"
 
 def init():
     '''
@@ -110,12 +116,6 @@ def getMineral(message_list,qid):
     elif mineralID==4:
         mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(300)*1000))/1000))
         ans=extract(qid,mineralNum,4)
-    elif mineralID==5:
-        mineralNum=np.random.randint(2,300000)
-        ans=extract(qid,mineralNum,5)
-    elif mineralID==6:
-        mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(300000)*1000))/1000))
-        ans=extract(qid,mineralNum,6)
     else:
         ans='开采失败:不存在此矿井！'
     return ans
@@ -148,22 +148,13 @@ def exchange(message_list,qid):
     return ans
 
 def getUserInfo(qid):
-    user:tuple = select(selectUserByQQ, mysql, (qid, ))[0]
-    _,schoolID,money,mineral,process_tech,extract_tech,digable = user
-    mres = ""
-    for mid, mnum in dict(mineral).items():
-        mres += "编号%s的矿石%s个；\n" % (mid, mnum)
-    ans = """
-查询到QQ号为：%s的用户信息
-学号：%s
-当前余额：%s
-加工科技点：%s
-开采科技点：%s
-当前是否可开采：%s
-
-以下为该用户拥有的矿石：  
-%s  
-""" % (qid, schoolID, money, process_tech, extract_tech, digable, mres)
+    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
+    _,schoolID,money,mineral,process_tech,extract_tech,digable=user
+    mres=""
+    for mid,mnum in dict(eval(mineral)).items():
+        mres+="编号%s的矿石%s个；\n"%(mid,mnum)
+    ans=info_msg%(qid,schoolID,money,process_tech,extract_tech,digable,mres)
+    return ans
 
 def handle(res,group):
     ans:str=''  #回复给用户的内容
