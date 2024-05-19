@@ -69,7 +69,7 @@ def extract(qid,mineralNum,mineID):
         execute(updateDigableByQQ,mysql,(False,qid))
         ans='开采失败: 您的运气不佳，未能开采成功！'
     else:
-        mineralDict:dict = dict(eval(mineral)) 
+        mineralDict:dict=dict(eval(mineral))
         # 加一个矿石
         if mineralNum not in mineralDict:
             mineralDict[mineralNum]=0
@@ -81,6 +81,7 @@ def extract(qid,mineralNum,mineID):
 
 
 def signup(message_list,qid,tf,gid=0):
+    ans=''
     if len(message_list)!=2 or not re.match(r'\d{5}',message_list[1]) or len(message_list[1])!=5:
         ans='注册失败:请注意您的输入格式！'
         return ans
@@ -91,15 +92,10 @@ def signup(message_list,qid,tf,gid=0):
     execute(createUser,mysql,(qid,schoolID,0,{},0.0,0.0,True))
     return ans
 
-
 def getMineral(message_list,tf,qid,gid=0):
     if len(message_list)!=2:
         ans='开采失败:请指定要开采的矿井！'
-        if tf:
-            send(gid,ans,True)
-        else:
-            send(qid,ans,False)
-        return None
+        return ans
     mineralID:int=int(message_list[1])
     if mineralID==1:
         mineralNum=np.random.randint(2,30000)
@@ -121,8 +117,7 @@ def getMineral(message_list,tf,qid,gid=0):
         ans=extract(qid,mineralNum,6)
     else:
         ans='开采失败:不存在此矿井！'
-        send(qid,ans,group=tf)
-        return None
+        return ans
     return ans
 
 
@@ -149,13 +144,9 @@ def handle(res,group):
             ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         elif funcStr=='注册':
             ans=signup(message_list,qid,True,gid)
-            if not ans:
-                return
 
         elif funcStr=='开采':
             ans=getMineral(message_list,True,qid,gid)
-            if not ans:
-                return
 
         elif funcStr=='帮助':
             ans=help_msg
