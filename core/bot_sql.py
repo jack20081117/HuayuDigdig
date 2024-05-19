@@ -77,11 +77,12 @@ def select(database,sql):
         cursor.close()
     return res
 
-def execute(sql,mysql=False,*args):
+def execute(sql,mysql=False,args=None):
     if not mysql:
         with sqlite3.connect("data.db") as conn:
             cursor=conn.cursor()
-            cursor.execute(sql%args)
+            if args:sql=sql%args
+            cursor.execute(sql)
             conn.commit()
             cursor.close()
     else:

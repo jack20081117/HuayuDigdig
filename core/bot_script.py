@@ -35,7 +35,7 @@ def init():
     在矿井刷新时进行初始化
     '''
     execute(updateDigableAll,mysql,(True))
-    execute(updateAbundance,mysql,(0.0))
+    execute(updateAbundance,mysql,(0.0,))
 
 
 def extract(qid,mineralNum,mineID):
@@ -90,6 +90,7 @@ def signup(message_list,qid,tf,gid=0):
         ans='注册失败:您已经注册过，无法重复注册！'
         return ans
     execute(createUser,mysql,(qid,schoolID,0,{},0.0,0.0,True))
+    ans="注册成功！"
     return ans
 
 def getMineral(message_list,tf,qid,gid=0):
@@ -188,20 +189,16 @@ def handle(res,group):
     else:
         message:str=res.get("raw_message")
         qid:str=res.get('sender').get('user_id')
-        message_list: list=message.split(' ')
+        message_list:list=message.split(' ')
         funcStr:str=message_list[0]
         if funcStr=='time':
             ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         elif funcStr=='注册':
             ans=signup(message_list,qid,False)
-            if not ans:
-                return
 
         elif funcStr=='开采':
             ans=getMineral(message_list,False,qid)
-            if not ans:
-                return
 
         elif funcStr=='帮助':
             ans=help_msg
