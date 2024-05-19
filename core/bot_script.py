@@ -120,6 +120,32 @@ def getMineral(message_list,qid):
         ans='开采失败:不存在此矿井！'
     return ans
 
+def exchange(message_list,qid):
+    if len(message_list)!=2:
+        ans='兑换失败:请指定要兑换的矿石！'
+        return ans
+    mineralNum: int=int(message_list[1])
+    user: tuple=select('data.db',selectUserByQQ%qid)[0]
+    schoolID: str=user[1]
+    money: int=user[2]
+    mineralDict: dict=dict(eval(user[3]))
+    if mineralNum not in mineralDict:
+        ans='兑换失败:您不具备此矿石！'
+        return ans
+    if int(schoolID)%mineralNum\
+            and int(schoolID[:3])%mineralNum\
+            and int(schoolID[2:])%mineralNum\
+            and int(schoolID[:2]+'0'+schoolID[:3])%mineralNum:
+        ans='兑换失败:您不能够兑换此矿石！'
+        return ans
+    mineralDict[mineralNum]-=1
+    if mineralDict[mineralNum]<=0:
+        mineralDict.pop(mineralNum)
+    execute(updateMineByQQ,mysql,(str(mineralDict),qid))
+    money+=mineralNum
+    execute(updateMoneyByQQ,mysql,(money,qid))
+    ans='兑换成功！'
+    return ans
 
 def handle(res,group):
     ans:str=''  #回复给用户的内容
@@ -152,33 +178,7 @@ def handle(res,group):
             ans=help_msg
 
         elif funcStr=='兑换':
-            if len(message_list)!=2:
-                ans='兑换失败:请指定要兑换的矿石！'
-                send(gid,ans,group=True)
-                return None
-            mineralNum:int=int(message_list[1])
-            user:tuple=select('data.db',selectUserByQQ%qid)[0]
-            schoolID:str=user[1]
-            money:int=user[2]
-            mineralDict:dict=dict(eval(user[3]))
-            if mineralNum not in mineralDict:
-                ans='兑换失败:您不具备此矿石！'
-                send(gid,ans,group=True)
-                return None
-            if int(schoolID)%mineralNum\
-                    and int(schoolID[:3])%mineralNum\
-                    and int(schoolID[2:])%mineralNum\
-                    and int(schoolID[:2]+'0'+schoolID[:3])%mineralNum:
-                ans='兑换失败:您不能够兑换此矿石！'
-                send(gid,ans,group=True)
-                return None
-            mineralDict[mineralNum]-=1
-            if mineralDict[mineralNum]<=0:
-                mineralDict.pop(mineralNum)
-            execute(updateMineByQQ,mysql,(str(mineralDict),qid))
-            money+=mineralNum
-            execute(updateMoneyByQQ,mysql,(money,qid))
-            ans='兑换成功！'
+            ans=exchange(message_list,qid)
 
         else:
             ans="未知命令：请输入'帮助'以获取帮助信息！"
@@ -203,33 +203,8 @@ def handle(res,group):
             ans=help_msg
 
         elif funcStr=='兑换':
-            if len(message_list)!=2:
-                ans='兑换失败:请指定要兑换的矿石！'
-                send(qid,ans,group=False)
-                return None
-            mineralNum:int=int(message_list[1])
-            user:tuple=select('data.db',selectUserByQQ%qid)[0]
-            schoolID:str=user[1]
-            money:int=user[2]
-            mineralDict:dict=dict(eval(user[3]))
-            if mineralNum not in mineralDict:
-                ans='兑换失败:您不具备此矿石！'
-                send(qid,ans,group=False)
-                return None
-            if int(schoolID)%mineralNum\
-                    and int(schoolID[:3])%mineralNum\
-                    and int(schoolID[2:])%mineralNum\
-                    and int(schoolID[:2]+'0'+schoolID[:3])%mineralNum:
-                ans='兑换失败:您不能够兑换此矿石！'
-                send(qid,ans,group=False)
-                return None
-            mineralDict[mineralNum]-=1
-            if mineralDict[mineralNum]<=0:
-                mineralDict.pop(mineralNum)
-            execute(updateMineByQQ,mysql,(mineralDict,qid))
-            money+=mineralNum
-            execute(updateMoneyByQQ,mysql,(money,qid))
-            ans='兑换成功！'
+            ans=exchange(message_list,qid)
+
         else:
             ans="未知命令：请输入'帮助'以获取帮助信息！"
         send(qid,ans,group=False)
