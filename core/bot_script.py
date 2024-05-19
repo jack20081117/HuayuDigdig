@@ -57,7 +57,7 @@ def init():
     '''
     在矿井刷新时进行初始化
     '''
-    execute(updateDigableAll,mysql,(True))
+    execute(updateDigableAll,mysql,(1,))
     execute(updateAbundanceAll,mysql,(0.0,))
 
 
@@ -88,7 +88,7 @@ def extract(qid,mineralNum,mineID):
         prob=round(abundance*sigmoid(extractTech),2)
 
     if np.random.random()>prob:
-        execute(updateDigableByQQ,mysql,(False,qid))
+        execute(updateDigableByQQ,mysql,(0,qid))
         ans='开采失败:您的运气不佳，未能开采成功！'
     else:
         mineralDict:dict=dict(eval(mineral))
@@ -115,7 +115,7 @@ def signup(message_list,qid):
     if select(selectUserBySchoolID,mysql,(schoolID,)) or select(selectUserByQQ,mysql,(qid,)):
         ans='注册失败:您已经注册过，无法重复注册！'
         return ans
-    execute(createUser,mysql,(qid,schoolID,0,{},0.0,0.0,True))
+    execute(createUser,mysql,(qid,schoolID,0,{},0.0,0.0,1))
     ans="注册成功！"
     return ans
 
