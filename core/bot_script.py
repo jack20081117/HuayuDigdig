@@ -71,7 +71,7 @@ def extract(qid,mineralNum,mineID):
             mineralDict[mineralNum]=0
         mineralDict[mineralNum]+=1
         execute(updateMineByQQ, mysql, (mineralDict,qid))
-        execute(updateAbundanceByID, mysql, (abundance+1,mineID))
+        execute(updateAbundanceByID, mysql, (prob,mineID))
         ans='开采成功！您获得了编号为%d的矿石！'%mineralNum
     return ans
 
