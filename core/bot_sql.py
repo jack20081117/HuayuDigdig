@@ -50,12 +50,12 @@ updateDigableByQQ="update users set digable=%d where qid=%s"
 updateDigableAll="update users set digable=%d"
 
 createMineTable='create table mine ('\
-                'mineid int primary key,'\
+                'mineID int primary key,'\
                 'abundance float'\
                 ')'
 
 createMineTableForMySQL='create table if not exists mine ('\
-                        'mineid int primary key,'\
+                        'mineID int primary key,'\
                         'abundance float'\
                         ')'
 

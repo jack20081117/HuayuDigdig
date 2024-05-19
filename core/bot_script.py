@@ -61,10 +61,10 @@ def init():
     execute(updateAbundanceAll,mysql,(0.0,))
 
 
-def extract(qid,mineralNum,mineID):
+def extract(qid,mineralID,mineID):
     """获取矿石
     :param qid:开采者的qq号
-    :param mineralNum:开采得矿石的编号
+    :param mineralID:开采得矿石的编号
     :param mineID:矿井编号
     :return:开采信息
     """
@@ -93,12 +93,12 @@ def extract(qid,mineralNum,mineID):
     else:
         mineralDict:dict=dict(eval(mineral))
         # 加一个矿石
-        if mineralNum not in mineralDict:
-            mineralDict[mineralNum]=0
-        mineralDict[mineralNum]+=1
+        if mineralID not in mineralDict:
+            mineralDict[mineralID]=0
+        mineralDict[mineralID]+=1
         execute(updateMineByQQ,mysql,(mineralDict,qid))
         execute(updateAbundanceByID,mysql,(prob,mineID))
-        ans='开采成功！您获得了编号为%d的矿石！'%mineralNum
+        ans='开采成功！您获得了编号为%d的矿石！'%mineralID
     return ans
 
 @handler("time")
@@ -126,17 +126,17 @@ def getMineral(message_list,qid):
         return ans
     mineralID:int=int(message_list[1])
     if mineralID==1:
-        mineralNum=np.random.randint(2,30000)
-        ans=extract(qid,mineralNum,1)
+        mineralID=np.random.randint(2,30000)
+        ans=extract(qid,mineralID,1)
     elif mineralID==2:
-        mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(30000)*1000))/1000))
-        ans=extract(qid,mineralNum,2)
+        mineralID=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(30000)*1000))/1000))
+        ans=extract(qid,mineralID,2)
     elif mineralID==3:
-        mineralNum=np.random.randint(2,999)
-        ans=extract(qid,mineralNum,3)
+        mineralID=np.random.randint(2,999)
+        ans=extract(qid,mineralID,3)
     elif mineralID==4:
-        mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(999)*1000))/1000))
-        ans=extract(qid,mineralNum,4)
+        mineralID=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(999)*1000))/1000))
+        ans=extract(qid,mineralID,4)
     else:
         ans='开采失败:不存在此矿井！'
     return ans
@@ -146,25 +146,25 @@ def exchange(message_list,qid):
     if len(message_list)!=2:
         ans='兑换失败:请指定要兑换的矿石！'
         return ans
-    mineralNum:int=int(message_list[1])
+    mineralID:int=int(message_list[1])
     user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
     schoolID:str=user[1]
     money:int=user[2]
     mineralDict:dict=dict(eval(user[3]))
-    if mineralNum not in mineralDict:
+    if mineralID not in mineralDict:
         ans='兑换失败:您不具备此矿石！'
         return ans
-    if int(schoolID)%mineralNum\
-            and int(schoolID[:3])%mineralNum\
-            and int(schoolID[2:])%mineralNum\
-            and int(schoolID[:2]+'0'+schoolID[2:])%mineralNum:
+    if int(schoolID)%mineralID\
+            and int(schoolID[:3])%mineralID\
+            and int(schoolID[2:])%mineralID\
+            and int(schoolID[:2]+'0'+schoolID[2:])%mineralID:
         ans='兑换失败:您不能够兑换此矿石！'
         return ans
-    mineralDict[mineralNum]-=1
-    if mineralDict[mineralNum]<=0:
-        mineralDict.pop(mineralNum)
+    mineralDict[mineralID]-=1
+    if mineralDict[mineralID]<=0:
+        mineralDict.pop(mineralID)
     execute(updateMineByQQ,mysql,(str(mineralDict),qid))
-    money+=mineralNum
+    money+=mineralID
     execute(updateMoneyByQQ,mysql,(money,qid))
     ans='兑换成功！'
     return ans
