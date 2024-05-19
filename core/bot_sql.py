@@ -68,6 +68,17 @@ selectAbundanceByID="select abundance from mine where mineID=%d"
 updateAbundanceByID="update mine set abundance=%f where mineID=%d"
 updateAbundanceAll="update mine set abundance=%f"
 
+createSaleTable='create sale ('\
+                'qid varchar(10),'\
+                'saleID varchar(6),'\
+                'mineralID int,'\
+                'mineralNum int,'\
+                'auction boolean,'\
+                'price int,'\
+                'starttime int,'\
+                'endtime int'\
+                ')'
+
 def select(sql,mysql=False,args=()):
     if not mysql:
         with sqlite3.connect("data.db") as conn:

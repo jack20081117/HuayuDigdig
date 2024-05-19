@@ -76,10 +76,7 @@ def extract(qid,mineralID,mineID):
 
     prob:float=0.0  # 初始化概率
 
-    if not digable:
-        # 不可开采
-        ans='开采失败:您必须等到下一个整点才能再次开采矿井！'
-        return ans
+    assert digable,'开采失败:您必须等到下一个整点才能再次开采矿井！'
 
     # 决定概率 
     if abundance==0.0:
@@ -108,22 +105,16 @@ def returnTime(m,q):
 @handler("注册")
 def signup(message_list,qid):
     ans=''
-    if len(message_list)!=2 or not re.match(r'\d{5}',message_list[1]) or len(message_list[1])!=5:
-        ans='注册失败:请注意您的输入格式！'
-        return ans
+    assert len(message_list)==2 and re.match(r'\d{5}',message_list[1]) and len(message_list[1])==5,'注册失败:请注意您的输入格式！'
     schoolID:str=message_list[1]
-    if select(selectUserBySchoolID,mysql,(schoolID,)) or select(selectUserByQQ,mysql,(qid,)):
-        ans='注册失败:您已经注册过，无法重复注册！'
-        return ans
+    assert not select(selectUserBySchoolID,mysql,(schoolID,)) and not select(selectUserByQQ,mysql,(qid,)),'注册失败:您已经注册过，无法重复注册！'
     execute(createUser,mysql,(qid,schoolID,0,{},0.0,0.0,1))
     ans="注册成功！"
     return ans
 
 @handler("开采")
 def getMineral(message_list,qid):
-    if len(message_list)!=2:
-        ans='开采失败:请指定要开采的矿井！'
-        return ans
+    assert len(message_list)==2,'开采失败:请指定要开采的矿井！'
     mineralID:int=int(message_list[1])
     if mineralID==1:
         mineralID=np.random.randint(2,30000)
@@ -143,23 +134,17 @@ def getMineral(message_list,qid):
 
 @handler("兑换")
 def exchange(message_list,qid):
-    if len(message_list)!=2:
-        ans='兑换失败:请指定要兑换的矿石！'
-        return ans
+    assert len(message_list)==2,'兑换失败:请指定要兑换的矿石！'
     mineralID:int=int(message_list[1])
     user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
     schoolID:str=user[1]
     money:int=user[2]
     mineralDict:dict=dict(eval(user[3]))
-    if mineralID not in mineralDict:
-        ans='兑换失败:您不具备此矿石！'
-        return ans
-    if int(schoolID)%mineralID\
-            and int(schoolID[:3])%mineralID\
-            and int(schoolID[2:])%mineralID\
-            and int(schoolID[:2]+'0'+schoolID[2:])%mineralID:
-        ans='兑换失败:您不能够兑换此矿石！'
-        return ans
+    assert mineralID in mineralDict,'兑换失败:您不具备此矿石！'
+    assert not int(schoolID)%mineralID\
+        or not int(schoolID[:3])%mineralID\
+        or not int(schoolID[2:])%mineralID\
+        or not int(schoolID[:2]+'0'+schoolID[2:])%mineralID,'兑换失败:您不能够兑换此矿石！'
     mineralDict[mineralID]-=1
     if mineralDict[mineralID]<=0:
         mineralDict.pop(mineralID)
@@ -178,6 +163,30 @@ def getUserInfo(message_list,qid):
         mres+="编号%s的矿石%s个；\n"%(mid,mnum)
     ans=info_msg%(qid,schoolID,money,process_tech,extract_tech,digable,mres)
     return ans
+
+@handler("摆卖")
+def presell(message_list,qid):#TODO
+    """
+    :param message_list: 摆卖 矿石编号 矿石数量 是否拍卖 价格 起始时间 终止时间
+    :param qid: 摆卖者的qq号
+    :return: 摆卖提示信息
+    """
+    assert len(message_list)==7,'摆卖失败:请按照规定格式进行摆卖！'
+    mineralID: int=int(message_list[1])
+    mineralNum: int=int(message_list[2])
+    auction: bool=bool(message_list[3])
+    price: int=int(message_list[4])
+    starttime: int=int(message_list[5])
+    endtime: int=int(message_list[6])
+
+    user: tuple=select(selectUserByQQ,mysql,(qid,))[0]
+    mineralDict: dict=dict(eval(user[3]))
+    assert mineralID in mineralDict,'摆卖失败:您不具备此矿石！'
+    for i in range(mineralNum):
+        pass
+
+    nowtime=datetime.timestamp(datetime.now())
+    starttime=max(round(nowtime,starttime))
 
 @handler("帮助")
 def getHelp(message_list,qid):
@@ -206,9 +215,11 @@ def handle(res,group):
         funcStr:str=message_list[1]
         message_list.pop(0)  #忽略at本身
 
-        ans=dealWithRequest(funcStr,message_list,qid)
-
-        send(gid,ans,group=True)
+        try:
+            ans=dealWithRequest(funcStr,message_list,qid)
+            send(gid,ans,group=True)
+        except AssertionError as err:
+            send(gid,err,group=True)
 
     else:
         message:str=res.get("raw_message")
@@ -216,9 +227,11 @@ def handle(res,group):
         message_list:list=message.split(' ')
         funcStr:str=message_list[0]
 
-        ans=dealWithRequest(funcStr,message_list,qid)
-
-        send(qid,ans,group=False)
+        try:
+            ans=dealWithRequest(funcStr,message_list,qid)
+            send(qid,ans,group=False)
+        except AssertionError as err:
+            send(qid,err,group=False)
 
 def send(qid,message,group=False):
     """
