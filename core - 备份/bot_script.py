@@ -38,17 +38,6 @@ info_msg="查询到QQ号为：%s的用户信息\n"\
          "以下为该用户拥有的矿石：\n"\
          "%s"
 
-commandsToFunction:dict = {}
-commands:list = []
-
-def handler(funcStr):
-    # 该装饰器装饰的函数会自动加入handle函数
-    def real_handler(func):
-        commands[funcStr]=func
-        commands.append(funcStr)
-        return func
-    return real_handler
-
 def init():
     '''
     在矿井刷新时进行初始化
@@ -98,11 +87,7 @@ def extract(qid,mineralNum,mineID):
         ans='开采成功！您获得了编号为%d的矿石！'%mineralNum
     return ans
 
-@handler("time")
-def returnTime(m, q):
-    return '当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-@handler("注册")
 def signup(message_list,qid):
     ans=''
     if len(message_list)!=2 or not re.match(r'\d{5}',message_list[1]) or len(message_list[1])!=5:
@@ -116,7 +101,7 @@ def signup(message_list,qid):
     ans="注册成功！"
     return ans
 
-@handler("开采")
+
 def getMineral(message_list,qid):
     if len(message_list)!=2:
         ans='开采失败:请指定要开采的矿井！'
@@ -138,7 +123,7 @@ def getMineral(message_list,qid):
         ans='开采失败:不存在此矿井！'
     return ans
 
-@handler("兑换")
+
 def exchange(message_list,qid):
     if len(message_list)!=2:
         ans='兑换失败:请指定要兑换的矿石！'
@@ -166,8 +151,8 @@ def exchange(message_list,qid):
     ans='兑换成功！'
     return ans
 
-@handler("查询")
-def getUserInfo(message_list, qid):
+
+def getUserInfo(qid):
     user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
     _,schoolID,money,mineral,process_tech,extract_tech,digable=user
     mres=""
@@ -176,14 +161,25 @@ def getUserInfo(message_list, qid):
     ans=info_msg%(qid,schoolID,money,process_tech,extract_tech,digable,mres)
     return ans
 
-@handler("帮助")
-def getHelp(message_list, qid):
-    return help_msg
-
 
 def dealWithRequest(funcStr, message_list, qid):
-    if funcStr in commands:
-        ans = commands[funcStr](message_list, qid)
+    if funcStr=='time':
+        ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+    elif funcStr=='注册':
+        ans=signup(message_list,qid)
+        
+    elif funcStr=='开采':
+        ans=getMineral(message_list,qid)
+        
+    elif funcStr=='帮助':
+        ans=help_msg
+        
+    elif funcStr=='兑换':
+        ans=exchange(message_list,qid)
+        
+    elif funcStr=="查询":
+        ans=getUserInfo(qid)
         
     else:
         ans="未知命令：请输入'帮助'以获取帮助信息！"
