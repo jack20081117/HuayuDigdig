@@ -101,6 +101,7 @@ def signup(message_list,qid):
     ans="注册成功！"
     return ans
 
+
 def getMineral(message_list,qid):
     if len(message_list)!=2:
         ans='开采失败:请指定要开采的矿井！'
@@ -121,6 +122,7 @@ def getMineral(message_list,qid):
     else:
         ans='开采失败:不存在此矿井！'
     return ans
+
 
 def exchange(message_list,qid):
     if len(message_list)!=2:
@@ -149,6 +151,7 @@ def exchange(message_list,qid):
     ans='兑换成功！'
     return ans
 
+
 def getUserInfo(qid):
     user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
     _,schoolID,money,mineral,process_tech,extract_tech,digable=user
@@ -158,72 +161,58 @@ def getUserInfo(qid):
     ans=info_msg%(qid,schoolID,money,process_tech,extract_tech,digable,mres)
     return ans
 
+
+def dealWithRequest(funcStr, message_list, qid):
+    if funcStr=='time':
+        ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+    elif funcStr=='注册':
+        ans=signup(message_list,qid)
+        
+    elif funcStr=='开采':
+        ans=getMineral(message_list,qid)
+        
+    elif funcStr=='帮助':
+        ans=help_msg
+        
+    elif funcStr=='兑换':
+        ans=exchange(message_list,qid)
+        
+    elif funcStr=="查询":
+        ans=getUserInfo(qid)
+        
+    else:
+        ans="未知命令：请输入'帮助'以获取帮助信息！"
+        
+    return ans
+
 def handle(res,group):
     ans:str=''  #回复给用户的内容
     if group:  #是群发消息
-        message:str=res.get("raw_message")
-        qid:str=res.get('sender').get('user_id')  #发消息者的qq号
-        gid:str=res.get('group_id')  #群的qq号
+        message:str = res.get("raw_message")
+        qid:str = res.get('sender').get('user_id')  #发消息者的qq号
+        gid:str = res.get('group_id')  #群的qq号
         if gid not in group_ids:
             return None
         if "[CQ:at,qq=2470751924]" not in message:  #必须在自己被at的情况下才能作出回复
             return None
 
-        # 开始处理
-
-        # 获取命令类型
         message_list: list=message.split(' ')
         funcStr:str=message_list[1]
         message_list.pop(0)  #忽略at本身
-
-        # 遍历func_str
-        if funcStr=='time':
-            ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        elif funcStr=='注册':
-            ans=signup(message_list,qid)
-
-        elif funcStr=='开采':
-            ans=getMineral(message_list,qid)
-
-        elif funcStr=='帮助':
-            ans=help_msg
-
-        elif funcStr=='兑换':
-            ans=exchange(message_list,qid)
-
-        elif funcStr=="查询":
-            ans=getUserInfo(qid)
-
-        else:
-            ans="未知命令：请输入'帮助'以获取帮助信息！"
+       
+        ans = dealWithRequest(funcStr, message_list, qid)
 
         send(gid,ans,group=True)
 
     else:
-        message:str=res.get("raw_message")
-        qid:str=res.get('sender').get('user_id')
-        message_list:list=message.split(' ')
-        funcStr:str=message_list[0]
-        if funcStr=='time':
-            ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        elif funcStr=='注册':
-            ans=signup(message_list,qid)
-
-        elif funcStr=='开采':
-            ans=getMineral(message_list,qid)
-
-        elif funcStr=='帮助':
-            ans=help_msg
-
-        elif funcStr=='兑换':
-            ans=exchange(message_list,qid)
-
-        elif funcStr=="查询":
-            ans=getUserInfo(qid)
+        message:str = res.get("raw_message")
+        qid:str = res.get('sender').get('user_id')
+        message_list:list = message.split(' ')
+        funcStr:str = message_list[0]
+        
+        ans = dealWithRequest(funcStr, message_list, qid)
             
-        else:
-            ans="未知命令：请输入'帮助'以获取帮助信息！"
         send(qid,ans,group=False)
 
 
