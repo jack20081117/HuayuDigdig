@@ -8,6 +8,13 @@ import os,json,requests,re
 group_ids:list=[788951477]
 headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'}
 
+with open("./config.json", "r") as config:
+    config = json.load(config)
+env:str = config["env"]
+if env == "prod":
+    mysql = True
+else:
+    mysql = False
 
 help_msg='您好！欢迎使用森bot！\n'
 help_msg+='您可以使用如下功能：\n'
@@ -24,8 +31,8 @@ def init():
     '''
     在矿井刷新时进行初始化
     '''
-    execute('data.db',updateDigableAll%(True))
-    execute('data.db',updateAbundance%(0.0))
+    execute(updateDigableAll, mysql, (True))
+    execute(updateAbundance, mysql, (0.0))
 
 def extract(qid,mineralNum,mineID):
     # 
@@ -55,7 +62,7 @@ def extract(qid,mineralNum,mineID):
         prob=abundance*extractTech
         
     if np.random.random()>prob:
-        execute('data.db',updateDigableByQQ%(False,qid))
+        execute(updateDigableByQQ, mysql, (False,qid))
         ans='开采失败: 您的运气不佳，未能开采成功！'
     else:
         mineralDict:dict = dict(eval(mineral)) 
@@ -63,8 +70,8 @@ def extract(qid,mineralNum,mineID):
         if mineralNum not in mineralDict:
             mineralDict[mineralNum]=0
         mineralDict[mineralNum]+=1
-        execute('data.db',updateMineByQQ%(mineralDict,qid))
-        execute('data.db',updateAbundanceByID%(abundance+1,mineID))
+        execute(updateMineByQQ, mysql, (mineralDict,qid))
+        execute(updateAbundanceByID, mysql, (abundance+1,mineID))
         ans='开采成功！您获得了编号为%d的矿石！'%mineralNum
     return ans
 
@@ -85,7 +92,7 @@ def signup(message_list, qid, tf, gid=0):
         else:
             send(qid,ans,False)
         return None
-    execute('data.db',createUser%(qid,schoolID,0,{},0.0,0.0,True))
+    execute(createUser, mysql, (qid,schoolID,0,{},0.0,0.0,True))
     return ans
 
 
@@ -182,10 +189,13 @@ def handle(res,group):
             mineralDict[mineralNum]-=1
             if mineralDict[mineralNum]<=0:
                 mineralDict.pop(mineralNum)
-            execute('data.db',updateMineByQQ%(str(mineralDict),qid))
+            execute(updateMineByQQ, mysql, (str(mineralDict),qid))
             money+=mineralNum
-            execute('data.db',updateMoneyByQQ%(money,qid))
+            execute(updateMoneyByQQ, mysql, (money,qid))
             ans='兑换成功！'
+            
+        else:
+            ans = "未知命令：请输入'帮助'以获取帮助信息！"
             
         send(gid,ans,group=True)
         
@@ -234,10 +244,12 @@ def handle(res,group):
             mineralDict[mineralNum]-=1
             if mineralDict[mineralNum]<=0:
                 mineralDict.pop(mineralNum)
-            execute('data.db',updateMineByQQ%(mineralDict,qid))
+            execute(updateMineByQQ, mysql, (mineralDict,qid))
             money+=mineralNum
-            execute('data.db',updateMoneyByQQ%(money,qid))
+            execute(updateMoneyByQQ, mysql, (money,qid))
             ans='兑换成功！'
+        else:
+            ans = "未知命令：请输入'帮助'以获取帮助信息！"
         send(qid,ans,group=False)
 
 def send(qid,message,group=False):

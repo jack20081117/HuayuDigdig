@@ -5,3 +5,4 @@ go-cqhttp
 *.db
 /gocq
 .gitignore
+/core/mysql.json

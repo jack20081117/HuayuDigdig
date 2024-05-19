@@ -1,6 +1,31 @@
+import json
 import sqlite3
+import pymysql
+
+with open("./config.json", "r") as config:
+    config = json.load(config)
+env:str = config["env"]
+    
+if env == "prod":
+    with open("./mysql.json", "a") as config:
+        pass
+    with open("./mysql.json", "r") as dbconfig:
+        dbconfig = json.load(dbconfig)
+    connection = pymysql.connect(host=dbconfig["host"], user=dbconfig["user"], password=dbconfig["password"], db=dbconfig["db"], charset="utf8")
+    mysqlcursor = connection.cursor()
+    
 
 createUserTable = 'create table users (' \
+           'qid varchar(10),' \
+           'schoolID varchar(5),' \
+           'money int,' \
+           'mineral varchar(1000),' \
+           'process_tech double,' \
+           'extract_tech double,' \
+           'digable boolean' \
+           ')'  # 建表users
+           
+createUserTableForMySQL = 'create table if not exists users (' \
            'qid varchar(10),' \
            'schoolID varchar(5),' \
            'money int,' \
@@ -24,14 +49,19 @@ updateMineByQQ ="update users set mineral='%s' where qid='%s'"
 updateDigableByQQ ="update users set digable=%s where qid='%s'"
 updateDigableAll="update users set digable=%s"
 
-createMineTable='create table mines (' \
+createMineTable='create table mine (' \
+           'mineid int primary key,' \
+           'abundance float' \
+           ')'
+
+createMineTableForMySQL='create table if not exists mine (' \
            'mineid int primary key,' \
            'abundance float' \
            ')'
 
 insertMine="insert into mine " \
            "(mineID,abundance) " \
-           "values (%d,%f)"
+           "values (%s,%s)"
 
 selectAbundanceByID="select abundance from mine where mineID=%d"
 
@@ -47,19 +77,36 @@ def select(database,sql):
         cursor.close()
     return res
 
-def execute(database,sql):
-    with sqlite3.connect(database) as conn:
-        cursor=conn.cursor()
-        cursor.execute(sql)
-        conn.commit()
-        cursor.close()
+def execute(sql, mysql=False, *args):
+    if not mysql:
+        with sqlite3.connect("data.db") as conn:
+            cursor=conn.cursor()
+            cursor.execute(sql%args)
+            conn.commit()
+            cursor.close()
+    else:
+        mysqlcursor.execute(sql, args)
+        connection.commit()
+    
+    
 
 if __name__ == '__main__':
-    execute('data.db',createUserTable)
-    execute('data.db',createMineTable)
-    execute('data.db',insertMine%(1,0))
-    execute('data.db',insertMine%(2,0))
-    execute('data.db',insertMine%(3,0))
-    execute('data.db',insertMine%(4,0))
-    execute('data.db',insertMine%(5,0))
-    execute('data.db',insertMine%(6,0))
+    if env == "dev":
+        execute(createUserTable, False)
+        execute(createMineTable, False)
+        execute(insertMine, False, (1,0))
+        execute(insertMine, False, (2,0))
+        execute(insertMine, False, (3,0))
+        execute(insertMine, False, (4,0))
+        execute(insertMine, False, (5,0))
+        execute(insertMine, False, (6,0))
+    
+    elif env == "prod":
+        execute(createUserTableForMySQL, True)
+        execute(createMineTableForMySQL, True)
+        execute(insertMine, True, (1,0))
+        execute(insertMine, True, (2,0))
+        execute(insertMine, True, (3,0))
+        execute(insertMine, True, (4,0))
+        execute(insertMine, True, (5,0))
+        execute(insertMine, True, (6,0))
