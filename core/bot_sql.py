@@ -15,6 +15,16 @@ if env=="prod":
                                db=dbconfig["db"],charset="utf8")
     mysqlcursor=connection.cursor()
 
+with open("./mines.json", "r") as mineConfig:
+    mineConfig = json.load(mineConfig)
+    mines = []
+    mineinfos = []
+    for mineID, mineInfo in mineConfig.items():
+        mines.append(int(mineID))
+        mineinfos.append(mineInfo)
+        
+    
+    
 createUserTable='create table users ('\
                 'qid varchar(10),'\
                 'schoolID varchar(5),'\
@@ -56,17 +66,30 @@ createMineTable='create table mine ('\
 
 createMineTableForMySQL='create table if not exists mine ('\
                         'mineID int primary key,'\
-                        'abundance float'\
+                        'abundance float,'\
+                        'algorithm tinyint(4),'\
+                        'start int,'\
+                        'end int'\
                         ')'
+#algorithm: 
+# 1: np.random.randint(start, end)
+# 2: int(np.exp(np.random.randint(int(np.log(start)*1000),int(np.log(end)*1000))/1000))
+
 
 insertMine="insert into mine "\
-           "(mineID,abundance) "\
-           "values (%s,%s)"
+           "(mineID,abundance, algorithm, start, end) "\
+           "values (%s,%s,%s,%s,%s)"
 
 selectAbundanceByID="select abundance from mine where mineID=%d"
 
 updateAbundanceByID="update mine set abundance=%f where mineID=%d"
 updateAbundanceAll="update mine set abundance=%f"
+
+
+selectMineInfoByID="select (algorithm,start,end) from mine where mineID=%d"
+
+tryDeleteDatabaseForMySQL = "drop database if exists huayu_dig"
+createDatabaseForMySQL = "create database huayu_dig"
 
 def select(sql,mysql=False,args=()):
     if not mysql:
@@ -101,14 +124,12 @@ if __name__=='__main__':
     if env=="dev":
         execute(createUserTable,False)
         execute(createMineTable,False)
-        execute(insertMine,False,(1,0))
-        execute(insertMine,False,(2,0))
-        execute(insertMine,False,(3,0))
-        execute(insertMine,False,(4,0))
+        for i in mines:
+            execute(insertMine,False,(i, 0, mineinfos[i-1][0], mineinfos[i-1][1], mineinfos[i-1][2]))
     elif env=="prod":
+        execute(tryDeleteDatabaseForMySQL,True)
+        execute(createDatabaseForMySQL,True)
         execute(createUserTableForMySQL,True)
         execute(createMineTableForMySQL,True)
-        execute(insertMine,True,(1,0))
-        execute(insertMine,True,(2,0))
-        execute(insertMine,True,(3,0))
-        execute(insertMine,True,(4,0))
+        for i in mines:
+            execute(insertMine,True,(i, 0, mineinfos[i-1][0], mineinfos[i-1][1], mineinfos[i-1][2]))

@@ -17,7 +17,8 @@ if env=="prod":
 else:
     mysql=False
 
-def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
+
+sigmoid = lambda x: 1/(1+np.exp(-x))
 
 help_msg='您好！欢迎使用森bot！\n'\
          '您可以使用如下功能：\n'\
@@ -40,7 +41,14 @@ info_msg="查询到QQ号为：%s的用户信息\n"\
          "以下为该用户拥有的矿石：\n"\
          "%s"
 
-commands:dict={}
+commands2functions:dict={}
+commands = []
+
+
+algorithms = [
+    lambda start,end: np.random.randint(start, end),
+    lambda start,end: int(np.exp(np.random.randint(int(np.log(start)*1000),int(np.log(end)*1000))/1000)),
+]
 
 def handler(funcStr):
     """
@@ -48,7 +56,8 @@ def handler(funcStr):
     :param funcStr: 功能
     """
     def real_handler(func):
-        commands[funcStr]=func
+        commands2functions[funcStr]=func
+        commands.append(funcStr)
         return func
 
     return real_handler
@@ -61,13 +70,22 @@ def init():
     execute(updateAbundanceAll,mysql,(0.0,))
 
 
-def extract(qid,mineralID,mineID):
+#algorithm: 
+# 1: np.random.randint(start, end)
+# 2: int(np.exp(np.random.randint(int(np.log(start)*1000),int(np.log(end)*1000))/1000))
+def getMineralID(mineID:int)->int:
+    alg, start, end = select(selectMineInfoByID, mysql, (mineID,))[0]
+    return algorithms[alg-1](start,end)
+    
+
+def extract(qid,mineID):
     """获取矿石
     :param qid:开采者的qq号
     :param mineralID:开采得矿石的编号
     :param mineID:矿井编号
     :return:开采信息
     """
+    mineralID = getMineralID(mineID)
     abundance:float=select(selectAbundanceByID,mysql,(mineID,))[0][0]  # 矿井丰度
     user:tuple=select(selectUserByQQ,mysql,(qid,))[0]  # 用户信息元组
     mineral:str=user[3]  # 用户拥有的矿石（str of dict）
@@ -124,19 +142,17 @@ def getMineral(message_list,qid):
     if len(message_list)!=2:
         ans='开采失败:请指定要开采的矿井！'
         return ans
+    if not isinstance(message_list[1],int):
+        return '开采失败：矿井号必须为正整数！'
     mineralID:int=int(message_list[1])
     if mineralID==1:
-        mineralID=np.random.randint(2,30000)
-        ans=extract(qid,mineralID,1)
+        ans=extract(qid,1)
     elif mineralID==2:
-        mineralID=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(30000)*1000))/1000))
-        ans=extract(qid,mineralID,2)
+        ans=extract(qid,2)
     elif mineralID==3:
-        mineralID=np.random.randint(2,999)
-        ans=extract(qid,mineralID,3)
+        ans=extract(qid,3)
     elif mineralID==4:
-        mineralID=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(999)*1000))/1000))
-        ans=extract(qid,mineralID,4)
+        ans=extract(qid,4)
     else:
         ans='开采失败:不存在此矿井！'
     return ans
@@ -186,7 +202,7 @@ def getHelp(message_list,qid):
 
 def dealWithRequest(funcStr,message_list,qid):
     if funcStr in commands:
-        ans=commands[funcStr](message_list,qid)
+        ans=commands2functions[funcStr](message_list,qid)
     else:
         ans="未知命令：请输入'帮助'以获取帮助信息！"
     return ans
