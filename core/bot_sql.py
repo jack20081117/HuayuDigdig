@@ -4,7 +4,7 @@ import pymysql
 
 with open("./config.json","r") as config:
     config=json.load(config)
-env: str=config["env"]
+env:str=config["env"]
 
 if env=="prod":
     with open("./mysql.json","a") as config:
@@ -68,7 +68,7 @@ selectAbundanceByID="select abundance from mine where mineID=%d"
 updateAbundanceByID="update mine set abundance=%f where mineID=%d"
 updateAbundanceAll="update mine set abundance=%f"
 
-def select(sql, mysql=False, args=()):
+def select(sql,mysql=False,args=()):
     if not mysql:
         with sqlite3.connect("data.db") as conn:
             cursor=conn.cursor()
@@ -80,7 +80,7 @@ def select(sql, mysql=False, args=()):
             cursor.close()
     else:
         mysqlcursor.execute(sql,args)
-        res = mysqlcursor.fetchall()
+        res=mysqlcursor.fetchall()
     return res
 
 def execute(sql,mysql=False,args=()):

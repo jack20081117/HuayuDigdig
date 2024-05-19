@@ -17,6 +17,8 @@ if env=="prod":
 else:
     mysql=False
 
+def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
+
 help_msg='您好！欢迎使用森bot！\n'\
          '您可以使用如下功能：\n'\
          '1:查询时间：输入 time\n'\
@@ -41,7 +43,10 @@ info_msg="查询到QQ号为：%s的用户信息\n"\
 commands:dict={}
 
 def handler(funcStr):
-    # 该装饰器装饰的函数会自动加入handle函数
+    '''
+    该装饰器装饰的函数会自动加入handle函数
+    :param funcStr: 功能
+    '''
     def real_handler(func):
         commands[funcStr]=func
         return func
@@ -57,7 +62,6 @@ def init():
 
 
 def extract(qid,mineralNum,mineID):
-    # 
     '''获取矿石
     :param qid:开采者的qq号
     :param mineralNum:开采得矿石的编号
@@ -81,7 +85,7 @@ def extract(qid,mineralNum,mineID):
     if abundance==0.0:
         prob=1.0
     else:
-        prob=abundance*extractTech
+        prob=round(abundance*sigmoid(extractTech),2)
 
     if np.random.random()>prob:
         execute(updateDigableByQQ,mysql,(False,qid))
