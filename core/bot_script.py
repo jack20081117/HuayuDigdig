@@ -137,7 +137,7 @@ def exchange(message_list,qid):
     if int(schoolID)%mineralNum\
             and int(schoolID[:3])%mineralNum\
             and int(schoolID[2:])%mineralNum\
-            and int(schoolID[:2]+'0'+schoolID[:3])%mineralNum:
+            and int(schoolID[:2]+'0'+schoolID[2:])%mineralNum:
         ans='兑换失败:您不能够兑换此矿石！'
         return ans
     mineralDict[mineralNum]-=1
