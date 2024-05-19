@@ -37,7 +37,7 @@ createUserTableForMySQL='create table if not exists users ('\
 
 createUser="insert into users "\
            "(qid,schoolID,money,mineral,process_tech,extract_tech,digable) "\
-           "values (%s,%s,%s,%s,%f,%f,%s)"  # 创建用户
+           "values ('%s','%s',%d,'%s',%f,%f,%d)"  # 创建用户
 # 拥有的矿石 加工科技 开采科技 是否能继续挖矿 (最后四个)
 
 selectUserBySchoolID="select * from users where schoolID=%s"  # 获取用户信息
@@ -66,7 +66,7 @@ insertMine="insert into mine "\
 selectAbundanceByID="select abundance from mine where mineID=%d"
 
 updateAbundanceByID="update mine set abundance=%f where mineID=%d"
-updateAbundance="update mine set abundance=%f"
+updateAbundanceAll="update mine set abundance=%f"
 
 def select(sql, mysql=False, args=()):
     if not mysql:
@@ -103,8 +103,6 @@ if __name__=='__main__':
         execute(insertMine,False,(2,0))
         execute(insertMine,False,(3,0))
         execute(insertMine,False,(4,0))
-        execute(insertMine,False,(5,0))
-        execute(insertMine,False,(6,0))
     elif env=="prod":
         execute(createUserTableForMySQL,True)
         execute(createMineTableForMySQL,True)
@@ -112,5 +110,3 @@ if __name__=='__main__':
         execute(insertMine,True,(2,0))
         execute(insertMine,True,(3,0))
         execute(insertMine,True,(4,0))
-        execute(insertMine,True,(5,0))
-        execute(insertMine,True,(6,0))

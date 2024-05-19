@@ -5,7 +5,7 @@ import random,socket
 import numpy as np
 import os,json,requests,re
 
-group_ids: list=[788951477]
+group_ids:list=[788951477]
 headers={
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'}
 
@@ -20,7 +20,7 @@ else:
 help_msg='您好！欢迎使用森bot！\n'\
          '您可以使用如下功能：\n'\
          '1:查询时间：输入 time\n'\
-         '2:注册账号：输入 注册 `学号`\n' \
+         '2:注册账号：输入 注册 `学号`\n'\
          '3:查询信息：输入 查询  即可获取用户个人信息\n'\
          '4:开采矿石：输入 开采 `矿井编号`\n'\
          '4.1 矿井1号会生成从2-30000均匀分布的随机整数矿石\n'\
@@ -38,15 +38,14 @@ info_msg="查询到QQ号为：%s的用户信息\n"\
          "以下为该用户拥有的矿石：\n"\
          "%s"
 
-commandsToFunction:dict = {}
-commands:list = []
+commands:dict={}
 
 def handler(funcStr):
     # 该装饰器装饰的函数会自动加入handle函数
     def real_handler(func):
         commands[funcStr]=func
-        commands.append(funcStr)
         return func
+
     return real_handler
 
 def init():
@@ -54,7 +53,7 @@ def init():
     在矿井刷新时进行初始化
     '''
     execute(updateDigableAll,mysql,(True))
-    execute(updateAbundance,mysql,(0.0,))
+    execute(updateAbundanceAll,mysql,(0.0,))
 
 
 def extract(qid,mineralNum,mineID):
@@ -65,17 +64,17 @@ def extract(qid,mineralNum,mineID):
     :param mineID:矿井编号
     :return:开采信息
     '''
-    abundance:float=select(selectAbundanceByID, mysql, (mineID,))[0][0] # 矿井丰度
-    user:tuple=select(selectUserByQQ, mysql, (qid,))[0] # 用户信息元组
-    mineral:str=user[3] # 用户拥有的矿石（str of dict）
-    extractTech:float=user[5] # 开采等级
-    digable:bool=user[6] # 是否可以开采
-    
-    prob:float=0.0 # 初始化概率
-    
+    abundance:float=select(selectAbundanceByID,mysql,(mineID,))[0][0]  # 矿井丰度
+    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]  # 用户信息元组
+    mineral:str=user[3]  # 用户拥有的矿石（str of dict）
+    extractTech:float=user[5]  # 开采等级
+    digable:bool=user[6]  # 是否可以开采
+
+    prob:float=0.0  # 初始化概率
+
     if not digable:
         # 不可开采
-        ans='开采失败: 您必须等到下一个整点才能再次开采矿井！'
+        ans='开采失败:您必须等到下一个整点才能再次开采矿井！'
         return ans
 
     # 决定概率 
@@ -86,7 +85,7 @@ def extract(qid,mineralNum,mineID):
 
     if np.random.random()>prob:
         execute(updateDigableByQQ,mysql,(False,qid))
-        ans='开采失败: 您的运气不佳，未能开采成功！'
+        ans='开采失败:您的运气不佳，未能开采成功！'
     else:
         mineralDict:dict=dict(eval(mineral))
         # 加一个矿石
@@ -99,7 +98,7 @@ def extract(qid,mineralNum,mineID):
     return ans
 
 @handler("time")
-def returnTime(m, q):
+def returnTime(m,q):
     return '当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 @handler("注册")
@@ -109,7 +108,7 @@ def signup(message_list,qid):
         ans='注册失败:请注意您的输入格式！'
         return ans
     schoolID:str=message_list[1]
-    if select(selectUserBySchoolID, mysql, (schoolID,)) or select(selectUserByQQ, mysql, (qid,)):
+    if select(selectUserBySchoolID,mysql,(schoolID,)) or select(selectUserByQQ,mysql,(qid,)):
         ans='注册失败:您已经注册过，无法重复注册！'
         return ans
     execute(createUser,mysql,(qid,schoolID,0,{},0.0,0.0,True))
@@ -143,11 +142,11 @@ def exchange(message_list,qid):
     if len(message_list)!=2:
         ans='兑换失败:请指定要兑换的矿石！'
         return ans
-    mineralNum: int=int(message_list[1])
-    user: tuple=select(selectUserByQQ, mysql, (qid,))[0]
-    schoolID: str=user[1]
-    money: int=user[2]
-    mineralDict: dict=dict(eval(user[3]))
+    mineralNum:int=int(message_list[1])
+    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
+    schoolID:str=user[1]
+    money:int=user[2]
+    mineralDict:dict=dict(eval(user[3]))
     if mineralNum not in mineralDict:
         ans='兑换失败:您不具备此矿石！'
         return ans
@@ -167,7 +166,7 @@ def exchange(message_list,qid):
     return ans
 
 @handler("查询")
-def getUserInfo(message_list, qid):
+def getUserInfo(message_list,qid):
     user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
     _,schoolID,money,mineral,process_tech,extract_tech,digable=user
     mres=""
@@ -177,56 +176,53 @@ def getUserInfo(message_list, qid):
     return ans
 
 @handler("帮助")
-def getHelp(message_list, qid):
+def getHelp(message_list,qid):
     return help_msg
 
 
-def dealWithRequest(funcStr, message_list, qid):
+def dealWithRequest(funcStr,message_list,qid):
     if funcStr in commands:
-        ans = commands[funcStr](message_list, qid)
-        
+        ans=commands[funcStr](message_list,qid)
     else:
         ans="未知命令：请输入'帮助'以获取帮助信息！"
-        
     return ans
 
 def handle(res,group):
     ans:str=''  #回复给用户的内容
-    if group:  #是群发消息
-        message:str = res.get("raw_message")
-        qid:str = res.get('sender').get('user_id')  #发消息者的qq号
-        gid:str = res.get('group_id')  #群的qq号
+    if group:#是群发消息
+        message:str=res.get("raw_message")
+        qid:str=res.get('sender').get('user_id')  #发消息者的qq号
+        gid:str=res.get('group_id')  #群的qq号
         if gid not in group_ids:
             return None
-        if "[CQ:at,qq=2470751924]" not in message:  #必须在自己被at的情况下才能作出回复
+        if "[CQ:at,qq=2470751924]" not in message:#必须在自己被at的情况下才能作出回复
             return None
 
-        message_list: list=message.split(' ')
+        message_list:list=message.split(' ')
         funcStr:str=message_list[1]
         message_list.pop(0)  #忽略at本身
-       
-        ans = dealWithRequest(funcStr, message_list, qid)
+
+        ans=dealWithRequest(funcStr,message_list,qid)
 
         send(gid,ans,group=True)
 
     else:
-        message:str = res.get("raw_message")
-        qid:str = res.get('sender').get('user_id')
-        message_list:list = message.split(' ')
-        funcStr:str = message_list[0]
-        
-        ans = dealWithRequest(funcStr, message_list, qid)
-            
-        send(qid,ans,group=False)
+        message:str=res.get("raw_message")
+        qid:str=res.get('sender').get('user_id')
+        message_list:list=message.split(' ')
+        funcStr:str=message_list[0]
 
+        ans=dealWithRequest(funcStr,message_list,qid)
+
+        send(qid,ans,group=False)
 
 def send(qid,message,group=False):
     """
     用于发送消息的函数
-    :param qid: 用户id
-    :param message: 发送的消息
-    :param gid: 群id
-    :return: none
+    :param qid:用户id
+    :param message:发送的消息
+    :param gid:群id
+    :return:none
     """
 
     if not group:
