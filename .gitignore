@@ -1,7 +1,7 @@
 go-cqhttp
 .idea
 
-*.py
+*.py[cod]
 *.db
 /gocq
 .gitignore
