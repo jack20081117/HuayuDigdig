@@ -83,6 +83,9 @@ createSale="insert into sale "\
            "(qid,saleID,mineralID,mineralNum,auction,price,starttime,endtime) " \
            "values (%s,%s,%d,%d,%d,%d,%d,%d)"
 
+selectSaleByID='select * from sale where saleID=%s'
+deleteSaleByID='delete from sale where saleID=%s'
+
 def select(sql,mysql=False,args=()):
     if not mysql:
         with sqlite3.connect("data.db") as conn:
