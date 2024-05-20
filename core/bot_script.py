@@ -260,7 +260,7 @@ def buy(message_list,qid):
     execute(deleteSaleByID,mysql,(saleID,))#删除市场上的此条记录
     execute(updateMoneyByQQ,mysql,(money,qid))
     execute(updateMoneyByQQ,mysql,(tmoney,tqid))
-    execute(updateMineralByQQ,mysql,(str(mineralDict),tqid))
+    execute(updateMineralByQQ,mysql,(str(mineralDict),qid))
 
     ans='购买成功！'
     send(tqid,'您摆卖的商品(编号:%s)已被卖出！'%saleID,False)
@@ -306,7 +306,7 @@ def pay(message_list,qid):
         b_money:int=b_info[0][2]
 
         a_money-=money
-        b_money+=money*(1-player_tax)
+        b_money+=round(money*(1-player_tax))
 
         execute(updateMoneyByQQ,mysql,(b_money,tqid))
         execute(updateMoneyByQQ,mysql,(a_money,qid))
