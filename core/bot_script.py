@@ -244,7 +244,7 @@ def buy(message_list,qid):
     user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
     tqid,_,mineralID,mineralNum,_,price,starttime,_=sale
     tuser:tuple=select(selectUserByQQ,mysql,(tqid,))[0]
-    money,tmoney=user[2],tuser[0]
+    money,tmoney=user[2],tuser[2]
 
     nowtime=datetime.timestamp(datetime.now())#现在的时间
     assert nowtime>=starttime,'购买失败:尚未到开始售卖时间！'
