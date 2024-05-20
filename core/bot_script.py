@@ -3,7 +3,7 @@ from bot_sql import *
 import sqlite3
 import random,socket
 import numpy as np
-import os,json,requests,re
+import os,json,requests,re,hashlib
 
 group_ids:list=[788951477]
 headers={
@@ -93,7 +93,7 @@ def extract(qid,mineralID,mineID):
         if mineralID not in mineralDict:
             mineralDict[mineralID]=0
         mineralDict[mineralID]+=1
-        execute(updateMineByQQ,mysql,(mineralDict,qid))
+        execute(updateMineralByQQ,mysql,(mineralDict,qid))
         execute(updateAbundanceByID,mysql,(prob,mineID))
         ans='开采成功！您获得了编号为%d的矿石！'%mineralID
     return ans
@@ -148,7 +148,7 @@ def exchange(message_list,qid):
     mineralDict[mineralID]-=1
     if mineralDict[mineralID]<=0:
         mineralDict.pop(mineralID)
-    execute(updateMineByQQ,mysql,(str(mineralDict),qid))
+    execute(updateMineralByQQ,mysql,(str(mineralDict),qid))
     money+=mineralID
     execute(updateMoneyByQQ,mysql,(money,qid))
     ans='兑换成功！'
@@ -172,21 +172,35 @@ def presell(message_list,qid):#TODO
     :return: 摆卖提示信息
     """
     assert len(message_list)==7,'摆卖失败:请按照规定格式进行摆卖！'
-    mineralID: int=int(message_list[1])
-    mineralNum: int=int(message_list[2])
-    auction: bool=bool(message_list[3])
-    price: int=int(message_list[4])
-    starttime: int=int(message_list[5])
-    endtime: int=int(message_list[6])
+    try:
+        mineralID:int=int(message_list[1])
+        mineralNum:int=int(message_list[2])
+        auction:bool=bool(message_list[3])
+        price:int=int(message_list[4])
+        starttime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
+        endtime:int=int(datetime.strptime(message_list[6],'%Y-%m-%d,%H:%M:%S').timestamp())
+    except Exception as err:
+        raise AssertionError('摆卖失败:请按照规定格式进行摆卖！')
 
-    user: tuple=select(selectUserByQQ,mysql,(qid,))[0]
-    mineralDict: dict=dict(eval(user[3]))
+    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
+    mineralDict:dict=dict(eval(user[3]))
     assert mineralID in mineralDict,'摆卖失败:您不具备此矿石！'
-    for i in range(mineralNum):
+    assert mineralDict[mineralID]>=mineralNum,'摆卖失败:您的矿石数量不足！'
+    execute(updateMineralByQQ,mysql,(mineralDict[mineralID]-mineralNum,qid))
+    if not auction:#非拍卖
+        pass
+    else:#拍卖
         pass
 
     nowtime=datetime.timestamp(datetime.now())
-    starttime=max(round(nowtime,starttime))
+    assert endtime>nowtime,'摆卖失败:已经超过截止期限！'
+    starttime=max(round(nowtime),starttime)
+    md5=hashlib.md5()
+    md5.update(('%.2f'%nowtime).encode('utf-8'))
+    saleID=md5.hexdigest()[:6]
+    execute(createSale,mysql,(qid,saleID,mineralID,mineralNum,auction,price,starttime,endtime))
+    ans='摆卖成功！编号:%s'%saleID
+    return ans
 
 @handler("帮助")
 def getHelp(message_list,qid):

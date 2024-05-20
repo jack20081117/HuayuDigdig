@@ -16,7 +16,7 @@ if env=="prod":
     mysqlcursor=connection.cursor()
 
 createUserTable='create table users ('\
-                'qid varchar(10),'\
+                'qid varchar(20),'\
                 'schoolID varchar(5),'\
                 'money int,'\
                 'mineral varchar(1000),'\
@@ -26,7 +26,7 @@ createUserTable='create table users ('\
                 ')'  # 建表users
 
 createUserTableForMySQL='create table if not exists users ('\
-                        'qid varchar(10),'\
+                        'qid varchar(20),'\
                         'schoolID varchar(5),'\
                         'money int,'\
                         'mineral varchar(1000),'\
@@ -45,7 +45,7 @@ selectUserByQQ="select * from users where qid=%s"  # 获取用户信息
 selectUserByUserID="select * from users where userid=%d"
 
 updateMoneyByQQ="update users set money=%d where qid=%s"
-updateMineByQQ="update users set mineral=%s where qid=%s"
+updateMineralByQQ="update users set mineral=%s where qid=%s"
 updateDigableByQQ="update users set digable=%d where qid=%s"
 updateDigableAll="update users set digable=%d"
 
@@ -68,8 +68,8 @@ selectAbundanceByID="select abundance from mine where mineID=%d"
 updateAbundanceByID="update mine set abundance=%f where mineID=%d"
 updateAbundanceAll="update mine set abundance=%f"
 
-createSaleTable='create sale ('\
-                'qid varchar(10),'\
+createSaleTable='create table sale ('\
+                'qid varchar(20),'\
                 'saleID varchar(6),'\
                 'mineralID int,'\
                 'mineralNum int,'\
@@ -78,6 +78,10 @@ createSaleTable='create sale ('\
                 'starttime int,'\
                 'endtime int'\
                 ')'
+
+createSale="insert into sale "\
+           "(qid,saleID,mineralID,mineralNum,auction,price,starttime,endtime) " \
+           "values (%s,%s,%d,%d,%d,%d,%d,%d)"
 
 def select(sql,mysql=False,args=()):
     if not mysql:
@@ -100,7 +104,6 @@ def execute(sql,mysql=False,args=()):
             cursor=conn.cursor()
             sql=sql.replace("%s","'%s'")
             if args:sql=sql%args
-            print(sql)
             cursor.execute(sql)
             conn.commit()
             cursor.close()
@@ -112,6 +115,7 @@ if __name__=='__main__':
     if env=="dev":
         execute(createUserTable,False)
         execute(createMineTable,False)
+        execute(createSaleTable,False)
         execute(insertMine,False,(1,0))
         execute(insertMine,False,(2,0))
         execute(insertMine,False,(3,0))
