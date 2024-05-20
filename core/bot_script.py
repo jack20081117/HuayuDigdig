@@ -3,9 +3,9 @@ from bot_sql import *
 import sqlite3
 import random,socket
 import numpy as np
-import os,json,requests,re
+import os,json,requests,re,hashlib
 
-group_ids: list=[788951477]
+group_ids:list=[788951477]
 headers={
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'}
 
@@ -17,10 +17,12 @@ if env=="prod":
 else:
     mysql=False
 
+def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
+
 help_msg='您好！欢迎使用森bot！\n'\
          '您可以使用如下功能：\n'\
          '1:查询时间：输入 time\n'\
-         '2:注册账号：输入 注册 `学号`\n' \
+         '2:注册账号：输入 注册 `学号`\n'\
          '3:查询信息：输入 查询  即可获取用户个人信息\n'\
          '4:开采矿石：输入 开采 `矿井编号`\n'\
          '4.1 矿井1号会生成从2-30000均匀分布的随机整数矿石\n'\
@@ -38,118 +40,122 @@ info_msg="查询到QQ号为：%s的用户信息\n"\
          "以下为该用户拥有的矿石：\n"\
          "%s"
 
+commands:dict={}
+
+def handler(funcStr):
+    """
+    该装饰器装饰的函数会自动加入handle函数
+    :param funcStr: 功能
+    """
+    def real_handler(func):
+        commands[funcStr]=func
+        return func
+
+    return real_handler
+
 def init():
-    '''
+    """
     在矿井刷新时进行初始化
-    '''
-    execute(updateDigableAll,mysql,(True))
-    execute(updateAbundance,mysql,(0.0,))
+    """
+    execute(updateDigableAll,mysql,(1,))
+    execute(updateAbundanceAll,mysql,(0.0,))
 
 
-def extract(qid,mineralNum,mineID):
-    # 
-    '''获取矿石
+def extract(qid,mineralID,mineID):
+    """获取矿石
     :param qid:开采者的qq号
-    :param mineralNum:开采得矿石的编号
+    :param mineralID:开采得矿石的编号
     :param mineID:矿井编号
     :return:开采信息
-    '''
-    abundance:float=select(selectAbundanceByID, mysql, (mineID,))[0][0] # 矿井丰度
-    user:tuple=select(selectUserByQQ, mysql, (qid,))[0] # 用户信息元组
-    mineral:str=user[3] # 用户拥有的矿石（str of dict）
-    extractTech:float=user[5] # 开采等级
-    digable:bool=user[6] # 是否可以开采
-    
-    prob:float=0.0 # 初始化概率
-    
-    if not digable:
-        # 不可开采
-        ans='开采失败: 您必须等到下一个整点才能再次开采矿井！'
-        return ans
+    """
+    abundance:float=select(selectAbundanceByID,mysql,(mineID,))[0][0]  # 矿井丰度
+    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]  # 用户信息元组
+    mineral:str=user[3]  # 用户拥有的矿石（str of dict）
+    extractTech:float=user[5]  # 开采等级
+    digable:bool=user[6]  # 是否可以开采
+
+    prob:float=0.0  # 初始化概率
+
+    assert digable,'开采失败:您必须等到下一个整点才能再次开采矿井！'
 
     # 决定概率 
     if abundance==0.0:
         prob=1.0
     else:
-        prob=abundance*extractTech
+        prob=round(abundance*sigmoid(extractTech),2)
 
     if np.random.random()>prob:
-        execute(updateDigableByQQ,mysql,(False,qid))
-        ans='开采失败: 您的运气不佳，未能开采成功！'
+        execute(updateDigableByQQ,mysql,(0,qid))
+        ans='开采失败:您的运气不佳，未能开采成功！'
     else:
         mineralDict:dict=dict(eval(mineral))
         # 加一个矿石
-        if mineralNum not in mineralDict:
-            mineralDict[mineralNum]=0
-        mineralDict[mineralNum]+=1
-        execute(updateMineByQQ,mysql,(mineralDict,qid))
+        if mineralID not in mineralDict:
+            mineralDict[mineralID]=0
+        mineralDict[mineralID]+=1
+        execute(updateMineralByQQ,mysql,(mineralDict,qid))
         execute(updateAbundanceByID,mysql,(prob,mineID))
-        ans='开采成功！您获得了编号为%d的矿石！'%mineralNum
+        ans='开采成功！您获得了编号为%d的矿石！'%mineralID
     return ans
 
+@handler("time")
+def returnTime(m,q):
+    return '当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+@handler("注册")
 def signup(message_list,qid):
     ans=''
-    if len(message_list)!=2 or not re.match(r'\d{5}',message_list[1]) or len(message_list[1])!=5:
-        ans='注册失败:请注意您的输入格式！'
-        return ans
+    assert len(message_list)==2 and re.match(r'\d{5}',message_list[1]) and len(message_list[1])==5,'注册失败:请注意您的输入格式！'
     schoolID:str=message_list[1]
-    if select(selectUserBySchoolID, mysql, (schoolID,)) or select(selectUserByQQ, mysql, (qid,)):
-        ans='注册失败:您已经注册过，无法重复注册！'
-        return ans
-    execute(createUser,mysql,(qid,schoolID,0,{},0.0,0.0,True))
+    assert not select(selectUserBySchoolID,mysql,(schoolID,)) and not select(selectUserByQQ,mysql,(qid,)),'注册失败:您已经注册过，无法重复注册！'
+    execute(createUser,mysql,(qid,schoolID,0,{},0.0,0.0,1))
     ans="注册成功！"
     return ans
 
+@handler("开采")
 def getMineral(message_list,qid):
-    if len(message_list)!=2:
-        ans='开采失败:请指定要开采的矿井！'
-        return ans
+    assert len(message_list)==2,'开采失败:请指定要开采的矿井！'
     mineralID:int=int(message_list[1])
     if mineralID==1:
-        mineralNum=np.random.randint(2,30000)
-        ans=extract(qid,mineralNum,1)
+        mineralID=np.random.randint(2,30000)
+        ans=extract(qid,mineralID,1)
     elif mineralID==2:
-        mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(30000)*1000))/1000))
-        ans=extract(qid,mineralNum,2)
+        mineralID=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(30000)*1000))/1000))
+        ans=extract(qid,mineralID,2)
     elif mineralID==3:
-        mineralNum=np.random.randint(2,999)
-        ans=extract(qid,mineralNum,3)
+        mineralID=np.random.randint(2,999)
+        ans=extract(qid,mineralID,3)
     elif mineralID==4:
-        mineralNum=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(999)*1000))/1000))
-        ans=extract(qid,mineralNum,4)
+        mineralID=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(999)*1000))/1000))
+        ans=extract(qid,mineralID,4)
     else:
         ans='开采失败:不存在此矿井！'
     return ans
 
+@handler("兑换")
 def exchange(message_list,qid):
-    if len(message_list)!=2:
-        ans='兑换失败:请指定要兑换的矿石！'
-        return ans
-    mineralNum: int=int(message_list[1])
-    user: tuple=select(selectUserByQQ, mysql, (qid,))[0]
-    schoolID: str=user[1]
-    money: int=user[2]
-    mineralDict: dict=dict(eval(user[3]))
-    if mineralNum not in mineralDict:
-        ans='兑换失败:您不具备此矿石！'
-        return ans
-    if int(schoolID)%mineralNum\
-            and int(schoolID[:3])%mineralNum\
-            and int(schoolID[2:])%mineralNum\
-            and int(schoolID[:2]+'0'+schoolID[:3])%mineralNum:
-        ans='兑换失败:您不能够兑换此矿石！'
-        return ans
-    mineralDict[mineralNum]-=1
-    if mineralDict[mineralNum]<=0:
-        mineralDict.pop(mineralNum)
-    execute(updateMineByQQ,mysql,(str(mineralDict),qid))
-    money+=mineralNum
+    assert len(message_list)==2,'兑换失败:请指定要兑换的矿石！'
+    mineralID:int=int(message_list[1])
+    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
+    schoolID:str=user[1]
+    money:int=user[2]
+    mineralDict:dict=dict(eval(user[3]))
+    assert mineralID in mineralDict,'兑换失败:您不具备此矿石！'
+    assert not int(schoolID)%mineralID\
+        or not int(schoolID[:3])%mineralID\
+        or not int(schoolID[2:])%mineralID\
+        or not int(schoolID[:2]+'0'+schoolID[2:])%mineralID,'兑换失败:您不能够兑换此矿石！'
+    mineralDict[mineralID]-=1
+    if mineralDict[mineralID]<=0:
+        mineralDict.pop(mineralID)
+    execute(updateMineralByQQ,mysql,(str(mineralDict),qid))
+    money+=mineralID
     execute(updateMoneyByQQ,mysql,(money,qid))
     ans='兑换成功！'
     return ans
 
-def getUserInfo(qid):
+@handler("查询")
+def getUserInfo(message_list,qid):
     user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
     _,schoolID,money,mineral,process_tech,extract_tech,digable=user
     mres=""
@@ -158,82 +164,96 @@ def getUserInfo(qid):
     ans=info_msg%(qid,schoolID,money,process_tech,extract_tech,digable,mres)
     return ans
 
+@handler("摆卖")
+def presell(message_list,qid):#TODO
+    """
+    :param message_list: 摆卖 矿石编号 矿石数量 是否拍卖 价格 起始时间 终止时间
+    :param qid: 摆卖者的qq号
+    :return: 摆卖提示信息
+    """
+    assert len(message_list)==7,'摆卖失败:请按照规定格式进行摆卖！'
+    try:
+        mineralID:int=int(message_list[1])
+        mineralNum:int=int(message_list[2])
+        auction:bool=bool(message_list[3])
+        price:int=int(message_list[4])
+        starttime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
+        endtime:int=int(datetime.strptime(message_list[6],'%Y-%m-%d,%H:%M:%S').timestamp())
+    except Exception as err:
+        raise AssertionError('摆卖失败:请按照规定格式进行摆卖！')
+
+    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
+    mineralDict:dict=dict(eval(user[3]))
+    assert mineralID in mineralDict,'摆卖失败:您不具备此矿石！'
+    assert mineralDict[mineralID]>=mineralNum,'摆卖失败:您的矿石数量不足！'
+    execute(updateMineralByQQ,mysql,(mineralDict[mineralID]-mineralNum,qid))
+    if not auction:#非拍卖
+        pass
+    else:#拍卖
+        pass
+
+    nowtime=datetime.timestamp(datetime.now())
+    assert endtime>nowtime,'摆卖失败:已经超过截止期限！'
+    starttime=max(round(nowtime),starttime)
+    md5=hashlib.md5()
+    md5.update(('%.2f'%nowtime).encode('utf-8'))
+    saleID=md5.hexdigest()[:6]
+    execute(createSale,mysql,(qid,saleID,mineralID,mineralNum,auction,price,starttime,endtime))
+    ans='摆卖成功！编号:%s'%saleID
+    return ans
+
+@handler("帮助")
+def getHelp(message_list,qid):
+    return help_msg
+
+
+def dealWithRequest(funcStr,message_list,qid):
+    if funcStr in commands:
+        ans=commands[funcStr](message_list,qid)
+    else:
+        ans="未知命令：请输入'帮助'以获取帮助信息！"
+    return ans
+
 def handle(res,group):
     ans:str=''  #回复给用户的内容
-    if group:  #是群发消息
+    if group:#是群发消息
         message:str=res.get("raw_message")
         qid:str=res.get('sender').get('user_id')  #发消息者的qq号
         gid:str=res.get('group_id')  #群的qq号
         if gid not in group_ids:
             return None
-        if "[CQ:at,qq=2470751924]" not in message:  #必须在自己被at的情况下才能作出回复
+        if "[CQ:at,qq=2470751924]" not in message:#必须在自己被at的情况下才能作出回复
             return None
 
-        # 开始处理
-
-        # 获取命令类型
-        message_list: list=message.split(' ')
+        message_list:list=message.split(' ')
         funcStr:str=message_list[1]
         message_list.pop(0)  #忽略at本身
 
-        # 遍历func_str
-        if funcStr=='time':
-            ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        elif funcStr=='注册':
-            ans=signup(message_list,qid)
-
-        elif funcStr=='开采':
-            ans=getMineral(message_list,qid)
-
-        elif funcStr=='帮助':
-            ans=help_msg
-
-        elif funcStr=='兑换':
-            ans=exchange(message_list,qid)
-
-        elif funcStr=="查询":
-            ans=getUserInfo(qid)
-
-        else:
-            ans="未知命令：请输入'帮助'以获取帮助信息！"
-
-        send(gid,ans,group=True)
+        try:
+            ans=dealWithRequest(funcStr,message_list,qid)
+            send(gid,ans,group=True)
+        except AssertionError as err:
+            send(gid,err,group=True)
 
     else:
         message:str=res.get("raw_message")
         qid:str=res.get('sender').get('user_id')
         message_list:list=message.split(' ')
         funcStr:str=message_list[0]
-        if funcStr=='time':
-            ans='当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        elif funcStr=='注册':
-            ans=signup(message_list,qid)
-
-        elif funcStr=='开采':
-            ans=getMineral(message_list,qid)
-
-        elif funcStr=='帮助':
-            ans=help_msg
-
-        elif funcStr=='兑换':
-            ans=exchange(message_list,qid)
-
-        elif funcStr=="查询":
-            ans=getUserInfo(qid)
-            
-        else:
-            ans="未知命令：请输入'帮助'以获取帮助信息！"
-        send(qid,ans,group=False)
-
+        try:
+            ans=dealWithRequest(funcStr,message_list,qid)
+            send(qid,ans,group=False)
+        except AssertionError as err:
+            send(qid,err,group=False)
 
 def send(qid,message,group=False):
     """
     用于发送消息的函数
-    :param qid: 用户id
-    :param message: 发送的消息
-    :param gid: 群id
-    :return: none
+    :param qid:用户id
+    :param message:发送的消息
+    :param gid:群id
+    :return:none
     """
 
     if not group:
