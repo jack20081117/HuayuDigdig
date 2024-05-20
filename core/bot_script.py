@@ -12,6 +12,8 @@ headers={
 with open("./config.json","r") as config:
     config=json.load(config)
 env:str=config["env"]
+player_tax=config["player_tax"]
+
 if env=="prod":
     mysql=True
 else:
@@ -29,7 +31,10 @@ help_msg='您好！欢迎使用森bot！\n'\
          '4.2 矿井2号会生成从2-30000对数均匀分布的随机整数矿石\n'\
          '4.3 矿井3号会生成从2-999均匀分布的随机整数矿石\n'\
          '4.4 矿井4号会生成从2-999对数均匀分布的随机整数矿石\n'\
-         '5:兑换矿石：输入 兑换 `矿石编号` 只有在矿石编号为3、5、6位学号的因数或班级因数时才可兑换！'
+         '5:兑换矿石：输入 兑换 `矿石编号` 只有在矿石编号为3、5、6位学号的因数或班级因数时才可兑换！\n'\
+         '6:矿石市场：\n' \
+         '本节所有时间格式必须为YYYY-MM-DD,hh:mm:ss格式，"是否"数值取值为0或1。\n'\
+         '6.1 摆卖矿石 输入 摆卖 `矿石编号` `矿石数目` `是否拍卖` `价格` `起始时间` `终止时间` 即可将矿石放置到市场上准备售出'
 
 info_msg="查询到QQ号为：%s的用户信息\n"\
          "学号：%s\n"\
@@ -186,7 +191,8 @@ def presell(message_list,qid):#TODO
     mineralDict:dict=dict(eval(user[3]))
     assert mineralID in mineralDict,'摆卖失败:您不具备此矿石！'
     assert mineralDict[mineralID]>=mineralNum,'摆卖失败:您的矿石数量不足！'
-    execute(updateMineralByQQ,mysql,(mineralDict[mineralID]-mineralNum,qid))
+    mineralDict[mineralID]-=mineralNum
+    execute(updateMineralByQQ,mysql,(mineralDict,qid))
     if not auction:#非拍卖
         pass
     else:#拍卖
@@ -201,6 +207,54 @@ def presell(message_list,qid):#TODO
     execute(createSale,mysql,(qid,saleID,mineralID,mineralNum,auction,price,starttime,endtime))
     ans='摆卖成功！编号:%s'%saleID
     return ans
+
+
+@handler("支付")
+def pay(message_list,qid):
+    # 格式1
+    # 支付 q4867850 $20
+    # 格式2
+    # 支付 25778 $20
+    assert len(message_list)==3,'支付失败:您的支付格式不正确！'
+    target=str(message_list[1])
+    assert message_list[2].startswith("$"),'支付失败:您的金融格式不正确！'
+    try:
+        money=int(str(message_list[2])[1:])
+    except Exception:
+        raise AssertionError("支付失败：金额格式不正确！应当为：$20")
+
+    a_money:int=select(selectUserByQQ,mysql,(qid,))[0][2]
+
+    assert a_money>=money,"支付失败：余额不足！"
+    if target.startswith("q"):
+        # 通过QQ号查找对方
+        tqid:str=target[1:]
+        b_info:list=select(selectUserByQQ,mysql,(tqid,))
+        assert b_info,"支付失败：QQ号为%s的用户未注册！"%tqid
+        b_money:int=b_info[0][2]
+
+        a_money-=money
+        b_money+=round(money*(1-player_tax))
+
+        execute(updateMoneyByQQ,mysql,(a_money,qid))
+        execute(updateMoneyByQQ,mysql,(b_money,tqid))
+
+        return "支付成功！"
+    else:
+        tschoolID:str=target
+        # 通过学号查找
+        b_info:list=select(selectUserBySchoolID,mysql,(tschoolID,))
+        assert b_info,"支付失败：学号为%s的用户未注册！"%tschoolID
+        tqid:str=b_info[0][0]
+        b_money:int=b_info[0][2]
+
+        a_money-=money
+        b_money+=money*(1-player_tax)
+
+        execute(updateMoneyByQQ,mysql,(b_money,tqid))
+        execute(updateMoneyByQQ,mysql,(a_money,qid))
+
+        return "支付成功！"
 
 @handler("帮助")
 def getHelp(message_list,qid):
