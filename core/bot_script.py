@@ -312,7 +312,7 @@ def sell(message_list,qid):
     assert select(selectPurchaseByID,mysql,(purchaseID,)),'购买失败:不存在此卖品！'
     purchase:tuple=select(selectPurchaseByID,mysql,(purchaseID,))[0]
     user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
-    tqid,_,mineralID,mineralNum,_,price,starttime,_=purchase
+    tqid,_,mineralID,mineralNum,price,starttime,_=purchase
     tuser:tuple=select(selectUserByQQ,mysql,(tqid,))[0]
     money,tmoney=user[2],tuser[2]
 
