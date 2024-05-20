@@ -35,6 +35,9 @@ help_msg='您好！欢迎使用森bot！\n'\
          '6:矿石市场：\n' \
          '本节所有时间格式必须为YYYY-MM-DD,hh:mm:ss格式，"是否"数值取值为0或1。\n'\
          '6.1 摆卖矿石 输入 摆卖 `矿石编号` `矿石数目` `是否拍卖` `价格` `起始时间` `终止时间` 即可将矿石放置到市场上准备售出\n'\
+         '6.2 购买矿石 输入 购买 `摆卖编号`\n'\
+         '6.3 预订矿石 输入 预订 `矿石编号` `矿石数目` `价格` `起始时间` `终止时间` 即可在市场上预订矿石\n'\
+         '6.4 售卖矿石 输入 售卖 `预订编号`\n'\
          '7:支付金钱：输入 支付 `编号` $`金额` 【金额前应带有美元符号$】即可向对方支付指定金额\n'\
          '    7.1 向QQ用户支付，编号以q开头，后加QQ号\n'\
          '    7.2 向指定学号用户支付，直接输入学号即可\n'\
@@ -264,6 +267,76 @@ def buy(message_list,qid):
 
     ans='购买成功！'
     send(tqid,'您摆卖的商品(编号:%s)已被卖出！'%saleID,False)
+    return ans
+
+@handler('预订')
+def prebuy(message_list,qid):
+    """
+    :param message_list: 预订 矿石编号 矿石数量 价格 起始时间 终止时间
+    :param qid: 预订者的qq号
+    :return: 预订提示信息
+    """
+    assert len(message_list)==6,'预订失败:请按照规定格式进行预订！'
+    try:
+        mineralID:int=int(message_list[1])
+        mineralNum:int=int(message_list[2])
+        price:int=int(message_list[3])
+        starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
+        endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
+    except Exception as err:
+        raise AssertionError('预订失败:请按照规定格式进行预订！')
+    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
+    money=user[2]
+    assert money>=price,'预订失败:您的余额不足！'
+    money-=price
+    nowtime=datetime.timestamp(datetime.now())
+    assert endtime>nowtime,'摆卖失败:已经超过截止期限！'
+    starttime=max(round(nowtime),starttime)
+    md5=hashlib.md5()
+    md5.update(('%.2f'%nowtime).encode('utf-8'))
+    purchaseID=md5.hexdigest()[:6]
+    execute(createPurchase,mysql,(qid,purchaseID,mineralID,mineralNum,price,starttime,endtime))
+    execute(updateMoneyByQQ,mysql,(money,qid))
+    ans='预订成功！编号:%s'%purchaseID
+    return ans
+
+@handler('售卖')
+def sell(message_list,qid):
+    """
+    :param message_list: 售卖 预订编号
+    :param qid: 售卖者的qq号
+    :return: 售卖提示信息
+    """
+    assert len(message_list)==2,'售卖失败:请按照规定进行售卖！'
+    purchaseID:str=message_list[1]
+    assert select(selectPurchaseByID,mysql,(purchaseID,)),'购买失败:不存在此卖品！'
+    purchase:tuple=select(selectPurchaseByID,mysql,(purchaseID,))[0]
+    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
+    tqid,_,mineralID,mineralNum,_,price,starttime,_=purchase
+    tuser:tuple=select(selectUserByQQ,mysql,(tqid,))[0]
+    money,tmoney=user[2],tuser[2]
+
+    nowtime=datetime.timestamp(datetime.now())  #现在的时间
+    assert nowtime>=starttime,'售卖失败:尚未到开始售卖时间！'
+    mineralDict:dict=dict(eval(user[3]))
+    assert mineralID in mineralDict,'售卖失败:您不具备此矿石！'
+    assert mineralDict[mineralID]>=mineralNum,'售卖失败:您的矿石数量不足！'
+    mineralDict[mineralID]-=mineralNum
+    if mineralDict[mineralID]<=0:mineralDict.pop(mineralID)
+
+    money+=price  #得钱
+    tmineralDict:dict=dict(eval(tuser[3]))
+    if mineralID not in tmineralDict:
+        tmineralDict[mineralID]=0
+    tmineralDict[mineralID]+=mineralNum  #增加矿石
+
+    execute(deletePurchaseByID,mysql,(purchaseID,))  #删除市场上的此条记录
+    execute(updateMoneyByQQ,mysql,(money,qid))
+    execute(updateMineralByQQ,mysql,(str(mineralDict),qid))
+    execute(updateMineralByQQ,mysql,(str(tmineralDict),tqid))
+
+    ans='售卖成功！'
+    send(tqid,'您预订的商品(编号:%s)已被买入！'%purchaseID,False)
     return ans
 
 @handler("支付")

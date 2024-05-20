@@ -86,6 +86,23 @@ createSale="insert into sale "\
 selectSaleByID='select * from sale where saleID=%s'
 deleteSaleByID='delete from sale where saleID=%s'
 
+createPurchaseTable='create table purchase ('\
+                'qid varchar(20),'\
+                'purchaseID varchar(6),'\
+                'mineralID int,'\
+                'mineralNum int,'\
+                'price int,'\
+                'starttime int,'\
+                'endtime int'\
+                ')'
+
+createPurchase="insert into purchase "\
+           "(qid,purchaseID,mineralID,mineralNum,price,starttime,endtime) " \
+           "values (%s,%s,%d,%d,%d,%d,%d)"
+
+selectPurchaseByID='select * from purchase where purchaseID=%s'
+deletePurchaseByID='delete from purchase where purchaseID=%s'
+
 def select(sql,mysql=False,args=()):
     if not mysql:
         with sqlite3.connect("data.db") as conn:
@@ -119,6 +136,7 @@ if __name__=='__main__':
         execute(createUserTable,False)
         execute(createMineTable,False)
         execute(createSaleTable,False)
+        execute(createPurchaseTable,False)
         execute(insertMine,False,(1,0))
         execute(insertMine,False,(2,0))
         execute(insertMine,False,(3,0))
