@@ -109,6 +109,11 @@ def returnTime(m,q):
 
 @handler("注册")
 def signup(message_list,qid):
+    """
+    :param message_list: 注册 学号
+    :param qid: 注册者的qq号
+    :return: 注册提示信息
+    """
     ans=''
     assert len(message_list)==2 and re.match(r'\d{5}',message_list[1]) and len(message_list[1])==5,'注册失败:请注意您的输入格式！'
     schoolID:str=message_list[1]
@@ -119,6 +124,11 @@ def signup(message_list,qid):
 
 @handler("开采")
 def getMineral(message_list,qid):
+    """
+    :param message_list: 开采 矿井编号
+    :param qid: 开采者的qq号
+    :return: 开采提示信息
+    """
     assert len(message_list)==2,'开采失败:请指定要开采的矿井！'
     mineralID:int=int(message_list[1])
     if mineralID==1:
@@ -139,6 +149,11 @@ def getMineral(message_list,qid):
 
 @handler("兑换")
 def exchange(message_list,qid):
+    """
+    :param message_list: 兑换 矿石编号
+    :param qid: 兑换者的qq号
+    :return: 兑换提示信息
+    """
     assert len(message_list)==2,'兑换失败:请指定要兑换的矿石！'
     mineralID:int=int(message_list[1])
     user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
@@ -192,6 +207,7 @@ def presell(message_list,qid):#TODO
     assert mineralID in mineralDict,'摆卖失败:您不具备此矿石！'
     assert mineralDict[mineralID]>=mineralNum,'摆卖失败:您的矿石数量不足！'
     mineralDict[mineralID]-=mineralNum
+    if mineralDict[mineralID]<=0:mineralDict.pop(mineralID)
     execute(updateMineralByQQ,mysql,(mineralDict,qid))
     if not auction:#非拍卖
         pass
