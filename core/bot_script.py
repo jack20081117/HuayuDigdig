@@ -187,7 +187,11 @@ def signup(message_list,qid):
     assert len(message_list)==2 and re.match(r'\d{5}',message_list[1]) and len(message_list[1])==5,'注册失败:请注意您的输入格式！'
     schoolID:str=message_list[1]
     assert not User.find(qid,mysql) and not User.findAll(mysql,'schoolID=?',(schoolID,)),'注册失败:您已经注册过，无法重复注册！'
-    user=User(qid=qid,schoolID=schoolID,money=0,mineral='{}',process_tech=0.0,extract_tech=0.0,digable=1)
+    user=User(
+        qid=qid,schoolID=schoolID,money=0,mineral='{}',
+        process_tech=0.0,extract_tech=0.0,refine_tech=0.0,digable=1,
+        factory_num=0,productivity=0.0,efficiency='[]',mines='[]'
+    )
     user.save(mysql)
     ans="注册成功！"
     return ans
@@ -271,21 +275,20 @@ def presell(message_list,qid):
     :param qid: 摆卖者的qq号
     :return: 摆卖提示信息
     """
-    assert len(message_list)==7,'摆卖失败:请按照规定格式进行摆卖！'
+    assert len(message_list)==6,'摆卖失败:请按照规定格式进行摆卖！'
     nowtime=datetime.timestamp(datetime.now())
     try:
         mineralID:int=int(message_list[1])
         mineralNum:int=int(message_list[2])
-        auction:bool=bool(int(message_list[3]))
-        price:int=int(message_list[4])
-        if message_list[5]=='现在' or message_list[5]=='now':
+        price:int=int(message_list[3])
+        if message_list[4]=='现在' or message_list[4]=='now':
             starttime:int=round(nowtime)
         else:
-            starttime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
-        if message_list[6] in delays:
-            endtime:int=starttime+delays[message_list[6]]
+            starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
+        if message_list[5] in delays:
+            endtime:int=starttime+delays[message_list[5]]
         else:
-            endtime:int=int(datetime.strptime(message_list[6],'%Y-%m-%d,%H:%M:%S').timestamp())
+            endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except Exception as err:
         raise AssertionError('摆卖失败:请按照规定格式进行摆卖！')
 
@@ -303,16 +306,11 @@ def presell(message_list,qid):
     user.mineral=str(mineralDict)
     user.update(mysql)
 
-    if not auction:#非拍卖
-        pass
-    else:#拍卖
-        pass
-
     md5=hashlib.md5()
     md5.update(('%.2f'%nowtime).encode('utf-8'))
     saleID=md5.hexdigest()[:6]
 
-    sale:Sale=Sale(saleID=saleID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,auction=auction,price=price,starttime=starttime,endtime=endtime)
+    sale:Sale=Sale(saleID=saleID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,starttime=starttime,endtime=endtime)
     sale.save(mysql)
     ans='摆卖成功！编号:%s'%saleID
     return ans
@@ -466,12 +464,11 @@ def market(message_list,qid):
     ans='欢迎来到矿石市场！\n'
     if sales:
         ans+='以下是所有处于摆卖中的商品:\n'
-        saleData=[['交易编号','矿石编号','矿石数目','是否拍卖','价格','起始时间','结束时间']]
+        saleData=[['交易编号','矿石编号','矿石数目','价格','起始时间','结束时间']]
         for sale in sales:
-            auction='是' if sale.auction else '否'
             starttime=datetime.fromtimestamp(float(sale.starttime)).strftime('%Y-%m-%d %H:%M:%S')
             endtime=datetime.fromtimestamp(float(sale.endtime)).strftime('%Y-%m-%d %H:%M:%S')
-            saleData.append([sale.saleID,sale.mineralID,sale.mineralNum,auction,sale.price,starttime,endtime])
+            saleData.append([sale.saleID,sale.mineralID,sale.mineralNum,sale.price,starttime,endtime])
             drawtable(saleData,'sale.png')
         ans+='[CQ:image,file=sale.png]'
     else:

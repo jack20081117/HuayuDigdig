@@ -202,28 +202,32 @@ class User(Model):
     mineral=StringField(columnType='varchar(1000)')
     process_tech=FloatField()
     extract_tech=FloatField()
+    refine_tech=FloatField()
     digable=BooleanField()
+    factory_num=IntegerField()
+    productivity=FloatField()
+    efficiency=StringField(columnType='varchar(50)')
+    mines=StringField(columnType='varchar(200)')
 
 class Mine(Model):
-    __table__='mine'
+    __table__='mines'
 
     mineID=IntegerField(primaryKey=True)
     abundance=FloatField()
 
 class Sale(Model):
-    __table__='sale'
+    __table__='sales'
 
     saleID=StringField(columnType='varchar(6)',primaryKey=True)
     qid=StringField(columnType='varchar(20)')
     mineralID=IntegerField()
     mineralNum=IntegerField()
-    auction=BooleanField()
     price=IntegerField()
     starttime=IntegerField()
     endtime=IntegerField()
 
 class Purchase(Model):
-    __table__='purchase'
+    __table__='purchases'
 
     purchaseID=StringField(columnType='varchar(6)',primaryKey=True)
     qid=StringField(columnType='varchar(20)')
@@ -232,6 +236,20 @@ class Purchase(Model):
     price=IntegerField()
     starttime=IntegerField()
     endtime=IntegerField()
+
+class Auction(Model):
+    __table__='auctions'
+
+    auctionID=StringField(columnType='varchar(6)',primaryKey=True)
+    qid=StringField(columnType='varchar(20)')
+    mineralID=IntegerField()
+    mineralNum=IntegerField()
+    price=IntegerField()
+    starttime=IntegerField()
+    endtime=IntegerField()
+    secret=BooleanField()
+    bestprice=IntegerField()
+    offers=StringField(columnType='varchar(250)')
 
 if __name__ == '__main__':
     # user=User(qid='1329913830',schoolID='24885',money=0,mineral='{}',process_tech=0.0,extract_tech=0.0,digable=1)
@@ -245,6 +263,7 @@ if __name__ == '__main__':
     Mine.create(False)
     Sale.create(False)
     Purchase.create(False)
+    Auction.create(False)
     # for i in range(1,5):
     #     _mine=Mine(mineID=i,abundance=0.0)
     #     _mine.save(False)
