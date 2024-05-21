@@ -67,8 +67,8 @@ def init():
     """
     在矿井刷新时进行初始化
     """
-    execute(updateDigableAll,mysql,(1,))
-    execute(updateAbundanceAll,mysql,(0.0,))
+    execute('update users set digable=?',mysql,(1,))
+    execute('update mine set abundance=?',mysql,(0.0,))
 
 
 def extract(qid,mineralID,mineID):
