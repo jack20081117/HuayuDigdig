@@ -1,9 +1,8 @@
 from datetime import datetime
 from bot_sql import *
-import sqlite3
-import random,socket
+from bot_model import *
 import numpy as np
-import os,json,requests,re,hashlib
+import json,requests,re,hashlib
 
 group_ids:list=[788951477]
 headers={
@@ -79,15 +78,14 @@ def extract(qid,mineralID,mineID):
     :param mineID:矿井编号
     :return:开采信息
     """
-    abundance:float=select(selectAbundanceByID,mysql,(mineID,))[0][0]  # 矿井丰度
-    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]  # 用户信息元组
-    mineral:str=user[3]  # 用户拥有的矿石（str of dict）
-    extractTech:float=user[5]  # 开采等级
-    digable:bool=user[6]  # 是否可以开采
+    mine:Mine=Mine.find(mineID,mysql)
+    #abundance:float=select(selectAbundanceByID,mysql,(mineID,))[0][0]  # 矿井丰度
+    abundance:float=mine.abundance #矿井丰度
+    user:User=User.find(qid,mysql)
+    mineral=user.mineral # 用户拥有的矿石（str of dict）
+    extractTech=user.extract_tech # 开采科技
 
-    prob:float=0.0  # 初始化概率
-
-    assert digable,'开采失败:您必须等到下一个整点才能再次开采矿井！'
+    assert user.digable,'开采失败:您必须等到下一个整点才能再次开采矿井！'
 
     # 决定概率 
     if abundance==0.0:
@@ -96,7 +94,8 @@ def extract(qid,mineralID,mineID):
         prob=round(abundance*sigmoid(extractTech),2)
 
     if np.random.random()>prob:
-        execute(updateDigableByQQ,mysql,(0,qid))
+        user.digable=0
+        user.update(mysql)
         ans='开采失败:您的运气不佳，未能开采成功！'
     else:
         mineralDict:dict=dict(eval(mineral))
@@ -104,8 +103,10 @@ def extract(qid,mineralID,mineID):
         if mineralID not in mineralDict:
             mineralDict[mineralID]=0
         mineralDict[mineralID]+=1
-        execute(updateMineralByQQ,mysql,(mineralDict,qid))
-        execute(updateAbundanceByID,mysql,(prob,mineID))
+        user.mineral=str(mineralDict)
+        user.update(mysql)
+        mine.abundance=prob
+        mine.update(mysql)
         ans='开采成功！您获得了编号为%d的矿石！'%mineralID
     return ans
 
@@ -123,8 +124,9 @@ def signup(message_list,qid):
     ans=''
     assert len(message_list)==2 and re.match(r'\d{5}',message_list[1]) and len(message_list[1])==5,'注册失败:请注意您的输入格式！'
     schoolID:str=message_list[1]
-    assert not select(selectUserBySchoolID,mysql,(schoolID,)) and not select(selectUserByQQ,mysql,(qid,)),'注册失败:您已经注册过，无法重复注册！'
-    execute(createUser,mysql,(qid,schoolID,0,{},0.0,0.0,1))
+    assert not User.find(qid,mysql) and not User.findAll(mysql,'schoolID=?',(schoolID,)),'注册失败:您已经注册过，无法重复注册！'
+    user=User(qid=qid,schoolID=schoolID,money=0,mineral='{}',process_tech=0.0,extract_tech=0.0,digable=1)
+    user.save(mysql)
     ans="注册成功！"
     return ans
 
@@ -162,34 +164,42 @@ def exchange(message_list,qid):
     """
     assert len(message_list)==2,'兑换失败:请指定要兑换的矿石！'
     mineralID:int=int(message_list[1])
-    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
-    schoolID:str=user[1]
-    money:int=user[2]
-    mineralDict:dict=dict(eval(user[3]))
+    user:User=User.find(qid,mysql)
+    schoolID:str=user.schoolID
+    money:int=user.money
+    mineralDict:dict=dict(eval(user.mineral))
     assert mineralID in mineralDict,'兑换失败:您不具备此矿石！'
     assert not int(schoolID)%mineralID\
         or not int(schoolID[:3])%mineralID\
         or not int(schoolID[2:])%mineralID\
         or not int(schoolID[:2]+'0'+schoolID[2:])%mineralID,'兑换失败:您不能够兑换此矿石！'
+
     mineralDict[mineralID]-=1
     if mineralDict[mineralID]<=0:
         mineralDict.pop(mineralID)
-    execute(updateMineralByQQ,mysql,(str(mineralDict),qid))
-    money+=mineralID
-    execute(updateMoneyByQQ,mysql,(money,qid))
+
+    user.mineral=str(mineralDict)
+    user.money+=mineralID
+    user.update(mysql)
+
     ans='兑换成功！'
     return ans
 
 @handler("查询")
 def getUserInfo(message_list,qid):
-    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
-    _,schoolID,money,mineral,process_tech,extract_tech,digable=user
+    user:User=User.find(qid,mysql)
+    schoolID=user.schoolID
+    money=user.money
+    mineral=user.mineral
+    processTech=user.process_tech
+    extractTech=user.extract_tech
+    digable=user.digable
     mres=""
     mineralDict:dict=dict(eval(mineral))
     sortedMineralDict={key:mineralDict[key] for key in sorted(mineralDict.keys())}
     for mid,mnum in sortedMineralDict.items():
         mres+="编号%s的矿石%s个；\n"%(mid,mnum)
-    ans=info_msg%(qid,schoolID,money,process_tech,extract_tech,digable,mres)
+    ans=info_msg%(qid,schoolID,money,processTech,extractTech,digable,mres)
     return ans
 
 @handler("摆卖")
@@ -210,26 +220,32 @@ def presell(message_list,qid):#TODO
     except Exception as err:
         raise AssertionError('摆卖失败:请按照规定格式进行摆卖！')
 
-    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
-    mineralDict:dict=dict(eval(user[3]))
+    user:User=User.find(qid,mysql)
+    mineralDict:dict=dict(eval(user.mineral))
     assert mineralNum>=1,'摆卖失败:您必须至少摆卖1个矿石！'
     assert mineralID in mineralDict,'摆卖失败:您不具备此矿石！'
     assert mineralDict[mineralID]>=mineralNum,'摆卖失败:您的矿石数量不足！'
+    nowtime=datetime.timestamp(datetime.now())
+    assert endtime>nowtime,'摆卖失败:已经超过截止期限！'
+    starttime=max(round(nowtime),starttime)
+
     mineralDict[mineralID]-=mineralNum
     if mineralDict[mineralID]<=0:mineralDict.pop(mineralID)
-    execute(updateMineralByQQ,mysql,(mineralDict,qid))
+
+    user.mineral=str(mineralDict)
+    user.update(mysql)
+
     if not auction:#非拍卖
         pass
     else:#拍卖
         pass
 
-    nowtime=datetime.timestamp(datetime.now())
-    assert endtime>nowtime,'摆卖失败:已经超过截止期限！'
-    starttime=max(round(nowtime),starttime)
     md5=hashlib.md5()
     md5.update(('%.2f'%nowtime).encode('utf-8'))
     saleID=md5.hexdigest()[:6]
-    execute(createSale,mysql,(qid,saleID,mineralID,mineralNum,auction,price,starttime,endtime))
+
+    sale:Sale=Sale(saleID=saleID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,auction=auction,price=price,starttime=starttime,endtime=endtime)
+    sale.save(mysql)
     ans='摆卖成功！编号:%s'%saleID
     return ans
 
@@ -242,28 +258,34 @@ def buy(message_list,qid):
     """
     assert len(message_list)==2,'购买失败:请按照规定格式进行购买！'
     saleID:str=message_list[1]
-    assert select(selectSaleByID,mysql,(saleID,)),'购买失败:不存在此卖品！'
-    sale:tuple=select(selectSaleByID,mysql,(saleID,))[0]
-    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
-    tqid,_,mineralID,mineralNum,_,price,starttime,_=sale
-    tuser:tuple=select(selectUserByQQ,mysql,(tqid,))[0]
-    money,tmoney=user[2],tuser[2]
+    sale:Sale=Sale.find(saleID,mysql)
+    assert sale,'购买失败:不存在此卖品！'
+    user:User=User.find(qid)
+
+    tqid=sale.qid
+    mineralID=sale.mineralID
+    mineralNum=sale.mineralNum
+    price=sale.price
+    starttime=sale.starttime
 
     nowtime=datetime.timestamp(datetime.now())#现在的时间
+    assert qid!=tqid,'购买失败:您不能购买自己的商品！'
     assert nowtime>=starttime,'购买失败:尚未到开始售卖时间！'
-    assert money>=price,'购买失败:您的余额不足！'
-    money-=price#付钱
-    tmoney+=price#得钱
+    assert user.money>=price,'购买失败:您的余额不足！'
 
-    mineralDict:dict=dict(eval(user[3]))
+    user.money-=price#付钱
+    tuser:User=User.find(tqid)
+    tuser.money+=price#得钱
+
+    mineralDict:dict=dict(eval(user.mineral))
     if mineralID not in mineralDict:
         mineralDict[mineralID]=0
     mineralDict[mineralID]+=mineralNum#增加矿石
+    user.mineral=str(mineralDict)
 
-    execute(deleteSaleByID,mysql,(saleID,))#删除市场上的此条记录
-    execute(updateMoneyByQQ,mysql,(money,qid))
-    execute(updateMoneyByQQ,mysql,(tmoney,tqid))
-    execute(updateMineralByQQ,mysql,(str(mineralDict),qid))
+    sale.remove(mysql)#删除市场上的此条记录
+    user.update(mysql)
+    tuser.update(mysql)
 
     ans='购买成功！'
     send(tqid,'您摆卖的商品(编号:%s)已被卖出！'%saleID,False)
@@ -285,18 +307,21 @@ def prebuy(message_list,qid):
         endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except Exception as err:
         raise AssertionError('预订失败:请按照规定格式进行预订！')
-    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
-    money=user[2]
-    assert money>=price,'预订失败:您的余额不足！'
-    money-=price
+    user:User=User.find(qid)
+
+    assert user.money>=price,'预订失败:您的余额不足！'
     nowtime=datetime.timestamp(datetime.now())
     assert endtime>nowtime,'摆卖失败:已经超过截止期限！'
     starttime=max(round(nowtime),starttime)
+    user.money-=price
+
     md5=hashlib.md5()
     md5.update(('%.2f'%nowtime).encode('utf-8'))
     purchaseID=md5.hexdigest()[:6]
-    execute(createPurchase,mysql,(qid,purchaseID,mineralID,mineralNum,price,starttime,endtime))
-    execute(updateMoneyByQQ,mysql,(money,qid))
+    purchase:Purchase=Purchase(purchaseID=purchaseID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,starttime=starttime,endtime=endtime)
+    purchase.save(mysql)
+    user.update(mysql)
+
     ans='预订成功！编号:%s'%purchaseID
     return ans
 
@@ -309,31 +334,40 @@ def sell(message_list,qid):
     """
     assert len(message_list)==2,'售卖失败:请按照规定进行售卖！'
     purchaseID:str=message_list[1]
-    assert select(selectPurchaseByID,mysql,(purchaseID,)),'购买失败:不存在此卖品！'
-    purchase:tuple=select(selectPurchaseByID,mysql,(purchaseID,))[0]
-    user:tuple=select(selectUserByQQ,mysql,(qid,))[0]
-    tqid,_,mineralID,mineralNum,price,starttime,_=purchase
-    tuser:tuple=select(selectUserByQQ,mysql,(tqid,))[0]
-    money,tmoney=user[2],tuser[2]
+    purchase:Purchase=Purchase.find(purchaseID)
+    assert purchase,'购买失败:不存在此卖品！'
+    user:User=User.find(qid)
+
+    tqid=purchase.qid
+    mineralID=purchase.mineralID
+    mineralNum=purchase.mineralNum
+    price=purchase.price
+    starttime=purchase.starttime
 
     nowtime=datetime.timestamp(datetime.now())  #现在的时间
+    assert qid!=tqid,'售卖失败:您不能向自己售卖商品！'
     assert nowtime>=starttime,'售卖失败:尚未到开始售卖时间！'
-    mineralDict:dict=dict(eval(user[3]))
+    mineralDict:dict=dict(eval(user.mineral))
     assert mineralID in mineralDict,'售卖失败:您不具备此矿石！'
     assert mineralDict[mineralID]>=mineralNum,'售卖失败:您的矿石数量不足！'
     mineralDict[mineralID]-=mineralNum
     if mineralDict[mineralID]<=0:mineralDict.pop(mineralID)
 
-    money+=price  #得钱
-    tmineralDict:dict=dict(eval(tuser[3]))
+    user.money+=price  #得钱
+    user.mineral=str(mineralDict)
+    user.update(mysql)
+
+    tuser:User=User.find(tqid)
+
+    tmineralDict:dict=dict(eval(tuser.mineral))
     if mineralID not in tmineralDict:
         tmineralDict[mineralID]=0
     tmineralDict[mineralID]+=mineralNum  #增加矿石
+    tuser.mineral=str(tmineralDict)
 
-    execute(deletePurchaseByID,mysql,(purchaseID,))  #删除市场上的此条记录
-    execute(updateMoneyByQQ,mysql,(money,qid))
-    execute(updateMineralByQQ,mysql,(str(mineralDict),qid))
-    execute(updateMineralByQQ,mysql,(str(tmineralDict),tqid))
+    purchase.remove(mysql)#删除市场上的此条记录
+
+    tuser.update(mysql)
 
     ans='售卖成功！'
     send(tqid,'您预订的商品(编号:%s)已被买入！'%purchaseID,False)
@@ -353,38 +387,27 @@ def pay(message_list,qid):
     except Exception:
         raise AssertionError("支付失败:金额格式不正确！应当为:$20")
 
-    a_money:int=select(selectUserByQQ,mysql,(qid,))[0][2]
+    user:User=User.find(qid)
 
-    assert a_money>=money,"支付失败:您的余额不足！"
+    assert user.money>=money,"支付失败:您的余额不足！"
     if target.startswith("q"):
         # 通过QQ号查找对方
         tqid:str=target[1:]
-        b_info:list=select(selectUserByQQ,mysql,(tqid,))
-        assert b_info,"支付失败:QQ号为%s的用户未注册！"%tqid
-        b_money:int=b_info[0][2]
-
-        a_money-=money
-        b_money+=round(money*(1-player_tax))
-
-        execute(updateMoneyByQQ,mysql,(a_money,qid))
-        execute(updateMoneyByQQ,mysql,(b_money,tqid))
-
-        return "支付成功！"
+        tuser:User=User.find(tqid)
+        assert tuser,"支付失败:QQ号为%s的用户未注册！"%tqid
     else:
         tschoolID:str=target
         # 通过学号查找
-        b_info:list=select(selectUserBySchoolID,mysql,(tschoolID,))
-        assert b_info,"支付失败：学号为%s的用户未注册！"%tschoolID
-        tqid:str=b_info[0][0]
-        b_money:int=b_info[0][2]
+        assert User.findAll(mysql,'schoolID=?',(tschoolID,)),"支付失败：学号为%s的用户未注册！"%tschoolID
+        tuser:User=User.findAll(mysql,'schoolID=?',(tschoolID,))[0]
 
-        a_money-=money
-        b_money+=round(money*(1-player_tax))
+    user.money-=money
+    tuser.money+=round(money*(1-player_tax))
 
-        execute(updateMoneyByQQ,mysql,(b_money,tqid))
-        execute(updateMoneyByQQ,mysql,(a_money,qid))
+    user.update(mysql)
+    tuser.update(mysql)
 
-        return "支付成功！"
+    return "支付成功！"
 
 @handler("帮助")
 def getHelp(message_list,qid):
@@ -434,9 +457,9 @@ def handle(res,group):
 def send(qid,message,group=False):
     """
     用于发送消息的函数
-    :param qid:用户id
-    :param message:发送的消息
-    :param gid:群id
+    :param qid: 用户id 或 群id
+    :param message: 发送的消息
+    :param group: 是否为群消息
     :return:none
     """
 

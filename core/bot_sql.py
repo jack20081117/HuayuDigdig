@@ -1,19 +1,8 @@
-import json
-import sqlite3
-import pymysql
+from bot_model import *
 
 with open("./config.json","r") as config:
     config=json.load(config)
 env:str=config["env"]
-
-if env=="prod":
-    with open("./mysql.json","a") as config:
-        pass
-    with open("./mysql.json","r") as dbconfig:
-        dbconfig=json.load(dbconfig)
-    connection=pymysql.connect(host=dbconfig["host"],user=dbconfig["user"],password=dbconfig["password"],
-                               db=dbconfig["db"],charset="utf8")
-    mysqlcursor=connection.cursor()
 
 createUserTable='create table users ('\
                 'qid varchar(20),'\
@@ -69,8 +58,8 @@ updateAbundanceByID="update mine set abundance=%f where mineID=%d"
 updateAbundanceAll="update mine set abundance=%f"
 
 createSaleTable='create table sale ('\
-                'qid varchar(20),'\
                 'saleID varchar(6),'\
+                'qid varchar(20),'\
                 'mineralID int,'\
                 'mineralNum int,'\
                 'auction boolean,'\
@@ -87,8 +76,8 @@ selectSaleByID='select * from sale where saleID=%s'
 deleteSaleByID='delete from sale where saleID=%s'
 
 createPurchaseTable='create table purchase ('\
-                'qid varchar(20),'\
                 'purchaseID varchar(6),'\
+                'qid varchar(20),'\
                 'mineralID int,'\
                 'mineralNum int,'\
                 'price int,'\
@@ -103,48 +92,20 @@ createPurchase="insert into purchase "\
 selectPurchaseByID='select * from purchase where purchaseID=%s'
 deletePurchaseByID='delete from purchase where purchaseID=%s'
 
-def select(sql,mysql=False,args=()):
-    if not mysql:
-        with sqlite3.connect("data.db") as conn:
-            cursor=conn.cursor()
-            sql=sql.replace("%s","'%s'")
-            if args:sql=sql%args
-            cursor.execute(sql)
-            conn.commit()
-            res=cursor.fetchall()
-            cursor.close()
-    else:
-        mysqlcursor.execute(sql,args)
-        res=mysqlcursor.fetchall()
-    return res
-
-def execute(sql,mysql=False,args=()):
-    if not mysql:
-        with sqlite3.connect("data.db") as conn:
-            cursor=conn.cursor()
-            sql=sql.replace("%s","'%s'")
-            if args:sql=sql%args
-            cursor.execute(sql)
-            conn.commit()
-            cursor.close()
-    else:
-        mysqlcursor.execute(sql,args)
-        connection.commit()
-
 if __name__=='__main__':
     if env=="dev":
         execute(createUserTable,False)
         execute(createMineTable,False)
         execute(createSaleTable,False)
         execute(createPurchaseTable,False)
-        execute(insertMine,False,(1,0))
-        execute(insertMine,False,(2,0))
-        execute(insertMine,False,(3,0))
-        execute(insertMine,False,(4,0))
+        # execute(insertMine,False,(1,0))
+        # execute(insertMine,False,(2,0))
+        # execute(insertMine,False,(3,0))
+        # execute(insertMine,False,(4,0))
     elif env=="prod":
         execute(createUserTableForMySQL,True)
         execute(createMineTableForMySQL,True)
-        execute(insertMine,True,(1,0))
-        execute(insertMine,True,(2,0))
-        execute(insertMine,True,(3,0))
-        execute(insertMine,True,(4,0))
+        # execute(insertMine,True,(1,0))
+        # execute(insertMine,True,(2,0))
+        # execute(insertMine,True,(3,0))
+        # execute(insertMine,True,(4,0))
