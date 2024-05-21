@@ -1,6 +1,8 @@
 from flask import Flask,request
 from datetime import datetime
 import bot_script
+import warnings
+warnings.filterwarnings('ignore')
 
 app=Flask(__name__)
 
@@ -8,7 +10,7 @@ app=Flask(__name__)
 def post():
     # 这里对消息进行分发，暂时先设置一个简单的分发
     res=request.get_json()
-    if 0<=int(datetime.timestamp(datetime.now()))%360<=10:
+    if 0<=int(datetime.timestamp(datetime.now()))%3600<=10:
         bot_script.init()#刷新
     if res.get('message_type')=='private':  # 说明有好友发送信息过来
         bot_script.handle(res,group=False)

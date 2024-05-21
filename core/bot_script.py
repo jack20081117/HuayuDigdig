@@ -2,6 +2,8 @@ from datetime import datetime
 from bot_model import *
 import numpy as np
 import json,requests,re,hashlib
+from matplotlib import pyplot as plt
+plt.rcParams['font.family']=['Microsoft YaHei']
 
 group_ids:list=[788951477]
 headers={
@@ -12,10 +14,7 @@ with open("./config.json","r") as config:
 env:str=config["env"]
 player_tax=config["player_tax"]
 
-if env=="prod":
-    mysql=True
-else:
-    mysql=False
+mysql:bool=(env=='prod')
 
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 
@@ -31,12 +30,14 @@ help_msg='您好！欢迎使用森bot！\n'\
          '    4.4 矿井4号会生成从2-999对数均匀分布的随机整数矿石\n'\
          '5:兑换矿石:输入 兑换 `矿石编号` 只有在矿石编号为3、5、6位学号的因数或班级因数时才可兑换！\n'\
          '6:矿石市场:\n' \
-         '本节所有时间格式必须为YYYY-MM-DD,hh:mm:ss格式，"是否"数值取值为0或1。\n'\
+         '注:除快捷键外，本节所有时间格式必须为YYYY-MM-DD,hh:mm:ss格式，"是否"数值取值为0或1\n' \
+         '6.1 市场 输入 市场 即可查看目前市场上存在的交易\n'\
          '6.2 摆卖矿石 输入 摆卖 `矿石编号` `矿石数目` `是否拍卖` `价格` `起始时间` `终止时间` 即可将矿石放置到市场上准备售出\n'\
          '6.3 购买矿石 输入 购买 `交易编号`\n'\
          '6.4 预订矿石 输入 预订 `矿石编号` `矿石数目` `价格` `起始时间` `终止时间` 即可在市场上预订矿石\n'\
-         '6.5 售卖矿石 输入 售卖 `交易编号`\n'\
-         '7:支付金钱:输入 支付 `编号` $`金额` 【金额前应带有美元符号$】即可向对方支付指定金额\n'\
+         '6.5 售卖矿石 输入 售卖 `交易编号`\n' \
+         '快捷键:现在/now:当前时间 十分钟后/10min:十分钟后 半小时后/30min:半小时后 一小时后/1h:一小时后 三小时后/3h:三小时后\n' \
+         '7:支付金钱:输入 支付 `编号` $`金额` (金额前应带有美元符号$)即可向对方支付指定金额\n'\
          '    7.1 向QQ用户支付，编号以q开头，后加QQ号\n'\
          '    7.2 向指定学号用户支付，直接输入学号即可\n'\
 
@@ -48,6 +49,8 @@ info_msg="查询到QQ号为:%s的用户信息\n"\
          "当前是否可开采:%s\n"\
          "以下为该用户拥有的矿石:\n"\
          "%s"
+
+delays:dict={'十分钟后':600,'10min':600,'半小时后':1800,'30min':1800,'一小时后':3600,'1h':3600,'三小时后':10800,'3h':10800}
 
 commands:dict={}
 
@@ -108,6 +111,25 @@ def extract(qid,mineralID,mineID):
         mine.update(mysql)
         ans='开采成功！您获得了编号为%d的矿石！'%mineralID
     return ans
+
+def drawtable(data:list[list],filename:str):
+    """
+    :param data: 要绘制的表格数据
+    :param filename: 存储图片地址
+    :return:
+    """
+    fig,ax=plt.subplots()
+    table=ax.table(cellText=data,loc='center')
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)
+
+    for key,cell in table.get_celld().items():
+        cell.set_text_props(fontsize=10,ha='center',va='center')
+
+    table.auto_set_column_width(col=list(range(len(data[0]))))
+
+    ax.axis('off')
+    plt.savefig('../go-cqhttp/data/images/%s'%filename)
 
 @handler("time")
 def returnTime(m,q):
@@ -202,20 +224,27 @@ def getUserInfo(message_list,qid):
     return ans
 
 @handler("摆卖")
-def presell(message_list,qid):#TODO
+def presell(message_list,qid):
     """
     :param message_list: 摆卖 矿石编号 矿石数量 是否拍卖 价格 起始时间 终止时间
     :param qid: 摆卖者的qq号
     :return: 摆卖提示信息
     """
     assert len(message_list)==7,'摆卖失败:请按照规定格式进行摆卖！'
+    nowtime=datetime.timestamp(datetime.now())
     try:
         mineralID:int=int(message_list[1])
         mineralNum:int=int(message_list[2])
         auction:bool=bool(int(message_list[3]))
         price:int=int(message_list[4])
-        starttime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
-        endtime:int=int(datetime.strptime(message_list[6],'%Y-%m-%d,%H:%M:%S').timestamp())
+        if message_list[5]=='现在' or message_list[5]=='now':
+            starttime:int=round(nowtime)
+        else:
+            starttime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
+        if message_list[6] in delays:
+            endtime:int=starttime+delays[message_list[6]]
+        else:
+            endtime:int=int(datetime.strptime(message_list[6],'%Y-%m-%d,%H:%M:%S').timestamp())
     except Exception as err:
         raise AssertionError('摆卖失败:请按照规定格式进行摆卖！')
 
@@ -224,7 +253,6 @@ def presell(message_list,qid):#TODO
     assert mineralNum>=1,'摆卖失败:您必须至少摆卖1个矿石！'
     assert mineralID in mineralDict,'摆卖失败:您不具备此矿石！'
     assert mineralDict[mineralID]>=mineralNum,'摆卖失败:您的矿石数量不足！'
-    nowtime=datetime.timestamp(datetime.now())
     assert endtime>nowtime,'摆卖失败:已经超过截止期限！'
     starttime=max(round(nowtime),starttime)
 
@@ -298,18 +326,24 @@ def prebuy(message_list,qid):
     :return: 预订提示信息
     """
     assert len(message_list)==6,'预订失败:请按照规定格式进行预订！'
+    nowtime=datetime.timestamp(datetime.now())
     try:
         mineralID:int=int(message_list[1])
         mineralNum:int=int(message_list[2])
         price:int=int(message_list[3])
-        starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
-        endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
+        if message_list[5]=='现在' or message_list[5]=='now':
+            starttime:int=round(nowtime)
+        else:
+            starttime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
+        if message_list[6] in delays:
+            endtime:int=starttime+delays[message_list[6]]
+        else:
+            endtime:int=int(datetime.strptime(message_list[6],'%Y-%m-%d,%H:%M:%S').timestamp())
     except Exception as err:
         raise AssertionError('预订失败:请按照规定格式进行预订！')
     user:User=User.find(qid)
 
     assert user.money>=price,'预订失败:您的余额不足！'
-    nowtime=datetime.timestamp(datetime.now())
     assert endtime>nowtime,'摆卖失败:已经超过截止期限！'
     starttime=max(round(nowtime),starttime)
     user.money-=price
@@ -384,21 +418,25 @@ def market(message_list,qid):
     ans='欢迎来到矿石市场！\n'
     if sales:
         ans+='以下是所有处于摆卖中的商品:\n'
+        saleData=[['交易编号','矿石编号','矿石数目','是否拍卖','价格','起始时间','结束时间']]
         for sale in sales:
             auction='是' if sale.auction else '否'
             starttime=datetime.fromtimestamp(float(sale.starttime)).strftime('%Y-%m-%d %H:%M:%S')
             endtime=datetime.fromtimestamp(float(sale.endtime)).strftime('%Y-%m-%d %H:%M:%S')
-            ans+='交易编号:%s,矿石编号:%s,矿石数目:%s,拍卖:%s,价格:%s,起始时间:%s,结束时间:%s\n'\
-                 %(sale.saleID,sale.mineralID,sale.mineralNum,auction,sale.price,starttime,endtime)
+            saleData.append([sale.saleID,sale.mineralID,sale.mineralNum,auction,sale.price,starttime,endtime])
+            drawtable(saleData,'sale.png')
+        ans+='[CQ:image,file=sale.png]'
     else:
         ans+='目前没有处于摆卖中的商品！\n'
     if purchases:
         ans+='以下是所有处于预订中的商品:\n'
+        purchaseData=[['交易编号','矿石编号','矿石数目','价格','起始时间','结束时间']]
         for purchase in purchases:
             starttime=datetime.fromtimestamp(float(purchase.starttime)).strftime('%Y-%m-%d %H:%M:%S')
             endtime=datetime.fromtimestamp(float(purchase.endtime)).strftime('%Y-%m-%d %H:%M:%S')
-            ans+='交易编号:%s,矿石编号:%s,矿石数目:%s,价格:%s,起始时间:%s,结束时间:%s\n'\
-                 %(purchase.purchaseID,purchase.mineralID,purchase.mineralNum,purchase.price,starttime,endtime)
+            purchaseData.append([purchase.purchaseID,purchase.mineralID,purchase.mineralNum,purchase.price,starttime,endtime])
+            drawtable(purchaseData,'purchase.png')
+        ans+='[CQ:image,file=purchase.png]'
     else:
         ans+='目前没有处于预订中的商品！\n'
     return ans
