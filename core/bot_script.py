@@ -1,5 +1,4 @@
 from datetime import datetime
-from bot_sql import *
 from bot_model import *
 import numpy as np
 import json,requests,re,hashlib
@@ -21,33 +20,33 @@ else:
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 
 help_msg='您好！欢迎使用森bot！\n'\
-         '您可以使用如下功能：\n'\
-         '1:查询时间：输入 time\n'\
-         '2:注册账号：输入 注册 `学号`\n'\
-         '3:查询信息：输入 查询  即可获取用户个人信息\n'\
-         '4:开采矿石：输入 开采 `矿井编号`\n'\
+         '您可以使用如下功能:\n'\
+         '1:查询时间:输入 time\n'\
+         '2:注册账号:输入 注册 `学号`\n'\
+         '3:查询信息:输入 查询  即可获取用户个人信息\n'\
+         '4:开采矿石:输入 开采 `矿井编号`\n'\
          '    4.1 矿井1号会生成从2-30000均匀分布的随机整数矿石\n'\
          '    4.2 矿井2号会生成从2-30000对数均匀分布的随机整数矿石\n'\
          '    4.3 矿井3号会生成从2-999均匀分布的随机整数矿石\n'\
          '    4.4 矿井4号会生成从2-999对数均匀分布的随机整数矿石\n'\
-         '5:兑换矿石：输入 兑换 `矿石编号` 只有在矿石编号为3、5、6位学号的因数或班级因数时才可兑换！\n'\
-         '6:矿石市场：\n' \
+         '5:兑换矿石:输入 兑换 `矿石编号` 只有在矿石编号为3、5、6位学号的因数或班级因数时才可兑换！\n'\
+         '6:矿石市场:\n' \
          '本节所有时间格式必须为YYYY-MM-DD,hh:mm:ss格式，"是否"数值取值为0或1。\n'\
-         '6.1 摆卖矿石 输入 摆卖 `矿石编号` `矿石数目` `是否拍卖` `价格` `起始时间` `终止时间` 即可将矿石放置到市场上准备售出\n'\
-         '6.2 购买矿石 输入 购买 `摆卖编号`\n'\
-         '6.3 预订矿石 输入 预订 `矿石编号` `矿石数目` `价格` `起始时间` `终止时间` 即可在市场上预订矿石\n'\
-         '6.4 售卖矿石 输入 售卖 `预订编号`\n'\
-         '7:支付金钱：输入 支付 `编号` $`金额` 【金额前应带有美元符号$】即可向对方支付指定金额\n'\
+         '6.2 摆卖矿石 输入 摆卖 `矿石编号` `矿石数目` `是否拍卖` `价格` `起始时间` `终止时间` 即可将矿石放置到市场上准备售出\n'\
+         '6.3 购买矿石 输入 购买 `交易编号`\n'\
+         '6.4 预订矿石 输入 预订 `矿石编号` `矿石数目` `价格` `起始时间` `终止时间` 即可在市场上预订矿石\n'\
+         '6.5 售卖矿石 输入 售卖 `交易编号`\n'\
+         '7:支付金钱:输入 支付 `编号` $`金额` 【金额前应带有美元符号$】即可向对方支付指定金额\n'\
          '    7.1 向QQ用户支付，编号以q开头，后加QQ号\n'\
          '    7.2 向指定学号用户支付，直接输入学号即可\n'\
 
-info_msg="查询到QQ号为：%s的用户信息\n"\
-         "学号：%s\n"\
-         "当前余额：%s\n"\
-         "加工科技点：%s\n"\
-         "开采科技点：%s\n"\
-         "当前是否可开采：%s\n"\
-         "以下为该用户拥有的矿石：\n"\
+info_msg="查询到QQ号为:%s的用户信息\n"\
+         "学号:%s\n"\
+         "当前余额:%s\n"\
+         "加工科技点:%s\n"\
+         "开采科技点:%s\n"\
+         "当前是否可开采:%s\n"\
+         "以下为该用户拥有的矿石:\n"\
          "%s"
 
 commands:dict={}
@@ -112,7 +111,7 @@ def extract(qid,mineralID,mineID):
 
 @handler("time")
 def returnTime(m,q):
-    return '当前时间为：%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    return '当前时间为:%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 @handler("注册")
 def signup(message_list,qid):
@@ -373,6 +372,37 @@ def sell(message_list,qid):
     send(tqid,'您预订的商品(编号:%s)已被买入！'%purchaseID,False)
     return ans
 
+@handler("市场")
+def market(message_list,qid):
+    """
+    :param message_list: 市场
+    :param qid:
+    :return: 提示信息
+    """
+    sales:list[Sale]=Sale.findAll(mysql)
+    purchases:list[Purchase]=Purchase.findAll(mysql)
+    ans='欢迎来到矿石市场！\n'
+    if sales:
+        ans+='以下是所有处于摆卖中的商品:\n'
+        for sale in sales:
+            auction='是' if sale.auction else '否'
+            starttime=datetime.fromtimestamp(float(sale.starttime)).strftime('%Y-%m-%d %H:%M:%S')
+            endtime=datetime.fromtimestamp(float(sale.endtime)).strftime('%Y-%m-%d %H:%M:%S')
+            ans+='交易编号:%s,矿石编号:%s,矿石数目:%s,拍卖:%s,起始时间:%s,结束时间:%s\n'\
+                 %(sale.saleID,sale.mineralID,sale.mineralNum,auction,starttime,endtime)
+    else:
+        ans+='目前没有处于摆卖中的商品！\n'
+    if purchases:
+        ans+='以下是所有处于预订中的商品:\n'
+        for purchase in purchases:
+            starttime=datetime.fromtimestamp(float(purchase.starttime)).strftime('%Y-%m-%d %H:%M:%S')
+            endtime=datetime.fromtimestamp(float(purchase.endtime)).strftime('%Y-%m-%d %H:%M:%S')
+            ans+='交易编号:%s,矿石编号:%s,矿石数目:%s,起始时间:%s,结束时间:%s\n'\
+                 %(purchase.purchaseID,purchase.mineralID,purchase.mineralNum,starttime,endtime)
+    else:
+        ans+='目前没有处于预订中的商品！\n'
+    return ans
+
 @handler("支付")
 def pay(message_list,qid):
     # 格式1
@@ -398,7 +428,7 @@ def pay(message_list,qid):
     else:
         tschoolID:str=target
         # 通过学号查找
-        assert User.findAll(mysql,'schoolID=?',(tschoolID,)),"支付失败：学号为%s的用户未注册！"%tschoolID
+        assert User.findAll(mysql,'schoolID=?',(tschoolID,)),"支付失败:学号为%s的用户未注册！"%tschoolID
         tuser:User=User.findAll(mysql,'schoolID=?',(tschoolID,))[0]
 
     user.money-=money
@@ -418,7 +448,7 @@ def dealWithRequest(funcStr,message_list,qid):
     if funcStr in commands:
         ans=commands[funcStr](message_list,qid)
     else:
-        ans="未知命令：请输入'帮助'以获取帮助信息！"
+        ans="未知命令:请输入'帮助'以获取帮助信息！"
     return ans
 
 def handle(res,group):

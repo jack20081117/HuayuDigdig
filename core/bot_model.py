@@ -95,10 +95,16 @@ class ModelMetaclass(type):
         attrs['__table__']=tableName
         attrs['__primaryKey__']=primaryKey
         attrs['__fields__']=fields
-        attrs['__select__']='select `%s`,%s from `%s`'%(primaryKey,','.join(escapedFields),tableName)
-        attrs['__insert__']='insert into `%s` (`%s`,%s) values (%s)'%(tableName,primaryKey,','.join(escapedFields),createArgsString(len(escapedFields)+1))
-        attrs['__update__']='update `%s` set %s where `%s`=?'%(tableName,','.join(map(lambda f:'`%s`=?'%(mappings.get(f).name or f),fields)),primaryKey)
-        attrs['__delete__']='delete from `%s` where `%s`=?'%(tableName,primaryKey)
+        attrs['__create__']='create table if not exists `%s` (`%s` %s primary key,%s)'\
+                            %(tableName,primaryKey,mappings[primaryKey].columnType,','.join(list(map(lambda f:'`%s` %s'%(f,mappings[f].columnType),fields))))
+        attrs['__select__']='select `%s`,%s from `%s`'\
+                            %(primaryKey,','.join(escapedFields),tableName)
+        attrs['__insert__']='insert into `%s` (`%s`,%s) values (%s)'\
+                            %(tableName,primaryKey,','.join(escapedFields),createArgsString(len(escapedFields)+1))
+        attrs['__update__']='update `%s` set %s where `%s`=?'\
+                            %(tableName,','.join(map(lambda f:'`%s`=?'%(mappings.get(f).name or f),fields)),primaryKey)
+        attrs['__delete__']='delete from `%s` where `%s`=?'\
+                            %(tableName,primaryKey)
         return type.__new__(mcs,name,bases,attrs)
 
 class Model(dict,metaclass=ModelMetaclass):
@@ -169,6 +175,10 @@ class Model(dict,metaclass=ModelMetaclass):
             return None
         return cls(*results[0])
 
+    @classmethod
+    def create(cls,mysql=False):
+        execute(cls.__create__,mysql)
+
     def save(self,mysql=False):
         args=[self.getValueOrDefault(self.__primaryKey__)]
         args.extend(list(map(self.getValueOrDefault,self.__fields__)))
@@ -231,4 +241,10 @@ if __name__ == '__main__':
     # user.update(False)
     # purchase=Purchase.find('fc0e56')
     # print(purchase)
-    pass
+    User.create(False)
+    Mine.create(False)
+    Sale.create(False)
+    Purchase.create(False)
+    # for i in range(1,5):
+    #     _mine=Mine(mineID=i,abundance=0.0)
+    #     _mine.save(False)
