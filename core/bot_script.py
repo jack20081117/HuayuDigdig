@@ -71,7 +71,48 @@ def init():
     """
     execute('update users set digable=?',mysql,(1,))
     execute('update mine set abundance=?',mysql,(0.0,))
+    update()
 
+def update():
+    """
+    对数据进行更新
+    """
+    nowtime:int=round(datetime.timestamp(datetime.now()))
+
+    deadSales:list[Sale]=Sale.findAll(mysql,'endtime<?',(nowtime,))#已经结束的摆卖
+    for deadSale in deadSales:
+        #将矿石返还给摆卖者
+        qid=deadSale.qid
+        saleID=deadSale.saleID
+        user=User.find(qid)
+
+        mineralID=deadSale.mineralID
+        mineralNum=deadSale.mineralNum
+        mineralDict=dict(eval(user.mineral))
+        if mineralID not in mineralDict:
+            mineralDict[mineralID]=0
+        mineralDict[mineralID]+=mineralNum
+        user.mineral=str(mineralDict)
+
+        user.update(mysql)
+        deadSale.remove(mysql)
+
+        send(qid,'您的摆卖:%s未能进行,矿石已返还到您的账户'%saleID,False)
+
+    deadPurchases:list[Purchase]=Purchase.findAll(mysql,'endtime<?',(nowtime,))#已经结束的预订
+    for deadPurchase in deadPurchases:
+        #将钱返还给预订者
+        qid=deadPurchase.qid
+        purchaseID=deadPurchase.purchaseID
+        user=User.find(qid)
+
+        price=deadPurchase.price
+        user.money+=price
+
+        user.update(mysql)
+        deadPurchase.remove(mysql)
+
+        send(qid,'您的预订:%s未能进行,钱已返还到您的账户'%purchaseID,False)
 
 def extract(qid,mineralID,mineID):
     """获取矿石
@@ -294,10 +335,13 @@ def buy(message_list,qid):
     mineralNum=sale.mineralNum
     price=sale.price
     starttime=sale.starttime
+    endtime=sale.endtime
 
     nowtime=datetime.timestamp(datetime.now())#现在的时间
+    if nowtime>endtime:update()
     assert qid!=tqid,'购买失败:您不能购买自己的商品！'
-    assert nowtime>=starttime,'购买失败:尚未到开始售卖时间！'
+    assert nowtime>=starttime,'购买失败:尚未到开始购买时间！'
+    assert nowtime<=endtime,'购买失败:此商品摆卖已结束！'
     assert user.money>=price,'购买失败:您的余额不足！'
 
     user.money-=price#付钱
@@ -331,14 +375,14 @@ def prebuy(message_list,qid):
         mineralID:int=int(message_list[1])
         mineralNum:int=int(message_list[2])
         price:int=int(message_list[3])
-        if message_list[5]=='现在' or message_list[5]=='now':
+        if message_list[4]=='现在' or message_list[4]=='now':
             starttime:int=round(nowtime)
         else:
-            starttime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
-        if message_list[6] in delays:
-            endtime:int=starttime+delays[message_list[6]]
+            starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
+        if message_list[5] in delays:
+            endtime:int=starttime+delays[message_list[5]]
         else:
-            endtime:int=int(datetime.strptime(message_list[6],'%Y-%m-%d,%H:%M:%S').timestamp())
+            endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except Exception as err:
         raise AssertionError('预订失败:请按照规定格式进行预订！')
     user:User=User.find(qid)
@@ -376,10 +420,14 @@ def sell(message_list,qid):
     mineralNum=purchase.mineralNum
     price=purchase.price
     starttime=purchase.starttime
+    endtime=purchase.endtime
 
     nowtime=datetime.timestamp(datetime.now())  #现在的时间
+    if nowtime>endtime:update()
     assert qid!=tqid,'售卖失败:您不能向自己售卖商品！'
     assert nowtime>=starttime,'售卖失败:尚未到开始售卖时间！'
+    assert nowtime<=endtime,'售卖失败:此商品预订已结束！'
+
     mineralDict:dict=dict(eval(user.mineral))
     assert mineralID in mineralDict,'售卖失败:您不具备此矿石！'
     assert mineralDict[mineralID]>=mineralNum,'售卖失败:您的矿石数量不足！'
