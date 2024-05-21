@@ -388,8 +388,8 @@ def market(message_list,qid):
             auction='是' if sale.auction else '否'
             starttime=datetime.fromtimestamp(float(sale.starttime)).strftime('%Y-%m-%d %H:%M:%S')
             endtime=datetime.fromtimestamp(float(sale.endtime)).strftime('%Y-%m-%d %H:%M:%S')
-            ans+='交易编号:%s,矿石编号:%s,矿石数目:%s,拍卖:%s,起始时间:%s,结束时间:%s\n'\
-                 %(sale.saleID,sale.mineralID,sale.mineralNum,auction,starttime,endtime)
+            ans+='交易编号:%s,矿石编号:%s,矿石数目:%s,拍卖:%s,价格:%s,起始时间:%s,结束时间:%s\n'\
+                 %(sale.saleID,sale.mineralID,sale.mineralNum,auction,sale.price,starttime,endtime)
     else:
         ans+='目前没有处于摆卖中的商品！\n'
     if purchases:
@@ -397,8 +397,8 @@ def market(message_list,qid):
         for purchase in purchases:
             starttime=datetime.fromtimestamp(float(purchase.starttime)).strftime('%Y-%m-%d %H:%M:%S')
             endtime=datetime.fromtimestamp(float(purchase.endtime)).strftime('%Y-%m-%d %H:%M:%S')
-            ans+='交易编号:%s,矿石编号:%s,矿石数目:%s,起始时间:%s,结束时间:%s\n'\
-                 %(purchase.purchaseID,purchase.mineralID,purchase.mineralNum,starttime,endtime)
+            ans+='交易编号:%s,矿石编号:%s,矿石数目:%s,价格:%s,起始时间:%s,结束时间:%s\n'\
+                 %(purchase.purchaseID,purchase.mineralID,purchase.mineralNum,purchase.price,starttime,endtime)
     else:
         ans+='目前没有处于预订中的商品！\n'
     return ans

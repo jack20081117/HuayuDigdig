@@ -1,7 +1,6 @@
-from flask import Flask,request,redirect
+from flask import Flask,request
 from datetime import datetime
 import bot_script
-from bot_sql import *
 
 app=Flask(__name__)
 
