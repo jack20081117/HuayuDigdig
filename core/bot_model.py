@@ -264,6 +264,6 @@ if __name__ == '__main__':
     Sale.create(False)
     Purchase.create(False)
     Auction.create(False)
-    # for i in range(1,5):
-    #     _mine=Mine(mineID=i,abundance=0.0)
-    #     _mine.save(False)
+    for i in range(1,5):
+        _mine=Mine(mineID=i,abundance=0.0)
+        _mine.save(False)
