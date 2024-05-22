@@ -205,9 +205,17 @@ class User(Model):
     refine_tech=FloatField()
     digable=BooleanField()
     factory_num=IntegerField()
-    productivity=FloatField()
     efficiency=StringField(columnType='varchar(50)')
     mines=StringField(columnType='varchar(200)')
+    stocks = StringField(columnType='varchar(1000)')
+
+    jobtype = IntegerField()
+    ingredients = StringField(columnType='varchar(50)')
+    product = StringField(columnType='varchar(50)')
+    accumulated = FloatField()
+    requirement = FloatField()
+
+
 
 class Mine(Model):
     __table__='mines'
@@ -250,6 +258,30 @@ class Auction(Model):
     secret=BooleanField()
     bestprice=IntegerField()
     offers=StringField(columnType='varchar(250)')
+
+class Stocks(Model):
+    __table__ = 'stocks'
+
+    stockID = StringField(columnType='varchar(6)',primaryKey=True)
+    stockName = StringField(columnType='varchar(8)')
+    issue_qid = StringField(columnType='varchar(20)')
+    buyprice = FloatField()
+    sellprice = FloatField()
+    histprice = StringField(columnType='varchar(2000)')
+    shareholders = StringField(columnType='varchar(2000)')
+    avg_dividend = FloatField()
+
+class Debts(Model):
+    __table__ = 'debts'
+
+    debtID = StringField(columnType='varchar(6)',primaryKey=True)
+    creditor_id = StringField(columnType='varchar(20)')
+    debitor_id = StringField(columnType='varchar(20)')
+    starttime = IntegerField()
+    endtime = IntegerField()
+    daily_interest = FloatField()
+
+
 
 if __name__ == '__main__':
     # user=User(qid='1329913830',schoolID='24885',money=0,mineral='{}',process_tech=0.0,extract_tech=0.0,digable=1)
