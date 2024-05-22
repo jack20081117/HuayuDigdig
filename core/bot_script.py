@@ -83,8 +83,8 @@ def update():
     for deadSale in deadSales:
         #将矿石返还给预售者
         qid=deadSale.qid
-        saleID=deadSale.saleID
-        user=User.find(qid)
+        tradeID=deadSale.tradeID
+        user=User.find(qid,mysql)
 
         mineralID=deadSale.mineralID
         mineralNum=deadSale.mineralNum
@@ -97,14 +97,14 @@ def update():
         user.update(mysql)
         deadSale.remove(mysql)
 
-        send(qid,'您的预售:%s未能进行,矿石已返还到您的账户'%saleID,False)
+        send(qid,'您的预售:%s未能进行,矿石已返还到您的账户'%tradeID,False)
 
     deadPurchases:list[Purchase]=Purchase.findAll(mysql,'endtime<?',(nowtime,))#已经结束的预订
     for deadPurchase in deadPurchases:
         #将钱返还给预订者
         qid=deadPurchase.qid
-        purchaseID=deadPurchase.purchaseID
-        user=User.find(qid)
+        tradeID=deadPurchase.tradeID
+        user=User.find(qid,mysql)
 
         price=deadPurchase.price
         user.money+=price
@@ -112,14 +112,14 @@ def update():
         user.update(mysql)
         deadPurchase.remove(mysql)
 
-        send(qid,'您的预订:%s未能进行,钱已返还到您的账户'%purchaseID,False)
+        send(qid,'您的预订:%s未能进行,钱已返还到您的账户'%tradeID,False)
 
     deadAuctions:list[Auction]=Auction.findAll(mysql,'endtime<?',(nowtime,))#已经结束的预售
     for deadAuction in deadAuctions:
         #将矿石返还给预售者
         qid=deadAuction.qid
-        auctionID=deadAuction.auctionID
-        user=User.find(qid)
+        tradeID=deadAuction.tradeID
+        user=User.find(qid,mysql)
 
         mineralID=deadAuction.mineralID
         mineralNum=deadAuction.mineralNum
@@ -132,7 +132,7 @@ def update():
         user.update(mysql)
         deadAuction.remove(mysql)
 
-        send(qid,'您的预售:%s未能进行,矿石已返还到您的账户'%auctionID,False)
+        send(qid,'您的预售:%s未能进行,矿石已返还到您的账户'%tradeID,False)
 
 def extract(qid,mineralID,mineID):
     """获取矿石
@@ -329,11 +329,11 @@ def presell(message_list,qid):
 
     md5=hashlib.md5()
     md5.update(('%.2f'%nowtime).encode('utf-8'))
-    saleID=md5.hexdigest()[:6]
+    tradeID=md5.hexdigest()[:6]
 
-    sale:Sale=Sale(saleID=saleID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,starttime=starttime,endtime=endtime)
+    sale:Sale=Sale(tradeID=tradeID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,starttime=starttime,endtime=endtime)
     sale.save(mysql)
-    ans='预售成功！编号:%s'%saleID
+    ans='预售成功！编号:%s'%tradeID
     return ans
 
 @handler("购买")
@@ -344,10 +344,10 @@ def buy(message_list,qid):
     :return: 购买提示信息
     """
     assert len(message_list)==2,'购买失败:请按照规定格式进行购买！'
-    saleID:str=message_list[1]
-    sale:Sale=Sale.find(saleID,mysql)
+    tradeID:str=message_list[1]
+    sale:Sale=Sale.find(tradeID,mysql)
     assert sale,'购买失败:不存在此卖品！'
-    user:User=User.find(qid)
+    user:User=User.find(qid,mysql)
 
     tqid=sale.qid
     mineralID=sale.mineralID
@@ -364,7 +364,7 @@ def buy(message_list,qid):
     assert user.money>=price,'购买失败:您的余额不足！'
 
     user.money-=price#付钱
-    tuser:User=User.find(tqid)
+    tuser:User=User.find(tqid,mysql)
     tuser.money+=price#得钱
 
     mineralDict:dict=dict(eval(user.mineral))
@@ -378,7 +378,7 @@ def buy(message_list,qid):
     tuser.update(mysql)
 
     ans='购买成功！'
-    send(tqid,'您预售的商品(编号:%s)已被卖出！'%saleID,False)
+    send(tqid,'您预售的商品(编号:%s)已被卖出！'%tradeID,False)
     return ans
 
 @handler('预订')
@@ -404,7 +404,7 @@ def prebuy(message_list,qid):
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except Exception as err:
         raise AssertionError('预订失败:请按照规定格式进行预订！')
-    user:User=User.find(qid)
+    user:User=User.find(qid,mysql)
 
     assert user.money>=price,'预订失败:您的余额不足！'
     assert price>0,'预订失败:预订价格必须为正数！'
@@ -414,12 +414,12 @@ def prebuy(message_list,qid):
 
     md5=hashlib.md5()
     md5.update(('%.2f'%nowtime).encode('utf-8'))
-    purchaseID=md5.hexdigest()[:6]
-    purchase:Purchase=Purchase(purchaseID=purchaseID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,starttime=starttime,endtime=endtime)
+    tradeID=md5.hexdigest()[:6]
+    purchase:Purchase=Purchase(tradeID=tradeID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,starttime=starttime,endtime=endtime)
     purchase.save(mysql)
     user.update(mysql)
 
-    ans='预订成功！编号:%s'%purchaseID
+    ans='预订成功！编号:%s'%tradeID
     return ans
 
 @handler('售卖')
@@ -430,10 +430,10 @@ def sell(message_list,qid):
     :return: 售卖提示信息
     """
     assert len(message_list)==2,'售卖失败:请按照规定进行售卖！'
-    purchaseID:str=message_list[1]
-    purchase:Purchase=Purchase.find(purchaseID)
+    tradeID:str=message_list[1]
+    purchase:Purchase=Purchase.find(tradeID,mysql)
     assert purchase,'购买失败:不存在此卖品！'
-    user:User=User.find(qid)
+    user:User=User.find(qid,mysql)
 
     tqid=purchase.qid
     mineralID=purchase.mineralID
@@ -458,7 +458,7 @@ def sell(message_list,qid):
     user.mineral=str(mineralDict)
     user.update(mysql)
 
-    tuser:User=User.find(tqid)
+    tuser:User=User.find(tqid,mysql)
 
     tmineralDict:dict=dict(eval(tuser.mineral))
     if mineralID not in tmineralDict:
@@ -471,15 +471,15 @@ def sell(message_list,qid):
     tuser.update(mysql)
 
     ans='售卖成功！'
-    send(tqid,'您预订的商品(编号:%s)已被买入！'%purchaseID,False)
+    send(tqid,'您预订的商品(编号:%s)已被买入！'%tradeID,False)
     return ans
 
 @handler("拍卖")
 def preauction(message_list,qid):
     """
     :param message_list: 拍卖 矿石编号 矿石数量 底价 起始时间 终止时间 是否保密
-    :param qid: 
-    :return: 
+    :param qid: 拍卖者的qq号
+    :return: 拍卖提示信息
     """
     assert len(message_list)==7,'拍卖失败:请按照规定格式进行拍卖！'
     nowtime=datetime.timestamp(datetime.now())
@@ -516,13 +516,39 @@ def preauction(message_list,qid):
 
     md5=hashlib.md5()
     md5.update(('%.2f'%nowtime).encode('utf-8'))
-    auctionID=md5.hexdigest()[:6]
+    tradeID=md5.hexdigest()[:6]
 
-    auction:Auction=Auction(auctionID=auctionID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,
+    auction:Auction=Auction(tradeID=tradeID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,
                             starttime=starttime,endtime=endtime,secret=secret,bestprice=0,offers='{}')
     auction.save(mysql)
-    ans='拍卖成功！编号:%s'%auctionID
+    ans='拍卖成功！编号:%s'%tradeID
     return ans
+
+@handler("投标")
+def bid(message_list,qid):
+    """
+    :param message_list: 投标 拍卖编号 价格
+    :param qid: 投标者的qq号
+    :return: 投标提示信息
+    """
+    assert len(message_list)==3,'投标失败:请按照规定格式进行投标！'
+    nowtime=datetime.timestamp(datetime.now())
+    try:
+        tradeID:str=message_list[1]
+        price:int=int(message_list[2])
+    except Exception as err:
+        raise AssertionError('投标失败:请按照规定格式进行投标！')
+    auction:Auction=Auction.find(tradeID,mysql)
+    assert auction,'投标失败:不存在此卖品！'
+    user:User=User.find(qid,mysql)
+
+    tqid=auction.qid
+    mineralID=auction.mineralID
+    mineralNum=auction.mineralNum
+    price=auction.price
+    starttime=auction.starttime
+    endtime=auction.endtime
+
 
 @handler("市场")
 def market(message_list,qid):
@@ -541,7 +567,7 @@ def market(message_list,qid):
         for sale in sales:
             starttime=datetime.fromtimestamp(float(sale.starttime)).strftime('%Y-%m-%d %H:%M:%S')
             endtime=datetime.fromtimestamp(float(sale.endtime)).strftime('%Y-%m-%d %H:%M:%S')
-            saleData.append([sale.saleID,sale.mineralID,sale.mineralNum,sale.price,starttime,endtime])
+            saleData.append([sale.tradeID,sale.mineralID,sale.mineralNum,sale.price,starttime,endtime])
             drawtable(saleData,'sale.png')
         ans+='[CQ:image,file=sale.png]'
     else:
@@ -552,7 +578,7 @@ def market(message_list,qid):
         for purchase in purchases:
             starttime=datetime.fromtimestamp(float(purchase.starttime)).strftime('%Y-%m-%d %H:%M:%S')
             endtime=datetime.fromtimestamp(float(purchase.endtime)).strftime('%Y-%m-%d %H:%M:%S')
-            purchaseData.append([purchase.purchaseID,purchase.mineralID,purchase.mineralNum,purchase.price,starttime,endtime])
+            purchaseData.append([purchase.tradeID,purchase.mineralID,purchase.mineralNum,purchase.price,starttime,endtime])
             drawtable(purchaseData,'purchase.png')
         ans+='[CQ:image,file=purchase.png]'
     else:
@@ -563,7 +589,7 @@ def market(message_list,qid):
         for auction in auctions:
             starttime=datetime.fromtimestamp(float(auction.starttime)).strftime('%Y-%m-%d %H:%M:%S')
             endtime=datetime.fromtimestamp(float(auction.endtime)).strftime('%Y-%m-%d %H:%M:%S')
-            auctionDatum=[auction.auctionID,auction.mineralID,auction.mineralNum,auction.price,starttime,endtime]
+            auctionDatum=[auction.tradeID,auction.mineralID,auction.mineralNum,auction.price,starttime,endtime]
             if auction.secret:
                 auctionDatum.append('-')
             else:
