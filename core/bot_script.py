@@ -5,15 +5,17 @@ import json,requests,re,hashlib
 from matplotlib import pyplot as plt
 plt.rcParams['font.family']=['Microsoft YaHei']
 
-group_ids:list=[788951477]
 headers={
-    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'}
+    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'
+}
 
-with open("./config.json","r") as config:
+with open("./config.json","r",encoding='utf-8') as config:
     config=json.load(config)
 env:str=config["env"]
-player_tax=config["player_tax"]
-
+player_tax:float=config["tax"]["player"]
+deposit:float=config["deposit"]
+delay:dict=config['delay']
+group_ids:list=config['group_ids']
 mysql:bool=(env=='prod')
 
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
@@ -36,10 +38,13 @@ help_msg='您好！欢迎使用森bot！\n'\
          '    6.3 购买矿石 输入 购买 `交易编号`\n'\
          '    6.4 预订矿石 输入 预订 `矿石编号` `矿石数目` `价格` `起始时间` `终止时间` 即可在市场上预订矿石\n'\
          '    6.5 售卖矿石 输入 售卖 `交易编号`\n' \
-         '快捷键:现在/now:当前时间 十分钟后/10min:十分钟后 半小时后/30min:半小时后 一小时后/1h:一小时后 三小时后/3h:三小时后\n' \
+         '    6.6 拍卖矿石 输入 拍卖 `矿石编号` `矿石数目` `底价` `起始时间` `终止时间` `是否对出价保密` 即可在市场上拍卖矿石\n' \
+         '    6.7 投标矿石 输入 投标 `交易编号` `出价` 要求支付数额为出价%d%%的押金，在拍卖终止时结算，最终出价为出价第二高者的出价\n'\
+         '快捷键:now:当前时间 10min:十分钟后 30min:半小时后 1h:一小时后 3h:三小时后\n' \
          '7:支付金钱:输入 支付 `编号` $`金额` (金额前应带有美元符号$)即可向对方支付指定金额\n'\
          '    7.1 向QQ用户支付，编号以q开头，后加QQ号\n'\
-         '    7.2 向指定学号用户支付，直接输入学号即可\n'\
+         '    7.2 向指定学号用户支付，直接输入学号即可\n' \
+         ''%(round(deposit*100))
 
 info_msg="查询到QQ号为:%s的用户信息\n"\
          "学号:%s\n"\
@@ -49,8 +54,6 @@ info_msg="查询到QQ号为:%s的用户信息\n"\
          "当前是否可开采:%s\n"\
          "以下为该用户拥有的矿石:\n"\
          "%s"
-
-delays:dict={'十分钟后':600,'10min':600,'半小时后':1800,'30min':1800,'一小时后':3600,'1h':3600,'三小时后':10800,'3h':10800}
 
 commands:dict={}
 
@@ -77,7 +80,7 @@ def update():
     """
     对数据进行更新
     """
-    nowtime:int=round(datetime.timestamp(datetime.now()))
+    nowtime:int=round(datetime.timestamp(datetime.now()))#现在的时间
 
     deadSales:list[Sale]=Sale.findAll(mysql,'endtime<?',(nowtime,))#已经结束的预售
     for deadSale in deadSales:
@@ -114,25 +117,26 @@ def update():
 
         send(qid,'您的预订:%s未能进行,钱已返还到您的账户'%tradeID,False)
 
-    deadAuctions:list[Auction]=Auction.findAll(mysql,'endtime<?',(nowtime,))#已经结束的预售
-    for deadAuction in deadAuctions:
-        #将矿石返还给预售者
-        qid=deadAuction.qid
-        tradeID=deadAuction.tradeID
-        user=User.find(qid,mysql)
-
-        mineralID=deadAuction.mineralID
-        mineralNum=deadAuction.mineralNum
-        mineralDict=dict(eval(user.mineral))
-        if mineralID not in mineralDict:
-            mineralDict[mineralID]=0
-        mineralDict[mineralID]+=mineralNum
-        user.mineral=str(mineralDict)
-
-        user.update(mysql)
-        deadAuction.remove(mysql)
-
-        send(qid,'您的预售:%s未能进行,矿石已返还到您的账户'%tradeID,False)
+    # deadAuctions:list[Auction]=Auction.findAll(mysql,'endtime<?',(nowtime,))#已经结束的拍卖
+    # for deadAuction in deadAuctions:
+    #     #将矿石返还给预售者
+    #     qid=deadAuction.qid
+    #     tradeID=deadAuction.tradeID
+    #     user=User.find(qid,mysql)
+    #
+    #     mineralID=deadAuction.mineralID
+    #     mineralNum=deadAuction.mineralNum
+    #     mineralDict=dict(eval(user.mineral))
+    #     if mineralID not in mineralDict:
+    #         mineralDict[mineralID]=0
+    #     mineralDict[mineralID]+=mineralNum
+    #     user.mineral=str(mineralDict)
+    #
+    #     user.update(mysql)
+    #     deadAuction.remove(mysql)
+    #
+    #     send(qid,'您的拍卖:%s未能进行,矿石已返还到您的账户'%tradeID,False)
+    #TODO:拍卖结束时的结算
 
 def extract(qid,mineralID,mineID):
     """获取矿石
@@ -151,30 +155,30 @@ def extract(qid,mineralID,mineID):
     assert user.digable,'开采失败:您必须等到下一个整点才能再次开采矿井！'
 
     # 决定概率 
-    if abundance==0.0:
+    if abundance==0.0:#若矿井未被开采过，则首次成功率为100%
         prob=1.0
     else:
         prob=round(abundance*sigmoid(extractTech),2)
 
-    if np.random.random()>prob:
-        user.digable=0
+    if np.random.random()>prob:#开采失败
+        user.digable=0#在下一次刷新前不可开采
         user.update(mysql)
         ans='开采失败:您的运气不佳，未能开采成功！'
     else:
         mineralDict:dict=dict(eval(mineral))
-        # 加一个矿石
-        if mineralID not in mineralDict:
+        if mineralID not in mineralDict:#用户不具备此矿石
             mineralDict[mineralID]=0
-        mineralDict[mineralID]+=1
+        mineralDict[mineralID]+=1 #加一个矿石
         user.mineral=str(mineralDict)
         user.update(mysql)
-        mine.abundance=prob
+        mine.abundance=prob#若开采成功，则后一次的丰度是前一次的成功概率
         mine.update(mysql)
         ans='开采成功！您获得了编号为%d的矿石！'%mineralID
     return ans
 
 def drawtable(data:list[list],filename:str):
     """
+    将市场信息绘制成表格
     :param data: 要绘制的表格数据
     :param filename: 存储图片地址
     :return:
@@ -194,16 +198,19 @@ def drawtable(data:list[list],filename:str):
 
 @handler("time")
 def returnTime(m,q):
+    """
+    返回当前时间
+    """
     return '当前时间为:%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 @handler("注册")
 def signup(message_list,qid):
     """
+    用户注册
     :param message_list: 注册 学号
     :param qid: 注册者的qq号
     :return: 注册提示信息
     """
-    ans=''
     assert len(message_list)==2 and re.match(r'\d{5}',message_list[1]) and len(message_list[1])==5,'注册失败:请注意您的输入格式！'
     schoolID:str=message_list[1]
     assert not User.find(qid,mysql) and not User.findAll(mysql,'schoolID=?',(schoolID,)),'注册失败:您已经注册过，无法重复注册！'
@@ -211,7 +218,7 @@ def signup(message_list,qid):
         qid=qid,schoolID=schoolID,money=0,mineral='{}',
         process_tech=0.0,extract_tech=0.0,refine_tech=0.0,digable=1,
         factory_num=0,productivity=0.0,efficiency='[]',mines='[]'
-    )
+    )#注册新用户
     user.save(mysql)
     ans="注册成功！"
     return ans
@@ -219,6 +226,7 @@ def signup(message_list,qid):
 @handler("开采")
 def getMineral(message_list,qid):
     """
+    根据传入的信息开采矿井
     :param message_list: 开采 矿井编号
     :param qid: 开采者的qq号
     :return: 开采提示信息
@@ -244,6 +252,7 @@ def getMineral(message_list,qid):
 @handler("兑换")
 def exchange(message_list,qid):
     """
+    兑换矿石
     :param message_list: 兑换 矿石编号
     :param qid: 兑换者的qq号
     :return: 兑换提示信息
@@ -273,6 +282,12 @@ def exchange(message_list,qid):
 
 @handler("查询")
 def getUserInfo(message_list,qid):
+    """
+    查询用户个人信息
+    :param message_list: 查询
+    :param qid: 查询者的qq号
+    :return: 查询提示信息
+    """
     user:User=User.find(qid,mysql)
     schoolID=user.schoolID
     money=user.money
@@ -291,6 +306,7 @@ def getUserInfo(message_list,qid):
 @handler("预售")
 def presell(message_list,qid):
     """
+    在市场上预售矿石
     :param message_list: 预售 矿石编号 矿石数量 价格 起始时间 终止时间
     :param qid: 预售者的qq号
     :return: 预售提示信息
@@ -305,8 +321,8 @@ def presell(message_list,qid):
             starttime:int=round(nowtime)
         else:
             starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
-        if message_list[5] in delays:
-            endtime:int=starttime+delays[message_list[5]]
+        if message_list[5] in delay:
+            endtime:int=starttime+delay[message_list[5]]
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except Exception as err:
@@ -339,6 +355,7 @@ def presell(message_list,qid):
 @handler("购买")
 def buy(message_list,qid):
     """
+    在市场上购买矿石
     :param message_list: 购买 预售编号
     :param qid: 购买者的qq号
     :return: 购买提示信息
@@ -384,6 +401,7 @@ def buy(message_list,qid):
 @handler('预订')
 def prebuy(message_list,qid):
     """
+    在市场上预订矿石
     :param message_list: 预订 矿石编号 矿石数量 价格 起始时间 终止时间
     :param qid: 预订者的qq号
     :return: 预订提示信息
@@ -398,8 +416,8 @@ def prebuy(message_list,qid):
             starttime:int=round(nowtime)
         else:
             starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
-        if message_list[5] in delays:
-            endtime:int=starttime+delays[message_list[5]]
+        if message_list[5] in delay:
+            endtime:int=starttime+delay[message_list[5]]
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except Exception as err:
@@ -425,6 +443,7 @@ def prebuy(message_list,qid):
 @handler('售卖')
 def sell(message_list,qid):
     """
+    在市场上售卖矿石
     :param message_list: 售卖 预订编号
     :param qid: 售卖者的qq号
     :return: 售卖提示信息
@@ -477,6 +496,7 @@ def sell(message_list,qid):
 @handler("拍卖")
 def preauction(message_list,qid):
     """
+    在市场上拍卖矿石
     :param message_list: 拍卖 矿石编号 矿石数量 底价 起始时间 终止时间 是否保密
     :param qid: 拍卖者的qq号
     :return: 拍卖提示信息
@@ -492,8 +512,8 @@ def preauction(message_list,qid):
             starttime:int=round(nowtime)
         else:
             starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
-        if message_list[5] in delays:
-            endtime:int=starttime+delays[message_list[5]]
+        if message_list[5] in delay:
+            endtime:int=starttime+delay[message_list[5]]
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except Exception as err:
@@ -527,6 +547,7 @@ def preauction(message_list,qid):
 @handler("投标")
 def bid(message_list,qid):
     """
+    在市场上对矿石进行投标
     :param message_list: 投标 拍卖编号 价格
     :param qid: 投标者的qq号
     :return: 投标提示信息
@@ -535,24 +556,51 @@ def bid(message_list,qid):
     nowtime=datetime.timestamp(datetime.now())
     try:
         tradeID:str=message_list[1]
-        price:int=int(message_list[2])
+        userprice:int=int(message_list[2])
     except Exception as err:
         raise AssertionError('投标失败:请按照规定格式进行投标！')
     auction:Auction=Auction.find(tradeID,mysql)
     assert auction,'投标失败:不存在此卖品！'
     user:User=User.find(qid,mysql)
 
-    tqid=auction.qid
-    mineralID=auction.mineralID
-    mineralNum=auction.mineralNum
-    price=auction.price
-    starttime=auction.starttime
-    endtime=auction.endtime
+    tqid:str=auction.qid
+    mineralID:int=auction.mineralID
+    mineralNum:int=auction.mineralNum
+    price:int=auction.price
+    starttime:int=auction.starttime
+    endtime:int=auction.endtime
+    secret:bool=auction.secret#是否对出价保密
 
+    nowtime=datetime.timestamp(datetime.now())#现在的时间
+    if nowtime>endtime:update()
+    assert qid!=tqid,'投标失败:您不能购买自己的商品！'
+    assert nowtime>=starttime,'投标失败:尚未到开始拍卖时间！'
+    assert nowtime<=endtime,'投标失败:此商品拍卖已结束！'
+    assert userprice>0,'投标失败:您的出价必须为正数！'
+    assert user.money>=price,'投标失败:您的余额不足以支付底价！'
+    assert user.money>=round(userprice*deposit),'投标失败:您的余额不足以支付押金！'
+
+    if secret:#对出价保密
+        user.money-=round(userprice*deposit)#支付押金
+    else:#不对出价保密
+        bestprice=auction.bestprice#当前最高价
+        assert userprice>bestprice,'投标失败:您的出价低于当前最高价！'
+        user.money-=round(userprice*deposit)#支付押金
+
+    offersDict:dict=dict(eval(auction.offers))
+    if qid not in offersDict:
+        offersDict[qid]=0
+    offersDict[qid]=max(userprice,offersDict[qid])
+    auction.bestprice=userprice#更新最高价
+    auction.offers=str(offersDict)
+
+    auction.update(mysql)
+    user.update(mysql)
 
 @handler("市场")
 def market(message_list,qid):
     """
+    查看市场
     :param message_list: 市场
     :param qid:
     :return: 提示信息
@@ -603,17 +651,18 @@ def market(message_list,qid):
 
 @handler("支付")
 def pay(message_list,qid):
-    # 格式1
-    # 支付 q4867850 $20
-    # 格式2
-    # 支付 25778 $20
+    """
+    :param message_list: 支付 q`QQ号`/`学号` $`金额`
+    :param qid: 支付者的qq号
+    :return: 支付提示信息
+    """
     assert len(message_list)==3,'支付失败:您的支付格式不正确！'
     target=str(message_list[1])
     assert message_list[2].startswith("$"),'支付失败:您的金额格式不正确！'
     try:
         money=int(str(message_list[2])[1:])
     except Exception:
-        raise AssertionError("支付失败:金额格式不正确！应当为:$20")
+        raise AssertionError("支付失败:您的金额格式不正确！应当为:$`金额`")
 
     user:User=User.find(qid)
 
