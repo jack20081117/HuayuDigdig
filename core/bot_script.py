@@ -3,6 +3,8 @@ from bot_model import *
 import numpy as np
 import json,requests,re,hashlib
 from matplotlib import pyplot as plt
+from datetime import datetime
+from apscheduler.schedulers.background import BackgroundScheduler as bgsc
 plt.rcParams['font.family']=['Microsoft YaHei']
 
 headers={
@@ -167,7 +169,7 @@ def extract(qid,mineralID,mineID):
         ans='开采成功！您获得了编号为%d的矿石！'%mineralID
     return ans
 
-def drawtable(data:list[list],filename:str):
+def drawtable(data:list,filename:str):
     """
     将市场信息绘制成表格
     :param data: 要绘制的表格数据
@@ -187,6 +189,29 @@ def drawtable(data:list[list],filename:str):
     ax.axis('off')
     plt.savefig('../go-cqhttp/data/images/%s'%filename)
 
+def setInterval(func:function, interval:int, *args, **kwargs):
+    """
+    定时触发任务
+    :param func: 要触发的任务（函数）
+    :param interval: 触发间隔（s）
+    :param *args: 任务参数
+    """
+    scheduler = bgsc()
+    scheduler.add_job(func, "interval", args=args, kwargs=kwargs, seconds=interval)
+    scheduler.start()
+    
+def setTimeTask(func:function, runtime:tuple, *args, **kwargs):
+    """
+    定时触发任务
+    :param func: 要触发的任务（函数）
+    :param interval: 触发时间元组（年，月，日，小时，分钟，秒）
+    :param *args: 任务参数
+    """
+    scheduler = bgsc()
+    scheduler.add_job(func, "date", args=args, kwargs=kwargs, run_date=datetime(runtime(0), runtime(1), runtime(2), runtime(3), runtime(4), runtime(5)))
+    scheduler.start()
+    
+    
 @handler("time")
 def returnTime(m,q):
     """
