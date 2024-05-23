@@ -8,7 +8,7 @@ from apscheduler.schedulers.background import BackgroundScheduler as bgsc
 plt.rcParams['font.family']=['Microsoft YaHei']
 
 headers={
-    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'
+    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'
 }
 
 with open("./config.json","r",encoding='utf-8') as config:
@@ -89,15 +89,15 @@ def updateSale(sale:Sale):
     """
     :param sale: 到达截止时间的预售
     """
-    qid=sale.qid
-    tradeID=sale.tradeID
-    user=User.find(qid,mysql)
+    qid:str=sale.qid
+    tradeID:str=sale.tradeID
+    user:User=User.find(qid,mysql)
     if Sale.find(tradeID) is None:#预售已成功进行
         return None
 
-    mineralID=sale.mineralID
-    mineralNum=sale.mineralNum
-    mineralDict=dict(eval(user.mineral))
+    mineralID:int=sale.mineralID
+    mineralNum:int=sale.mineralNum
+    mineralDict:dict=dict(eval(user.mineral))
     if mineralID not in mineralDict:
         mineralDict[mineralID]=0
     mineralDict[mineralID]+=mineralNum#将矿石返还给预售者
@@ -112,13 +112,13 @@ def updatePurchase(purchase:Purchase):
     """
     :param purchase: 到达截止时间的预订
     """
-    qid=purchase.qid
-    tradeID=purchase.tradeID
-    user=User.find(qid,mysql)
+    qid:str=purchase.qid
+    tradeID:str=purchase.tradeID
+    user:User=User.find(qid,mysql)
     if Purchase.find(tradeID) is None:#预订已成功进行
         return None
 
-    price=purchase.price
+    price:int=purchase.price
     user.money+=price#将钱返还给预订者
 
     user.update(mysql)
@@ -130,7 +130,55 @@ def updateAuction(auction:Auction):
     """
     :param auction: 到达截止时间的拍卖
     """
-    pass#TODO:增加拍卖结算功能
+    qid:str=auction.qid
+    tradeID:str=auction.tradeID
+    user:User=User.find(qid,mysql)
+    offersList:list=list(eval(auction.offers))
+
+    bids:list[tuple[str,int,int]]=sorted(offersList,key=lambda t:(t[1],-t[2]),reverse=True)#先按出价从大到小排序再按时间从小到大排序
+    mineralID:int=auction.mineralID
+    mineralNum:int=auction.mineralNum
+    while bids:
+        success=False#投标是否成功
+        tqid:str=bids[0][0]
+        if len(bids)==1:
+            bids.append(('nobody',auction.price,0))#默认最后一人
+        if tqid=='nobody':#无人生还
+            bids.pop()
+            break
+        tuser:User=User.find(tqid)
+        if tuser.money+round(bids[0][1]*deposit)>=bids[1][1]:#第一人现金+第一人押金>=第二人出价
+            success=True#投标成功
+            tuser.money-=bids[0][1]-round(bids[0][1]*deposit)#扣除剩余金额
+            tmineralDict:dict=dict(eval(tuser.mineral))
+            if mineralID not in tmineralDict:
+                tmineralDict[mineralID]=0
+            tmineralDict[mineralID]+=mineralNum#给予矿石
+            tuser.mineral=str(tmineralDict)
+            tuser.update(mysql)
+            send(tqid,'您在拍卖:%s中竞拍成功，矿石已发送到您的账户'%tradeID,False)
+
+            for otherbid in bids[1:]:#返还剩余玩家押金
+                otheruser=User.find(otherbid[0])
+                otheruser.money+=round(otherbid[1]*deposit)
+                otheruser.update(mysql)
+                send(otheruser.qid,'您在拍卖:%s中竞拍失败，押金已返还到您的账户'%tradeID,False)
+        else:#投标失败
+            bids.pop(0)#去除第一人
+            send(tqid,'您在拍卖:%S中竞拍失败，押金已扣除'%tradeID,False)
+        if success:#结束投标
+            break
+    if not bids:
+        mineralDict:dict=dict(eval(user.mineral))
+        if mineralID not in mineralDict:
+            mineralDict[mineralID]=0
+        mineralDict[mineralID]+=mineralNum  #将矿石返还给拍卖者
+        user.mineral=str(mineralDict)
+
+        user.update(mysql)
+        auction.remove(mysql)
+
+        send(qid,'您的拍卖:%s未能进行,矿石已返还到您的账户'%tradeID,False)
 
 def extract(qid,mineralID,mineID):
     """获取矿石
@@ -233,7 +281,7 @@ def signup(message_list,qid):
     user=User(
         qid=qid,schoolID=schoolID,money=0,mineral='{}',
         process_tech=0.0,extract_tech=0.0,refine_tech=0.0,digable=1,
-        factory_num=0,productivity=0.0,efficiency='[]',mines='[]'
+        factory_num=0,effis='[]',mines='[]'
     )#注册新用户
     user.save(mysql)
     ans="注册成功！"
@@ -296,7 +344,7 @@ def exchange(message_list,qid):
     ans='兑换成功！'
     return ans
 
-effisStr = ['分解效率','合成效率','复制效率','修饰效率','炼油效率','建工效率']
+effisStr=['分解效率','合成效率','复制效率','修饰效率','炼油效率','建工效率']
 
 info_msg="查询到QQ号为：%s的用户信息\n"\
          "学号：%s\n"\
@@ -328,26 +376,27 @@ def getUserInfo(message_list,qid):
     digable=user.digable
     mres=""
     mineralDict:dict=dict(eval(mineral))
-    effisList:list=list(eval(effis))
-    mineList:list=list(eval(mines))
+    factory_num=user.factory_num
+    effisList:list=list(eval(user.effis))
+    mineList:list=list(eval(user.mines))
     sortedMineralDict={key:mineralDict[key] for key in sorted(mineralDict.keys())}
 
     for mid,mnum in sortedMineralDict.items():
-        if mid == '0':
+        if mid=='0':
             mres+="燃油%s个单位；\n" % mnum
         else:
             mres+="编号%s的矿石%s个；\n"%(mid,mnum)
 
-    eres = ''    #生产效率信息
+    eres=''    #生产效率信息
     for index in range(6):
         eres+=effisStr[index]+":%s\n" % effisList[index]
 
-    mineres = '' #私有矿井信息
+    mineres='' #私有矿井信息
     for mine in mineList:
         mineres+='%s,' % mine
 
     ans=info_msg%(qid,schoolID,money,processTech,extractTech,refineTech,digable,
-                  mres,fact_num, eres, mineres)
+                  mres,factory_num,eres,mineres)
     return ans
 
 @handler("预售")
@@ -586,7 +635,7 @@ def preauction(message_list,qid):
     tradeID=md5.hexdigest()[:6]
 
     auction:Auction=Auction(tradeID=tradeID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,
-                            starttime=starttime,endtime=endtime,secret=secret,bestprice=0,offers='{}')
+                            starttime=starttime,endtime=endtime,secret=secret,bestprice=0,offers='[]')
     auction.save(mysql)
     ans='拍卖成功！编号:%s'%tradeID
     return ans
@@ -618,7 +667,7 @@ def bid(message_list,qid):
     endtime:int=auction.endtime
     secret:bool=auction.secret#是否对出价保密
 
-    nowtime=datetime.timestamp(datetime.now())#现在的时间
+    nowtime=round(datetime.timestamp(datetime.now()))#现在的时间
     assert qid!=tqid,'投标失败:您不能购买自己的商品！'
     assert nowtime>=starttime,'投标失败:尚未到开始拍卖时间！'
     assert nowtime<=endtime,'投标失败:此商品拍卖已结束！'
@@ -633,12 +682,10 @@ def bid(message_list,qid):
         assert userprice>bestprice,'投标失败:您的出价低于当前最高价！'
         user.money-=round(userprice*deposit)#支付押金
 
-    offersDict:dict=dict(eval(auction.offers))
-    if qid not in offersDict:
-        offersDict[qid]=0
-    offersDict[qid]=max(userprice,offersDict[qid])
-    auction.bestprice=userprice#更新最高价
-    auction.offers=str(offersDict)
+    offersList:list[tuple[str,str,int]]=list(eval(auction.offers))
+    offersList.append((qid,userprice,nowtime))
+    auction.bestprice=max(userprice,auction.bestprice)
+    auction.offers=str(offersList)
 
     auction.update(mysql)
     user.update(mysql)

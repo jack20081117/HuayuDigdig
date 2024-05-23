@@ -199,21 +199,21 @@ class User(Model):
     qid=StringField(columnType='varchar(20)',primaryKey=True)
     schoolID=StringField(columnType='varchar(5)')
     money=IntegerField()
-    mineral=StringField(columnType='varchar(1000)')
+    mineral=StringField(columnType='varchar(2000)')
     process_tech=FloatField()
     extract_tech=FloatField()
     refine_tech=FloatField()
     digable=BooleanField()
     factory_num=IntegerField()
-    efficiency=StringField(columnType='varchar(50)')
+    effis=StringField(columnType='varchar(200)')
     mines=StringField(columnType='varchar(200)')
-    stocks = StringField(columnType='varchar(1000)')
+    stocks=StringField(columnType='varchar(2000)')
 
-    jobtype = IntegerField()
-    ingredients = StringField(columnType='varchar(50)')
-    product = StringField(columnType='varchar(50)')
-    accumulated = FloatField()
-    requirement = FloatField()
+    jobtype=IntegerField()
+    ingredients=StringField(columnType='varchar(50)')
+    product=StringField(columnType='varchar(50)')
+    accumulated=FloatField()
+    requirement=FloatField()
 
 
 
@@ -257,29 +257,29 @@ class Auction(Model):
     endtime=IntegerField()
     secret=BooleanField()
     bestprice=IntegerField()
-    offers=StringField(columnType='varchar(250)')
+    offers=StringField(columnType='varchar(2000)')
 
 class Stocks(Model):
-    __table__ = 'stocks'
+    __table__='stocks'
 
-    stockID = StringField(columnType='varchar(6)',primaryKey=True)
-    stockName = StringField(columnType='varchar(8)')
-    issue_qid = StringField(columnType='varchar(20)')
-    buyprice = FloatField()
-    sellprice = FloatField()
-    histprice = StringField(columnType='varchar(2000)')
-    shareholders = StringField(columnType='varchar(2000)')
-    avg_dividend = FloatField()
+    stockID=StringField(columnType='varchar(6)',primaryKey=True)
+    stockName=StringField(columnType='varchar(8)')
+    issue_qid=StringField(columnType='varchar(20)')
+    buyprice=FloatField()
+    sellprice=FloatField()
+    histprice=StringField(columnType='varchar(2000)')
+    shareholders=StringField(columnType='varchar(2000)')
+    avg_dividend=FloatField()
 
 class Debts(Model):
-    __table__ = 'debts'
+    __table__='debts'
 
-    debtID = StringField(columnType='varchar(6)',primaryKey=True)
-    creditor_id = StringField(columnType='varchar(20)')
-    debitor_id = StringField(columnType='varchar(20)')
-    starttime = IntegerField()
-    endtime = IntegerField()
-    daily_interest = FloatField()
+    debtID=StringField(columnType='varchar(6)',primaryKey=True)
+    creditor_id=StringField(columnType='varchar(20)')
+    debitor_id=StringField(columnType='varchar(20)')
+    starttime=IntegerField()
+    endtime=IntegerField()
+    daily_interest=FloatField()
 
 
 
