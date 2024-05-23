@@ -165,7 +165,7 @@ def updateAuction(auction:Auction):
                 send(otheruser.qid,'您在拍卖:%s中竞拍失败，押金已返还到您的账户'%tradeID,False)
         else:#投标失败
             bids.pop(0)#去除第一人
-            send(tqid,'您在拍卖:%S中竞拍失败，押金已扣除'%tradeID,False)
+            send(tqid,'您在拍卖:%s中竞拍失败，押金已扣除'%tradeID,False)
         if success:#结束投标
             break
     if not bids:
