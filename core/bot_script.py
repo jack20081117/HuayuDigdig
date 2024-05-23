@@ -48,15 +48,6 @@ help_msg='您好！欢迎使用森bot！\n'\
          '    7.2 向指定学号用户支付，直接输入学号即可\n' \
          ''%(round(deposit*100))
 
-info_msg="查询到QQ号为:%s的用户信息\n"\
-         "学号:%s\n"\
-         "当前余额:%s\n"\
-         "加工科技点:%s\n"\
-         "开采科技点:%s\n"\
-         "当前是否可开采:%s\n"\
-         "以下为该用户拥有的矿石:\n"\
-         "%s"
-
 commands:dict={}
 
 def handler(funcStr):
@@ -305,6 +296,20 @@ def exchange(message_list,qid):
     ans='兑换成功！'
     return ans
 
+effisStr = ['分解效率','合成效率','复制效率','修饰效率','炼油效率','建工效率']
+
+info_msg="查询到QQ号为：%s的用户信息\n"\
+         "学号：%s\n"\
+         "当前余额：%s\n"\
+         "加工科技点：%s\n"\
+         "开采科技点：%s\n"\
+         "炼油科技点：%s\n"\
+         "当前是否可开采：%s\n"\
+         "以下为该用户拥有的矿石：\n %s"\
+         "工厂数: %s\n"\
+         "以下为该玩家各工种生产效率：\n %s"\
+         "以下为该玩家拥有的私人矿井编号：\n %s"\
+
 @handler("查询")
 def getUserInfo(message_list,qid):
     """
@@ -319,13 +324,30 @@ def getUserInfo(message_list,qid):
     mineral=user.mineral
     processTech=user.process_tech
     extractTech=user.extract_tech
+    refineTech=user.refine_tech
     digable=user.digable
     mres=""
     mineralDict:dict=dict(eval(mineral))
+    effisList:list=list(eval(effis))
+    mineList:list=list(eval(mines))
     sortedMineralDict={key:mineralDict[key] for key in sorted(mineralDict.keys())}
+
     for mid,mnum in sortedMineralDict.items():
-        mres+="编号%s的矿石%s个；\n"%(mid,mnum)
-    ans=info_msg%(qid,schoolID,money,processTech,extractTech,digable,mres)
+        if mid == '0':
+            mres+="燃油%s个单位；\n" % mnum
+        else:
+            mres+="编号%s的矿石%s个；\n"%(mid,mnum)
+
+    eres = ''    #生产效率信息
+    for index in range(6):
+        eres+=effisStr[index]+":%s\n" % effisList[index]
+
+    mineres = '' #私有矿井信息
+    for mine in mineList:
+        mineres+='%s,' % mine
+
+    ans=info_msg%(qid,schoolID,money,processTech,extractTech,refineTech,digable,
+                  mres,fact_num, eres, mineres)
     return ans
 
 @handler("预售")
