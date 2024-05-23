@@ -76,7 +76,7 @@ def update():
     nowtime=round(datetime.timestamp(datetime.now()))
     endedSales:list[Sale]=Sale.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预售
     endedPurchases:list[Purchase]=Purchase.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预订
-    endedAuctions:list[Auction]=Purchase.findAll(mysql,'endtime<?',(nowtime,))
+    endedAuctions:list[Auction]=Auction.findAll(mysql,'endtime<?',(nowtime,))
 
     for sale in endedSales:
         updateSale(sale)
@@ -162,10 +162,15 @@ def updateAuction(auction:Auction):
             user.update(mysql)
 
             for otherbid in bids[1:]:#返还剩余玩家押金
+                if otherbid[0]=='nobody':
+                    break
                 otheruser=User.find(otherbid[0])
                 otheruser.money+=round(otherbid[1]*deposit)
                 otheruser.update(mysql)
                 send(otheruser.qid,'您在拍卖:%s中竞拍失败，押金已返还到您的账户'%tradeID,False)
+
+            auction.remove(mysql)
+
         else:#投标失败
             bids.pop(0)#去除第一人
             send(tqid,'您在拍卖:%s中竞拍失败，押金已扣除'%tradeID,False)
@@ -640,6 +645,7 @@ def preauction(message_list,qid):
     auction:Auction=Auction(tradeID=tradeID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,
                             starttime=starttime,endtime=endtime,secret=secret,bestprice=0,offers='[]')
     auction.save(mysql)
+    setTimeTask(updateAuction,endtime,auction)
     ans='拍卖成功！编号:%s'%tradeID
     return ans
 

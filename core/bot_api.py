@@ -6,7 +6,7 @@ warnings.filterwarnings('ignore')
 
 app=Flask(__name__)
 
-setInterval(init,3600)
+setInterval(init,10)
 
 @app.route('/',methods=['POST'])
 def post():
@@ -20,4 +20,5 @@ def post():
     return 'OK'
 
 if __name__=='__main__':
+    init()
     app.run("127.0.0.1",port=5701,debug=True)  # 注意，这里的端口要和配置文件中的保持一致
