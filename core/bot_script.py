@@ -281,7 +281,7 @@ def signup(message_list,qid):
     user=User(
         qid=qid,schoolID=schoolID,money=0,mineral='{}',
         process_tech=0.0,extract_tech=0.0,refine_tech=0.0,digable=1,
-        factory_num=0,effis='[]',mines='[]'
+        factory_num=0,effis='[0.0,0.0,0.0,0.0,0.0,0.0]',mines='[]'
     )#注册新用户
     user.save(mysql)
     ans="注册成功！"
@@ -353,10 +353,10 @@ info_msg="查询到QQ号为：%s的用户信息\n"\
          "开采科技点：%s\n"\
          "炼油科技点：%s\n"\
          "当前是否可开采：%s\n"\
-         "以下为该用户拥有的矿石：\n %s"\
+         "以下为该用户拥有的矿石：\n%s"\
          "工厂数: %s\n"\
-         "以下为该玩家各工种生产效率：\n %s"\
-         "以下为该玩家拥有的私人矿井编号：\n %s"\
+         "以下为该玩家各工种生产效率：\n%s"\
+         "以下为该玩家拥有的私人矿井编号：\n%s"\
 
 @handler("查询")
 def getUserInfo(message_list,qid):
@@ -672,7 +672,7 @@ def bid(message_list,qid):
     assert nowtime>=starttime,'投标失败:尚未到开始拍卖时间！'
     assert nowtime<=endtime,'投标失败:此商品拍卖已结束！'
     assert userprice>0,'投标失败:您的出价必须为正数！'
-    assert user.money>=price,'投标失败:您的余额不足以支付底价！'
+    assert userprice>=price,'投标失败:您的出价低于底价！'
     assert user.money>=round(userprice*deposit),'投标失败:您的余额不足以支付押金！'
 
     if secret:#对出价保密
@@ -689,6 +689,8 @@ def bid(message_list,qid):
 
     auction.update(mysql)
     user.update(mysql)
+    ans='投标成功！'
+    return ans
 
 @handler("市场")
 def market(message_list,qid):
