@@ -6,7 +6,7 @@ warnings.filterwarnings('ignore')
 
 app=Flask(__name__)
 
-setInterval(init,10)
+setInterval(init,3600)
 
 @app.route('/',methods=['POST'])
 def post():
