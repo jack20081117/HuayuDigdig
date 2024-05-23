@@ -75,70 +75,71 @@ def init():
     在矿井刷新时进行初始化
     """
     execute('update users set digable=?',mysql,(1,))
-    execute('update mine set abundance=?',mysql,(0.0,))
+    execute('update mines set abundance=?',mysql,(0.0,))
     update()
 
 def update():
     """
-    对数据进行更新
+    防止由于程序中止而未能成功进行事务更新
     """
-    nowtime:int=round(datetime.timestamp(datetime.now()))#现在的时间
+    nowtime=round(datetime.timestamp(datetime.now()))
+    endedSales:list[Sale]=Sale.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预售
+    endedPurchases:list[Purchase]=Purchase.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预订
+    endedAuctions:list[Auction]=Purchase.findAll(mysql,'endtime<?',(nowtime,))
 
-    deadSales:list[Sale]=Sale.findAll(mysql,'endtime<?',(nowtime,))#已经结束的预售
-    for deadSale in deadSales:
-        #将矿石返还给预售者
-        qid=deadSale.qid
-        tradeID=deadSale.tradeID
-        user=User.find(qid,mysql)
+    for sale in endedSales:
+        updateSale(sale)
+    for purchase in endedPurchases:
+        updatePurchase(purchase)
+    for auction in endedAuctions:
+        updateAuction(auction)
 
-        mineralID=deadSale.mineralID
-        mineralNum=deadSale.mineralNum
-        mineralDict=dict(eval(user.mineral))
-        if mineralID not in mineralDict:
-            mineralDict[mineralID]=0
-        mineralDict[mineralID]+=mineralNum
-        user.mineral=str(mineralDict)
+def updateSale(sale:Sale):
+    """
+    :param sale: 到达截止时间的预售
+    """
+    qid=sale.qid
+    tradeID=sale.tradeID
+    user=User.find(qid,mysql)
+    if Sale.find(tradeID) is None:#预售已成功进行
+        return None
 
-        user.update(mysql)
-        deadSale.remove(mysql)
+    mineralID=sale.mineralID
+    mineralNum=sale.mineralNum
+    mineralDict=dict(eval(user.mineral))
+    if mineralID not in mineralDict:
+        mineralDict[mineralID]=0
+    mineralDict[mineralID]+=mineralNum#将矿石返还给预售者
+    user.mineral=str(mineralDict)
 
-        send(qid,'您的预售:%s未能进行,矿石已返还到您的账户'%tradeID,False)
+    user.update(mysql)
+    sale.remove(mysql)
 
-    deadPurchases:list[Purchase]=Purchase.findAll(mysql,'endtime<?',(nowtime,))#已经结束的预订
-    for deadPurchase in deadPurchases:
-        #将钱返还给预订者
-        qid=deadPurchase.qid
-        tradeID=deadPurchase.tradeID
-        user=User.find(qid,mysql)
+    send(qid,'您的预售:%s未能进行,矿石已返还到您的账户'%tradeID,False)
 
-        price=deadPurchase.price
-        user.money+=price
+def updatePurchase(purchase:Purchase):
+    """
+    :param purchase: 到达截止时间的预订
+    """
+    qid=purchase.qid
+    tradeID=purchase.tradeID
+    user=User.find(qid,mysql)
+    if Purchase.find(tradeID) is None:#预订已成功进行
+        return None
 
-        user.update(mysql)
-        deadPurchase.remove(mysql)
+    price=purchase.price
+    user.money+=price#将钱返还给预订者
 
-        send(qid,'您的预订:%s未能进行,钱已返还到您的账户'%tradeID,False)
+    user.update(mysql)
+    purchase.remove(mysql)
 
-    # deadAuctions:list[Auction]=Auction.findAll(mysql,'endtime<?',(nowtime,))#已经结束的拍卖
-    # for deadAuction in deadAuctions:
-    #     #将矿石返还给预售者
-    #     qid=deadAuction.qid
-    #     tradeID=deadAuction.tradeID
-    #     user=User.find(qid,mysql)
-    #
-    #     mineralID=deadAuction.mineralID
-    #     mineralNum=deadAuction.mineralNum
-    #     mineralDict=dict(eval(user.mineral))
-    #     if mineralID not in mineralDict:
-    #         mineralDict[mineralID]=0
-    #     mineralDict[mineralID]+=mineralNum
-    #     user.mineral=str(mineralDict)
-    #
-    #     user.update(mysql)
-    #     deadAuction.remove(mysql)
-    #
-    #     send(qid,'您的拍卖:%s未能进行,矿石已返还到您的账户'%tradeID,False)
-    #TODO:拍卖结束时的结算
+    send(qid,'您的预订:%s未能进行,钱已返还到您的账户'%tradeID,False)
+
+def updateAuction(auction:Auction):
+    """
+    :param auction: 到达截止时间的拍卖
+    """
+    pass#TODO:增加拍卖结算功能
 
 def extract(qid,mineralID,mineID):
     """获取矿石
@@ -198,28 +199,27 @@ def drawtable(data:list,filename:str):
     ax.axis('off')
     plt.savefig('../go-cqhttp/data/images/%s'%filename)
 
-def setInterval(func:function, interval:int, *args, **kwargs):
+def setInterval(func:callable,interval:int,*args,**kwargs):
     """
     定时触发任务
     :param func: 要触发的任务（函数）
     :param interval: 触发间隔（s）
-    :param *args: 任务参数
+    :param args: 任务参数
     """
-    scheduler = bgsc()
-    scheduler.add_job(func, "interval", args=args, kwargs=kwargs, seconds=interval)
+    scheduler=bgsc()
+    scheduler.add_job(func,"interval",args=args,kwargs=kwargs,seconds=interval)
     scheduler.start()
-    
-def setTimeTask(func:function, runtime:tuple, *args, **kwargs):
+
+def setTimeTask(func:callable,runtime:int,*args,**kwargs):
     """
     定时触发任务
     :param func: 要触发的任务（函数）
-    :param interval: 触发时间元组（年，月，日，小时，分钟，秒）
-    :param *args: 任务参数
+    :param runtime: 触发时间timestamps
+    :param args: 任务参数
     """
-    scheduler = bgsc()
-    scheduler.add_job(func, "date", args=args, kwargs=kwargs, run_date=datetime(runtime(0), runtime(1), runtime(2), runtime(3), runtime(4), runtime(5)))
+    scheduler=bgsc()
+    scheduler.add_job(func,"date",args=args,kwargs=kwargs,run_date=datetime.fromtimestamp(float(runtime)))
     scheduler.start()
-    
     
 @handler("time")
 def returnTime(m,q):
@@ -374,6 +374,7 @@ def presell(message_list,qid):
 
     sale:Sale=Sale(tradeID=tradeID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,starttime=starttime,endtime=endtime)
     sale.save(mysql)
+    setTimeTask(updateSale,endtime,sale)
     ans='预售成功！编号:%s'%tradeID
     return ans
 
@@ -399,7 +400,6 @@ def buy(message_list,qid):
     endtime=sale.endtime
 
     nowtime=datetime.timestamp(datetime.now())#现在的时间
-    if nowtime>endtime:update()
     assert qid!=tqid,'购买失败:您不能购买自己的商品！'
     assert nowtime>=starttime,'购买失败:尚未到开始购买时间！'
     assert nowtime<=endtime,'购买失败:此商品预售已结束！'
@@ -460,6 +460,7 @@ def prebuy(message_list,qid):
     tradeID=md5.hexdigest()[:6]
     purchase:Purchase=Purchase(tradeID=tradeID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,starttime=starttime,endtime=endtime)
     purchase.save(mysql)
+    setTimeTask(updatePurchase,endtime,purchase)
     user.update(mysql)
 
     ans='预订成功！编号:%s'%tradeID
@@ -487,7 +488,6 @@ def sell(message_list,qid):
     endtime=purchase.endtime
 
     nowtime=datetime.timestamp(datetime.now())  #现在的时间
-    if nowtime>endtime:update()
     assert qid!=tqid,'售卖失败:您不能向自己售卖商品！'
     assert nowtime>=starttime,'售卖失败:尚未到开始售卖时间！'
     assert nowtime<=endtime,'售卖失败:此商品预订已结束！'
@@ -597,7 +597,6 @@ def bid(message_list,qid):
     secret:bool=auction.secret#是否对出价保密
 
     nowtime=datetime.timestamp(datetime.now())#现在的时间
-    if nowtime>endtime:update()
     assert qid!=tqid,'投标失败:您不能购买自己的商品！'
     assert nowtime>=starttime,'投标失败:尚未到开始拍卖时间！'
     assert nowtime<=endtime,'投标失败:此商品拍卖已结束！'
