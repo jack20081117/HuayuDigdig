@@ -158,6 +158,9 @@ def updateAuction(auction:Auction):
             tuser.update(mysql)
             send(tqid,'您在拍卖:%s中竞拍成功，矿石已发送到您的账户'%tradeID,False)
 
+            user.money+=bids[0][1]
+            user.update(mysql)
+
             for otherbid in bids[1:]:#返还剩余玩家押金
                 otheruser=User.find(otherbid[0])
                 otheruser.money+=round(otherbid[1]*deposit)
