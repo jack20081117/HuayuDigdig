@@ -196,7 +196,6 @@ def extract(qid,mineralID,mineID):
     :return:开采信息
     """
     mine:Mine=Mine.find(mineID,mysql)
-    #abundance:float=select(selectAbundanceByID,mysql,(mineID,))[0][0]  # 矿井丰度
     abundance:float=mine.abundance #矿井丰度
     user:User=User.find(qid,mysql)
     mineral=user.mineral # 用户拥有的矿石（str of dict）
