@@ -283,14 +283,7 @@ class Debts(Model):
 
 
 
-if __name__ == '__main__':
-    # user=User(qid='1329913830',schoolID='24885',money=0,mineral='{}',process_tech=0.0,extract_tech=0.0,digable=1)
-    # user.save(False)
-    # user=User.find('1329913830')
-    # user.money=100
-    # user.update(False)
-    # purchase=Purchase.find('fc0e56')
-    # print(purchase)
+if __name__ == '__main__':#创建新表
     User.create(False)
     Mine.create(False)
     Sale.create(False)
