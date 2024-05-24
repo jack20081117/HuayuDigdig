@@ -6,7 +6,7 @@
 ## 软件架构
 使用ORM将用户数据存入sqlite数据表或mysql数据库中。
 
-通过go-cqhttp协议制作QQ机器人与用户进行交互。
+通过go-cqhttp协议制作QQ机器人与用户进行交互。关于交互指令，详见[help_msg.md](core/help_msg.md)。
 
 ## 基本机制
 ### 学号与兑换
