@@ -229,7 +229,7 @@ class Mine(Model):
 class Sale(Model):
     __table__='sales'
 
-    tradeID=StringField(columnType='varchar(6)',primaryKey=True)
+    tradeID=IntegerField(primaryKey=True)
     qid=StringField(columnType='varchar(20)')
     mineralID=IntegerField()
     mineralNum=IntegerField()
@@ -240,7 +240,7 @@ class Sale(Model):
 class Purchase(Model):
     __table__='purchases'
 
-    tradeID=StringField(columnType='varchar(6)',primaryKey=True)
+    tradeID=IntegerField(primaryKey=True)
     qid=StringField(columnType='varchar(20)')
     mineralID=IntegerField()
     mineralNum=IntegerField()
@@ -251,7 +251,7 @@ class Purchase(Model):
 class Auction(Model):
     __table__='auctions'
 
-    tradeID=StringField(columnType='varchar(6)',primaryKey=True)
+    tradeID=IntegerField(primaryKey=True)
     qid=StringField(columnType='varchar(20)')
     mineralID=IntegerField()
     mineralNum=IntegerField()
