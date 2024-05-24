@@ -210,9 +210,9 @@ class User(Model):
     stocks=StringField(columnType='varchar(2000)')
 
 class Plan(Model):
-    __table__ = 'plans'
+    __table__='plans'
 
-    planID = IntegerField()
+    planID=IntegerField(primaryKey=True)
     jobtype=IntegerField()
     ingredients=StringField(columnType='varchar(50)')
     product=StringField(columnType='varchar(50)')
