@@ -743,6 +743,26 @@ def market(message_list:list[str],qid:str):
 
     return ans
 
+@handler("发行")
+def issue(message_list:list[str],qid:str):
+    """
+    :param message_list: 发行 股票名称 缩写 发行量 价格 自我保留比例
+    :param qid: 发行者的qq号
+    :return: 发行提示信息
+    """
+    assert len(message_list)==6,'发行失败:您的发行格式不正确！'
+    stockName:str=message_list[1]
+    stockAbbr:str=message_list[2]
+    assert len(stockName)<=8,'发行失败:股票名称必须在8个字符以内！'
+    assert len(stockAbbr)==3,'发行失败:股票缩写必须为3个字符！'
+    stockNum:int=int(message_list[3])
+    assert 10000<=stockNum<=100000,'发行失败:股票发行量必须在10000股到100000股之间！'
+    price:int=int(message_list[4])
+    selfRetain:float=float(message_list[5])
+
+    stockID:int=max([0]+[stock.tradeID for stock in Stock.findAll(mysql)])+1
+    stock=Stock(stockID=stockID,stockNum=stockNum,stockAbbr=stockAbbr,issue_qid=qid,price=price,self_retain=selfRetain)
+
 @handler("支付")
 def pay(message_list:list[str],qid:str):
     """

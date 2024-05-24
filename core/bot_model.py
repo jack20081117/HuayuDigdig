@@ -262,22 +262,23 @@ class Auction(Model):
     bestprice=IntegerField()
     offers=StringField(columnType='varchar(2000)')
 
-class Stocks(Model):
+class Stock(Model):
     __table__='stocks'
 
-    stockID=StringField(columnType='varchar(6)',primaryKey=True)
+    stockID=IntegerField(primaryKey=True)
     stockName=StringField(columnType='varchar(8)')
+    stockAbbr=StringField(columnType='varchar(3)')
     issue_qid=StringField(columnType='varchar(20)')
-    buyprice=FloatField()
-    sellprice=FloatField()
+    self_retain=FloatField()
+    price=IntegerField()
     histprice=StringField(columnType='varchar(2000)')
     shareholders=StringField(columnType='varchar(2000)')
     avg_dividend=FloatField()
 
-class Debts(Model):
+class Debt(Model):
     __table__='debts'
 
-    debtID=StringField(columnType='varchar(6)',primaryKey=True)
+    debtID=IntegerField(primaryKey=True)
     creditor_id=StringField(columnType='varchar(20)')
     debitor_id=StringField(columnType='varchar(20)')
     starttime=IntegerField()
