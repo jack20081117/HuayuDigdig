@@ -1,0 +1,8 @@
+APScheduler>=3.10.4
+Flask>=3.0.3
+imgkit>=1.2.3
+matplotlib>=3.9.0
+Markdown>=3.6
+numpy>=1.26.4
+PyMySQL>=1.1.0
+requests>=2.31.0
