@@ -772,9 +772,9 @@ def pay(message_list:list[str],qid:str):
 
 @handler("帮助")
 def getHelp(message_list:list[str],qid:str):
-    with open('help_msg.md','r',encoding='utf-8') as f:
-        html=markdown.markdown(f.read())
-    imgkit.from_string(html,'../go-cqhttp/data/images/help.png',config=imgkit_config)
+    with open('help_msg.md','r',encoding='utf-8') as help_msg:
+        html=markdown.markdown(help_msg.read())
+    imgkit.from_string(html,'../go-cqhttp/data/images/help.png',config=imgkit_config,css='./style.css')
     ans='[CQ:image,file=help.png]'
     return ans
 
