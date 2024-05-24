@@ -209,12 +209,15 @@ class User(Model):
     mines=StringField(columnType='varchar(200)')
     stocks=StringField(columnType='varchar(2000)')
 
+class Plan(Model):
+    __table__ = 'plans'
+
+    planID = IntegerField()
     jobtype=IntegerField()
     ingredients=StringField(columnType='varchar(50)')
     product=StringField(columnType='varchar(50)')
     accumulated=FloatField()
     requirement=FloatField()
-
 
 
 class Mine(Model):
