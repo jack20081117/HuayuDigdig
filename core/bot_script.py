@@ -1,7 +1,7 @@
 from datetime import datetime
 from bot_model import *
 import numpy as np
-import json,requests,re
+import json,requests,re,markdown,imgkit
 from matplotlib import pyplot as plt
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler as bgsc
@@ -10,6 +10,8 @@ plt.rcParams['font.family']=['Microsoft YaHei']
 headers:dict={
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'
 }
+
+imgkit_config=imgkit.config(wkhtmltoimage=r'D:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe')
 
 with open("./config.json","r",encoding='utf-8') as config:
     config=json.load(config)
@@ -21,32 +23,6 @@ group_ids:list=config['group_ids']
 mysql:bool=(env=='prod')
 
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
-
-help_msg:str='您好！欢迎使用森bot！\n'\
-         '您可以使用如下功能:\n'\
-         '1:查询时间:输入 time\n'\
-         '2:注册账号:输入 注册 `学号`\n'\
-         '3:查询信息:输入 查询  即可获取用户个人信息\n'\
-         '4:开采矿石:输入 开采 `矿井编号`\n'\
-         '    4.1 矿井1号会生成从2-30000均匀分布的随机整数矿石\n'\
-         '    4.2 矿井2号会生成从2-30000对数均匀分布的随机整数矿石\n'\
-         '    4.3 矿井3号会生成从2-999均匀分布的随机整数矿石\n'\
-         '    4.4 矿井4号会生成从2-999对数均匀分布的随机整数矿石\n'\
-         '5:兑换矿石:输入 兑换 `矿石编号` 只有在矿石编号为3、5、6位学号的因数或班级因数时才可兑换！\n'\
-         '6:矿石市场:\n' \
-         '注:除快捷键外，本节所有时间格式必须为YYYY-MM-DD,hh:mm:ss格式，"是否"数值取值为0或1\n' \
-         '    6.1 市场 输入 市场 即可查看目前市场上存在的交易\n'\
-         '    6.2 预售矿石 输入 预售 `矿石编号` `矿石数目` `价格` `起始时间` `终止时间` 即可在市场上预售矿石\n'\
-         '    6.3 购买矿石 输入 购买 `交易编号`\n'\
-         '    6.4 预订矿石 输入 预订 `矿石编号` `矿石数目` `价格` `起始时间` `终止时间` 即可在市场上预订矿石\n'\
-         '    6.5 售卖矿石 输入 售卖 `交易编号`\n' \
-         '    6.6 拍卖矿石 输入 拍卖 `矿石编号` `矿石数目` `底价` `起始时间` `终止时间` `是否对出价保密` 即可在市场上拍卖矿石\n' \
-         '    6.7 投标矿石 输入 投标 `交易编号` `出价` 要求支付数额为出价%d%%的押金，在拍卖终止时结算，最终出价为出价第二高者的出价\n'\
-         '快捷键:now:当前时间 10min:十分钟后 30min:半小时后 1h:一小时后 3h:三小时后\n' \
-         '7:支付金钱:输入 支付 `编号` $`金额` (金额前应带有美元符号$)即可向对方支付指定金额\n'\
-         '    7.1 向QQ用户支付，编号以q开头，后加QQ号\n'\
-         '    7.2 向指定学号用户支付，直接输入学号即可\n' \
-         ''%(round(deposit*100))
 
 commands:dict={}
 
@@ -796,8 +772,11 @@ def pay(message_list:list[str],qid:str):
 
 @handler("帮助")
 def getHelp(message_list:list[str],qid:str):
-    return help_msg
-
+    with open('help_msg.md','r',encoding='utf-8') as f:
+        html=markdown.markdown(f.read())
+    imgkit.from_string(html,'../go-cqhttp/data/images/help.png',config=imgkit_config)
+    ans='[CQ:image,file=help.png]'
+    return ans
 
 def dealWithRequest(funcStr:str,message_list:list[str],qid:str):
     if funcStr in commands:
