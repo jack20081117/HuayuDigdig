@@ -232,6 +232,16 @@ def setInterval(func:callable,interval:int,*args,**kwargs):
     scheduler.add_job(func,"interval",args=args,kwargs=kwargs,seconds=interval)
     scheduler.start()
 
+def setCrontab(func:callable,*args,**kwargs):
+    """
+    定时触发任务
+    :param func: 要触发的任务（函数）
+    :param args: 任务参数
+    """
+    scheduler=bgsc()
+    scheduler.add_job(func,'cron',minute=0,args=args,kwargs=kwargs)
+    scheduler.start()
+
 def setTimeTask(func:callable,runtime:int,*args,**kwargs):
     """
     定时触发任务
