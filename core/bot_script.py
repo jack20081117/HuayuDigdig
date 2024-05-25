@@ -688,7 +688,7 @@ def bid(message_list:list[str],qid:str):
     return ans
 
 @handler("市场")
-def market(message_list:list[str],qid:str):
+def mineralMarket(message_list:list[str],qid:str):
     """
     查看市场
     :param message_list: 市场
@@ -707,7 +707,7 @@ def market(message_list:list[str],qid:str):
             starttime:str=datetime.fromtimestamp(float(sale.starttime)).strftime('%Y-%m-%d %H:%M:%S')
             endtime:str=datetime.fromtimestamp(float(sale.endtime)).strftime('%Y-%m-%d %H:%M:%S')
             saleData.append([sale.tradeID,sale.mineralID,sale.mineralNum,sale.price,starttime,endtime])
-            drawtable(saleData,'sale.png')
+        drawtable(saleData,'sale.png')
         ans+='[CQ:image,file=sale.png]\n'
     else:
         ans+='目前没有处于预售中的商品！\n'
@@ -719,7 +719,7 @@ def market(message_list:list[str],qid:str):
             starttime:str=datetime.fromtimestamp(float(purchase.starttime)).strftime('%Y-%m-%d %H:%M:%S')
             endtime:str=datetime.fromtimestamp(float(purchase.endtime)).strftime('%Y-%m-%d %H:%M:%S')
             purchaseData.append([purchase.tradeID,purchase.mineralID,purchase.mineralNum,purchase.price,starttime,endtime])
-            drawtable(purchaseData,'purchase.png')
+        drawtable(purchaseData,'purchase.png')
         ans+='[CQ:image,file=purchase.png]\n'
     else:
         ans+='目前没有处于预订中的商品！\n'
@@ -736,7 +736,7 @@ def market(message_list:list[str],qid:str):
             else:
                 auctionDatum.append(auction.bestprice)
             auctionData.append(auctionDatum)
-            drawtable(auctionData,'auction.png')
+        drawtable(auctionData,'auction.png')
         ans+='[CQ:image,file=auction.png]\n'
     else:
         ans+='目前没有处于拍卖中的商品！\n'
@@ -752,17 +752,38 @@ def issue(message_list:list[str],qid:str):
     """
     assert len(message_list)==6,'发行失败:您的发行格式不正确！'
     stockName:str=message_list[1]
-    stockAbbr:str=message_list[2]
+    stockID:str=message_list[2]
     assert len(stockName)<=8,'发行失败:股票名称必须在8个字符以内！'
-    assert len(stockAbbr)==3,'发行失败:股票缩写必须为3个字符！'
+    assert len(stockID)==3,'发行失败:股票缩写必须为3个字符！'
     stockNum:int=int(message_list[3])
     assert 10000<=stockNum<=100000,'发行失败:股票发行量必须在10000股到100000股之间！'
     price:int=int(message_list[4])
     selfRetain:float=float(message_list[5])
 
-    stockID:int=max([0]+[stock.tradeID for stock in Stock.findAll(mysql)])+1
-    stock=Stock(stockID=stockID,stockNum=stockNum,stockAbbr=stockAbbr,issue_qid=qid,price=price,self_retain=selfRetain,
+    stock=Stock(stockID=stockID,stockName=stockName,stockNum=stockNum,issue_qid=qid,price=price,self_retain=selfRetain,
                 histprice='{}',shareholders='{}',avg_dividend=0.0)
+    stock.save(mysql)
+    ans='发行成功！'
+
+@handler('股市')
+def stockMarket(message_list:list[str],qid:str):
+    """
+    :param message_list: 股市
+    :param qid:
+    :return: 提示信息
+    """
+    stocks:list[Stock]=Stock.findAll(mysql)
+    ans='欢迎来到股市！\n'
+    if stocks:
+        ans+='以下是所有目前发行的股票:\n'
+        stockData=[['股票名称','股票缩写','发行量','当前股价']]
+        for stock in stocks:
+            stockData.append([stock.stockName,stock.stockID,stock.stockNum,stock.price])
+        drawtable(stockData,'stock.png')
+        ans+='[CQ:image,file=stock.png]'
+    else:
+        ans+='目前没有发行的股票！'
+    return ans
 
 @handler("支付")
 def pay(message_list:list[str],qid:str):

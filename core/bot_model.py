@@ -265,12 +265,12 @@ class Auction(Model):
 class Stock(Model):
     __table__='stocks'
 
-    stockID=IntegerField(primaryKey=True)
+    stockID=StringField(columnType='varchar(3)',primaryKey=True)
     stockName=StringField(columnType='varchar(8)')
-    stockAbbr=StringField(columnType='varchar(3)')
+    stockNum=IntegerField()
     issue_qid=StringField(columnType='varchar(20)')
-    self_retain=FloatField()
     price=IntegerField()
+    self_retain=FloatField()
     histprice=StringField(columnType='varchar(2000)')
     shareholders=StringField(columnType='varchar(2000)')
     avg_dividend=FloatField()
@@ -293,6 +293,7 @@ if __name__ == '__main__':#创建新表
     Sale.create(False)
     Purchase.create(False)
     Auction.create(False)
+    Stock.create(False)
     for i in range(1,5):
         _mine=Mine(mineID=i,abundance=0.0)
         _mine.save(False)
