@@ -1,7 +1,7 @@
 import logging,sqlite3,json,pymysql
 #logging.basicConfig(level=logging.INFO)
 
-createArgsString=lambda num:('?,'*num)[:-1]
+createArgsString=lambda num:('?,'*num)[:-1]#生成参数占位符字符串
 
 with open("./config.json","r") as config:
     config=json.load(config)
@@ -25,6 +25,7 @@ def select(sql,mysql=False,args=()):
             res=cursor.fetchall()
             cursor.close()
     else:
+        #sql占位符是?,mysql占位符是%s,所以要对字符串进行replace操作
         mysqlcursor.execute(sql.replace('?','%s'),args)
         res=mysqlcursor.fetchall()
     return res
@@ -146,6 +147,14 @@ class Model(dict,metaclass=ModelMetaclass):
 
     @classmethod
     def findAll(cls,mysql=False,where=None,args=None,**kwargs):
+        """
+        根据指定条件在表中查询对象
+        :param mysql: 是否采用mysql
+        :param where: 查询条件
+        :param args: 查询条件参数
+        :param kwargs: 其他附加参数
+        :return: 查询结果 list[对象]
+        """
         sql=[cls.__select__]
         if where:
             sql.extend(['where',where])
@@ -170,6 +179,12 @@ class Model(dict,metaclass=ModelMetaclass):
 
     @classmethod
     def find(cls,primaryKey,mysql=False):
+        """
+        根据主键在表中查找对象
+        :param primaryKey: 对象主键
+        :param mysql: 是否采用mysql
+        :return: 查找结果 对象 or None
+        """
         results=select('%s where `%s`=?'%(cls.__select__,cls.__primaryKey__),mysql,(primaryKey,))
         if not results:
             return None
@@ -177,19 +192,35 @@ class Model(dict,metaclass=ModelMetaclass):
 
     @classmethod
     def create(cls,mysql=False):
+        """
+        在数据库中创建表
+        :param mysql: 是否采用mysql
+        """
         execute(cls.__create__,mysql)
 
     def save(self,mysql=False):
+        """
+        在表中添加新对象
+        :param mysql: 是否采用mysql
+        """
         args=[self.getValueOrDefault(self.__primaryKey__)]
         args.extend(list(map(self.getValueOrDefault,self.__fields__)))
         execute(self.__insert__,mysql,tuple(args))
 
     def update(self,mysql=False):
+        """
+        在表中更新对象
+        :param mysql: 是否采用mysql
+        """
         args=list(map(self.getValue,self.__fields__))
         args.append(self.getValue(self.__primaryKey__))
         execute(self.__update__,mysql,tuple(args))
 
     def remove(self,mysql=False):
+        """
+        在表中删除对象
+        :param mysql: 是否采用mysql
+        """
         args=[self.getValue(self.__primaryKey__)]
         execute(self.__delete__,mysql,tuple(args))
 
