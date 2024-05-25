@@ -198,7 +198,7 @@ class Model(dict,metaclass=ModelMetaclass):
         """
         execute(cls.__create__,mysql)
 
-    def save(self,mysql=False):
+    def add(self,mysql=False):
         """
         在表中添加新对象
         :param mysql: 是否采用mysql
@@ -207,7 +207,7 @@ class Model(dict,metaclass=ModelMetaclass):
         args.extend(list(map(self.getValueOrDefault,self.__fields__)))
         execute(self.__insert__,mysql,tuple(args))
 
-    def update(self,mysql=False):
+    def save(self,mysql=False):
         """
         在表中更新对象
         :param mysql: 是否采用mysql

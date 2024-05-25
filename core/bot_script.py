@@ -3,7 +3,6 @@ import requests
 import re
 import markdown
 import imgkit
-import time
 import numpy as np
 from datetime import datetime
 
@@ -96,7 +95,7 @@ def updateSale(sale:Sale):
     mineralDict[mineralID]+=mineralNum#将矿石返还给预售者
     user.mineral=str(mineralDict)
 
-    user.update(mysql)
+    user.save(mysql)
     sale.remove(mysql)
 
     send(qid,'您的预售:%s未能进行,矿石已返还到您的账户'%tradeID,False)
@@ -114,7 +113,7 @@ def updatePurchase(purchase:Purchase):
     price:int=purchase.price
     user.money+=price#将钱返还给预订者
 
-    user.update(mysql)
+    user.save(mysql)
     purchase.remove(mysql)
 
     send(qid,'您的预订:%s未能进行,钱已返还到您的账户'%tradeID,False)
@@ -148,18 +147,18 @@ def updateAuction(auction:Auction):
                 tmineralDict[mineralID]=0
             tmineralDict[mineralID]+=mineralNum#给予矿石
             tuser.mineral=str(tmineralDict)
-            tuser.update(mysql)
+            tuser.save(mysql)
             send(tqid,'您在拍卖:%s中竞拍成功，矿石已发送到您的账户'%tradeID,False)
 
             user.money+=bids[0][1]
-            user.update(mysql)
+            user.save(mysql)
 
             for otherbid in bids[1:]:#返还剩余玩家押金
                 if otherbid[0]=='nobody':
                     break
                 otheruser=User.find(otherbid[0],mysql)
                 otheruser.money+=round(otherbid[1]*deposit)
-                otheruser.update(mysql)
+                otheruser.save(mysql)
                 send(otheruser.qid,'您在拍卖:%s中竞拍失败，押金已返还到您的账户'%tradeID,False)
 
             auction.remove(mysql)
@@ -176,7 +175,7 @@ def updateAuction(auction:Auction):
         mineralDict[mineralID]+=mineralNum  #将矿石返还给拍卖者
         user.mineral=str(mineralDict)
 
-        user.update(mysql)
+        user.save(mysql)
         auction.remove(mysql)
 
         send(qid,'您的拍卖:%s未能进行,矿石已返还到您的账户'%tradeID,False)
@@ -204,7 +203,7 @@ def extract(qid,mineralID,mineID):
 
     if np.random.random()>prob:#开采失败
         user.digable=0#在下一次刷新前不可开采
-        user.update(mysql)
+        user.save(mysql)
         ans='开采失败:您的运气不佳，未能开采成功！'
     else:
         mineralDict:dict[int,int]=dict(eval(mineral))
@@ -212,9 +211,9 @@ def extract(qid,mineralID,mineID):
             mineralDict[mineralID]=0
         mineralDict[mineralID]+=1 #加一个矿石
         user.mineral=str(mineralDict)
-        user.update(mysql)
+        user.save(mysql)
         mine.abundance=prob#若开采成功，则后一次的丰度是前一次的成功概率
-        mine.update(mysql)
+        mine.save(mysql)
         ans='开采成功！您获得了编号为%d的矿石！'%mineralID
     return ans
 
@@ -242,7 +241,7 @@ def signup(message_list:list[str],qid:str):
         process_tech=0.0,extract_tech=0.0,refine_tech=0.0,digable=1,
         factory_num=0,effis='[0.0,0.0,0.0,0.0,0.0,0.0]',mines='[]'
     )#注册新用户
-    user.save(mysql)
+    user.add(mysql)
     ans="注册成功！"
     return ans
 
@@ -298,7 +297,7 @@ def exchange(message_list:list[str],qid:str):
 
     user.mineral=str(mineralDict)
     user.money+=mineralID
-    user.update(mysql)
+    user.save(mysql)
 
     ans='兑换成功！'
     return ans
@@ -383,12 +382,12 @@ def presell(message_list:list[str],qid:str):
     if mineralDict[mineralID]<=0:mineralDict.pop(mineralID)
 
     user.mineral=str(mineralDict)
-    user.update(mysql)
+    user.save(mysql)
 
     tradeID:int=max([0]+[sale.tradeID for sale in Sale.findAll(mysql)])+1
 
     sale:Sale=Sale(tradeID=tradeID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,starttime=starttime,endtime=endtime)
-    sale.save(mysql)
+    sale.add(mysql)
     setTimeTask(updateSale,endtime,sale)
     ans='预售成功！编号:%d'%tradeID
     return ans
@@ -434,8 +433,8 @@ def buy(message_list:list[str],qid:str):
     user.mineral=str(mineralDict)
 
     sale.remove(mysql)#删除市场上的此条记录
-    user.update(mysql)
-    tuser.update(mysql)
+    user.save(mysql)
+    tuser.save(mysql)
 
     ans='购买成功！'
     send(tqid,'您预售的商品(编号:%d)已被卖出！'%tradeID,False)
@@ -476,9 +475,9 @@ def prebuy(message_list:list[str],qid:str):
     tradeID:int=max([0]+[purchase.tradeID for purchase in Purchase.findAll(mysql)])+1
 
     purchase:Purchase=Purchase(tradeID=tradeID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,starttime=starttime,endtime=endtime)
-    purchase.save(mysql)
+    purchase.add(mysql)
     setTimeTask(updatePurchase,endtime,purchase)
-    user.update(mysql)
+    user.save(mysql)
 
     ans='预订成功！编号:%d'%tradeID
     return ans
@@ -520,7 +519,7 @@ def sell(message_list:list[str],qid:str):
 
     user.money+=price  #得钱
     user.mineral=str(mineralDict)
-    user.update(mysql)
+    user.save(mysql)
 
     tuser:User=User.find(tqid,mysql)
 
@@ -532,7 +531,7 @@ def sell(message_list:list[str],qid:str):
 
     purchase.remove(mysql)#删除市场上的此条记录
 
-    tuser.update(mysql)
+    tuser.save(mysql)
 
     ans='售卖成功！'
     send(tqid,'您预订的商品(编号:%d)已被买入！'%tradeID,False)
@@ -577,13 +576,13 @@ def preauction(message_list:list[str],qid:str):
     if mineralDict[mineralID]<=0:mineralDict.pop(mineralID)
 
     user.mineral=str(mineralDict)
-    user.update(mysql)
+    user.save(mysql)
 
     tradeID:int=max([0]+[auction.tradeID for auction in Auction.findAll(mysql)])+1
 
     auction:Auction=Auction(tradeID=tradeID,qid=qid,mineralID=mineralID,mineralNum=mineralNum,price=price,
                             starttime=starttime,endtime=endtime,secret=secret,bestprice=0,offers='[]')
-    auction.save(mysql)
+    auction.add(mysql)
     setTimeTask(updateAuction,endtime,auction)
     ans='拍卖成功！编号:%d'%tradeID
     return ans
@@ -635,8 +634,8 @@ def bid(message_list:list[str],qid:str):
     auction.bestprice=max(userprice,auction.bestprice)
     auction.offers=str(offersList)
 
-    auction.update(mysql)
-    user.update(mysql)
+    auction.save(mysql)
+    user.save(mysql)
     ans='投标成功！'
     return ans
 
@@ -715,7 +714,7 @@ def issue(message_list:list[str],qid:str):
 
     stock=Stock(stockID=stockID,stockName=stockName,stockNum=stockNum,issue_qid=qid,price=price,self_retain=selfRetain,
                 histprice='{}',shareholders='{}',avg_dividend=0.0)
-    stock.save(mysql)
+    stock.add(mysql)
     ans='发行成功！'
 
 @handler('股市')
@@ -770,8 +769,8 @@ def pay(message_list:list[str],qid:str):
     user.money-=money
     tuser.money+=round(money*(1-player_tax))
 
-    user.update(mysql)
-    tuser.update(mysql)
+    user.save(mysql)
+    tuser.save(mysql)
 
     return "支付成功！"
 
@@ -783,64 +782,53 @@ def getHelp(message_list:list[str],qid:str):
     ans='[CQ:image,file=help.png]'
     return ans
 
-@handler("借出")
-def lend_out(message_list:list[str], qid:str):
+@handler("放贷")
+def prelend(message_list:list[str],qid:str):
     """
-    :param message_list: 借出 q`QQ号`/`学号` $`金额` `借出时间` `利率`
-    :param qid: 借出者的qq号
-    :return: 借出提示信息
+    :param message_list: 借出 金额 借出时间 利率 起始时间 终止时间
+    :param qid: 放贷者的qq号
+    :return: 放贷提示信息
     """
-    assert len(message_list)==5,'借出失败:您的借出格式不正确！'
-    _, target, money_, debt_time, interest = message_list
-    assert money_.startswith("$"),'借出失败:您的金额格式不正确！'
+    assert len(message_list)==5,'放贷失败:您的放贷格式不正确！'
+    nowtime:int=round(datetime.timestamp(datetime.now()))
     try:
-        money = int(money[1:])
+        money=int(message_list[1])
+        debttime=message_list[2]
+        interest=float(message_list[3])
+        if message_list[4]=='现在' or message_list[4]=='now':
+            starttime:int=round(nowtime)
+        else:
+            starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
+        if message_list[5] in delay:
+            endtime:int=starttime+delay[message_list[5]]
+        else:
+            endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except Exception:
-        raise AssertionError("借出失败:您的金额格式不正确！应当为:$`金额`")
-    
-    lend_time = 0
-    if debt_time.endswith("m"):
-        lend_time = int(debt_time[:-1]) * 60
-    elif debt_time.endswith("h"):
-        lend_time = int(debt_time[:-1]) * 60 * 60
-    elif debt_time.endswith("d"):
-        lend_time = int(debt_time[:-1]) * 60 * 60 * 24
+        raise AssertionError("借出失败:您的金额格式不正确！")
+
+    lendtime:int=0
+    if debttime.endswith("m"):
+        lendtime=int(debttime[:-1])*60
+    elif debttime.endswith("h"):
+        lendtime=int(debttime[:-1])*3600
+    elif debttime.endswith("d"):
+        lendtime=int(debttime[:-1])*86400
     else:
-        return "借出失败:您的借出时间格式不正确！应当为:`借出时间`(m/h/d)"
-    
-    if target.startswith("q"):
-        targetID = target[1:]
-        debitor = User.find(targetID, mysql)
-    else:
-        targetID = target
-        debitor = User.findAll(mysql,'schoolID=?',(targetID, ))[0]
-    creditor = User.find(qid, mysql)
-    
-    if creditor.money < money:
-        return "借出失败:您的余额不足！"
-    creditor.money -= money
-    debitor.money += money
-    
-    creditor.update(mysql)
-    debitor.update(mysql)
-    current_time = int(time.time())
-    
-    debt = Debt(
-        debtID = random.randint(0, 10**8),
-        creditor_id = qid,
-        debitor_id = targetID,
-        money = money,
-        starttime = current_time,
-        endtime = current_time + lend_time,
-        daily_interest = float(interest)
-    )
-    debt.save()
-    dt = datetime.fromtimestamp(current_time + lend_time)
-    
-    return "借出成功！您已成功借出 %s 元矿币，若对方未在 %s 前主动还款，系统将自动扣除其包含1.5倍利息的金额进入您的账户。如果强制还款时对方金额不足，则该债务将保留未完成状态，您可随时使用 催债 命令来拿到对方剩余金额和债务未偿还部分两者中较低的部分。" % (
-        money, dt.strftime("%Y-%m-%d %H:%M:%S")
-    )
-    
+        return "放贷失败:您的时间格式不正确！应当为:`借出时间`(m/h/d)"
+
+    creditor=User.find(qid,mysql)
+    assert creditor.money>money,"放贷失败:您的余额不足！"
+    creditor.money-=money
+    creditor.save(mysql)
+
+    debtID:int=max([0]+[auction.tradeID for auction in Debt.findAll(mysql)])+1
+    debt=Debt(debtID=debtID,creditor_id=qid,debitor_id='nobody',money=money,
+              starttime=starttime,endtime=endtime,daily_interest=float(interest))
+    debt.add(mysql)
+
+    ans='放贷成功！'
+    return ans
+
 
 def dealWithRequest(funcStr:str,message_list:list[str],qid:str):
     if funcStr in commands:
