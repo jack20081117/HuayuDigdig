@@ -84,7 +84,7 @@ def updateSale(sale:Sale):
     qid:str=sale.qid
     tradeID:str=sale.tradeID
     user:User=User.find(qid,mysql)
-    if Sale.find(tradeID) is None:#预售已成功进行
+    if Sale.find(tradeID,mysql) is None:#预售已成功进行
         return None
 
     mineralID:int=sale.mineralID
@@ -107,7 +107,7 @@ def updatePurchase(purchase:Purchase):
     qid:str=purchase.qid
     tradeID:str=purchase.tradeID
     user:User=User.find(qid,mysql)
-    if Purchase.find(tradeID) is None:#预订已成功进行
+    if Purchase.find(tradeID,mysql) is None:#预订已成功进行
         return None
 
     price:int=purchase.price
@@ -138,7 +138,7 @@ def updateAuction(auction:Auction):
         if tqid=='nobody':#无人生还
             bids.pop()
             break
-        tuser:User=User.find(tqid)
+        tuser:User=User.find(tqid,mysql)
         if tuser.money+round(bids[0][1]*deposit)>=bids[1][1]:#第一人现金+第一人押金>=第二人出价
             success=True#投标成功
             tuser.money-=bids[0][1]-round(bids[0][1]*deposit)#扣除剩余金额
@@ -156,7 +156,7 @@ def updateAuction(auction:Auction):
             for otherbid in bids[1:]:#返还剩余玩家押金
                 if otherbid[0]=='nobody':
                     break
-                otheruser=User.find(otherbid[0])
+                otheruser=User.find(otherbid[0],mysql)
                 otheruser.money+=round(otherbid[1]*deposit)
                 otheruser.update(mysql)
                 send(otheruser.qid,'您在拍卖:%s中竞拍失败，押金已返还到您的账户'%tradeID,False)
@@ -752,13 +752,13 @@ def pay(message_list:list[str],qid:str):
     except Exception:
         raise AssertionError("支付失败:您的金额格式不正确！应当为:$`金额`")
 
-    user:User=User.find(qid)
+    user:User=User.find(qid,mysql)
 
     assert user.money>=money,"支付失败:您的余额不足！"
     if target.startswith("q"):
         # 通过QQ号查找对方
         tqid:str=target[1:]
-        tuser:User=User.find(tqid)
+        tuser:User=User.find(tqid,mysql)
         assert tuser,"支付失败:QQ号为%s的用户未注册！"%tqid
     else:
         tschoolID:str=target
