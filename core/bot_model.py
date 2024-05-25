@@ -219,7 +219,6 @@ class Plan(Model):
     accumulated=FloatField()
     requirement=FloatField()
 
-
 class Mine(Model):
     __table__='mines'
 
