@@ -25,7 +25,7 @@ def select(sql,mysql=False,args=()):
             res=cursor.fetchall()
             cursor.close()
     else:
-        mysqlcursor.execute(sql,args)
+        mysqlcursor.execute(sql.replace('?','%s'),args)
         res=mysqlcursor.fetchall()
     return res
 
@@ -37,7 +37,7 @@ def execute(sql,mysql=False,args=()):
             conn.commit()
             cursor.close()
     else:
-        mysqlcursor.execute(sql,args)
+        mysqlcursor.execute(sql.replace('?','%s'),args)
         connection.commit()
 
 class Field(object):
@@ -287,12 +287,13 @@ class Debt(Model):
 
 
 if __name__ == '__main__':#创建新表
-    User.create(False)
-    Mine.create(False)
-    Sale.create(False)
-    Purchase.create(False)
-    Auction.create(False)
-    Stock.create(False)
+    mysql=(env=='prod')
+    User.create(mysql)
+    Mine.create(mysql)
+    Sale.create(mysql)
+    Purchase.create(mysql)
+    Auction.create(mysql)
+    Stock.create(mysql)
     for i in range(1,5):
         _mine=Mine(mineID=i,abundance=0.0)
-        _mine.save(False)
+        _mine.save(mysql)
