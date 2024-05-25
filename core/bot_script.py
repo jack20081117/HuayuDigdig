@@ -1,11 +1,14 @@
-from datetime import datetime
-from bot_model import *
+import json
+import requests
+import re
+import markdown
+import imgkit
 import numpy as np
-import json,requests,re,markdown,imgkit
-from matplotlib import pyplot as plt
 from datetime import datetime
-from apscheduler.schedulers.background import BackgroundScheduler as bgsc
-plt.rcParams['font.family']=['Microsoft YaHei']
+
+from bot_model import *
+from bot_functions import *
+
 
 headers:dict={
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58'
@@ -25,6 +28,19 @@ mysql:bool=(env=='prod')
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 
 commands:dict={}
+effisStr=['分解效率','合成效率','复制效率','修饰效率','炼油效率','建工效率']
+
+info_msg="查询到QQ号为:%s的用户信息\n"\
+         "学号:%s\n"\
+         "当前余额:%s\n"\
+         "加工科技点:%s\n"\
+         "开采科技点:%s\n"\
+         "炼油科技点:%s\n"\
+         "当前是否可开采:%s\n"\
+         "以下为该用户拥有的矿石:\n%s"\
+         "工厂数: %s\n"\
+         "以下为该玩家各工种生产效率:\n%s"\
+         "以下为该玩家拥有的私人矿井编号:\n%s"\
 
 def handler(funcStr:str):
     """
@@ -201,58 +217,7 @@ def extract(qid,mineralID,mineID):
         ans='开采成功！您获得了编号为%d的矿石！'%mineralID
     return ans
 
-def drawtable(data:list,filename:str):
-    """
-    将市场信息绘制成表格
-    :param data: 要绘制的表格数据
-    :param filename: 存储图片地址
-    :return:
-    """
-    fig,ax=plt.subplots()
-    table=ax.table(cellText=data,loc='center')
-    table.auto_set_font_size(False)
-    #table.set_fontsize(10)
-
-    for key,cell in table.get_celld().items():
-        cell.set_text_props(fontsize=8,ha='center',va='center')
-
-    table.auto_set_column_width(col=list(range(len(data[0]))))
-
-    ax.axis('off')
-    plt.savefig('../go-cqhttp/data/images/%s'%filename)
-
-def setInterval(func:callable,interval:int,*args,**kwargs):
-    """
-    定时触发任务
-    :param func: 要触发的任务（函数）
-    :param interval: 触发间隔（s）
-    :param args: 任务参数
-    """
-    scheduler=bgsc()
-    scheduler.add_job(func,"interval",args=args,kwargs=kwargs,seconds=interval)
-    scheduler.start()
-
-def setCrontab(func:callable,*args,**kwargs):
-    """
-    定时触发任务
-    :param func: 要触发的任务（函数）
-    :param args: 任务参数
-    """
-    scheduler=bgsc()
-    scheduler.add_job(func,'cron',minute=0,args=args,kwargs=kwargs)
-    scheduler.start()
-
-def setTimeTask(func:callable,runtime:int,*args,**kwargs):
-    """
-    定时触发任务
-    :param func: 要触发的任务（函数）
-    :param runtime: 触发时间timestamps
-    :param args: 任务参数
-    """
-    scheduler=bgsc()
-    scheduler.add_job(func,"date",args=args,kwargs=kwargs,run_date=datetime.fromtimestamp(float(runtime)))
-    scheduler.start()
-    
+  
 @handler("time")
 def returnTime(m,q):
     """
@@ -337,19 +302,6 @@ def exchange(message_list:list[str],qid:str):
     ans='兑换成功！'
     return ans
 
-effisStr=['分解效率','合成效率','复制效率','修饰效率','炼油效率','建工效率']
-
-info_msg="查询到QQ号为:%s的用户信息\n"\
-         "学号:%s\n"\
-         "当前余额:%s\n"\
-         "加工科技点:%s\n"\
-         "开采科技点:%s\n"\
-         "炼油科技点:%s\n"\
-         "当前是否可开采:%s\n"\
-         "以下为该用户拥有的矿石:\n%s"\
-         "工厂数: %s\n"\
-         "以下为该玩家各工种生产效率:\n%s"\
-         "以下为该玩家拥有的私人矿井编号:\n%s"\
 
 @handler("查询")
 def getUserInfo(message_list:list[str],qid:str):
