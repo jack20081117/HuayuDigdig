@@ -546,14 +546,14 @@ def preauction(message_list:list[str],qid:str):
     :return: 拍卖提示信息
     """
     assert len(message_list)==7,'拍卖失败:请按照规定格式进行拍卖！'
-    nowtime=datetime.timestamp(datetime.now())
+    nowtime:int=round(datetime.timestamp(datetime.now()))
     try:
         mineralID:int=int(message_list[1])
         mineralNum:int=int(message_list[2])
         price:int=int(message_list[3])
         secret:bool=bool(int(message_list[6]))
         if message_list[4]=='现在' or message_list[4]=='now':
-            starttime:int=round(nowtime)
+            starttime:int=nowtime
         else:
             starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
         if message_list[5] in delay:
@@ -570,7 +570,7 @@ def preauction(message_list:list[str],qid:str):
     assert mineralDict[mineralID]>=mineralNum,'拍卖失败:您的矿石数量不足！'
     assert price>0,'拍卖失败:底价必须为正数！'
     assert endtime>nowtime,'拍卖失败:已经超过截止期限！'
-    starttime=max(round(nowtime),starttime)
+    starttime=max(nowtime,starttime)
 
     mineralDict[mineralID]-=mineralNum
     if mineralDict[mineralID]<=0:mineralDict.pop(mineralID)
@@ -785,7 +785,7 @@ def getHelp(message_list:list[str],qid:str):
 @handler("放贷")
 def prelend(message_list:list[str],qid:str):
     """
-    :param message_list: 借出 金额 借出时间 利率 起始时间 终止时间
+    :param message_list: 放贷 金额 放贷时间 利率 起始时间 终止时间
     :param qid: 放贷者的qq号
     :return: 放贷提示信息
     """
@@ -796,7 +796,7 @@ def prelend(message_list:list[str],qid:str):
         debttime=message_list[2]
         interest=float(message_list[3])
         if message_list[4]=='现在' or message_list[4]=='now':
-            starttime:int=round(nowtime)
+            starttime:int=nowtime
         else:
             starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
         if message_list[5] in delay:
@@ -804,31 +804,94 @@ def prelend(message_list:list[str],qid:str):
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except Exception:
-        raise AssertionError("借出失败:您的金额格式不正确！")
+        return "放贷失败:您的金额格式不正确！"
 
-    lendtime:int=0
+    duration:int=0
     if debttime.endswith("m"):
-        lendtime=int(debttime[:-1])*60
+        duration=int(debttime[:-1])*60
     elif debttime.endswith("h"):
-        lendtime=int(debttime[:-1])*3600
+        duration=int(debttime[:-1])*3600
     elif debttime.endswith("d"):
-        lendtime=int(debttime[:-1])*86400
+        duration=int(debttime[:-1])*86400
     else:
         return "放贷失败:您的时间格式不正确！应当为:`借出时间`(m/h/d)"
 
     creditor=User.find(qid,mysql)
     assert creditor.money>money,"放贷失败:您的余额不足！"
+    assert endtime>nowtime,'放贷失败:已经超过截止期限！'
+    starttime=max(nowtime,starttime)
     creditor.money-=money
     creditor.save(mysql)
 
-    debtID:int=max([0]+[auction.tradeID for auction in Debt.findAll(mysql)])+1
+    debtID:int=max([0]+[debt.debtID for debt in Debt.findAll(mysql)])+1
     debt=Debt(debtID=debtID,creditor_id=qid,debitor_id='nobody',money=money,
-              starttime=starttime,endtime=endtime,daily_interest=float(interest))
+              duration=duration,starttime=starttime,endtime=endtime,interest=float(interest))
     debt.add(mysql)
 
     ans='放贷成功！'
     return ans
 
+@handler("借贷")
+def borrow(message_list:list[str],qid:str):
+    """
+    :param message_list: 借贷 债券编号 金额
+    :param qid: 借贷者的qq号
+    :return: 借贷提示信息
+    """
+    assert len(message_list)==3,"借贷失败:您的借贷格式不正确！"
+    nowtime:int=round(datetime.timestamp(datetime.now()))
+    try:
+        debtID:int=int(message_list[1])
+        money:int=int(message_list[2])
+    except Exception:
+        return "借贷失败:您的借贷格式不正确！"
+    debt=Debt.find(debtID,mysql)
+    assert debt is not None,"借贷失败:不存在此债券！"
+    assert debt.debitor_id=='nobody',"借贷失败:此债券已被贷款！"
+    assert debt.money>money,"借贷失败:贷款金额过大！"
+    assert debt.starttime<nowtime,"借贷失败:此债券尚未开始放贷！"
+    assert debt.endtime>nowtime,"借贷失败:此债券已结束放贷！"
+
+    debt.money-=money
+    debt.save(mysql)
+    creditor_id=debt.creditor_id
+    duration=debt.duration
+    interest=debt.interest
+
+    newdebtID:int=max([0]+[debt.debtID for debt in Debt.findAll(mysql)])+1
+    newdebt=Debt(debtID=newdebtID,creditor_id=creditor_id,debitor_id=qid,money=money,
+                 duration=duration,starttime=nowtime,endtime=nowtime+duration,interest=interest)
+    newdebt.save(mysql)
+    ans='借贷成功！请注意在借贷时限内还款！'
+
+@handler("债市")
+def debtMarket(message_list:list[str],qid:str):
+    """
+    :param message_list: 债市
+    :param qid:
+    :return: 提示信息
+    """
+    debts:list[Debt]=Debt.findAll(mysql,where='debitor_id=?',args=('nobody',))
+    ans='欢迎来到债市！\n'
+    if debts:
+        ans+='以下是所有目前可借的贷款:\n'
+        debtData=[['债券编号','金额','债权人','借出时间','利率','起始时间','终止时间']]
+        for debt in debts:
+            debttime:str=''
+            if debt.duration//86400:
+                debttime+='%d天'%debt.duration//86400
+            if (debt.duration%86400)//3600:
+                debttime+='%d小时'%(debt.duration%86400)//3600
+            if (debt.duration%3600)//60:
+                debttime+='%d分钟'%(debt.duration%3600)//60
+            starttime:str=datetime.fromtimestamp(float(debt.starttime)).strftime('%Y-%m-%d %H:%M:%S')
+            endtime:str=datetime.fromtimestamp(float(debt.endtime)).strftime('%Y-%m-%d %H:%M:%S')
+            debtData.append([debt.debtID,debt.money,debt.creditor_id,debt.duration,debt.interest,starttime,endtime])
+        drawtable(debtData,'debt.png')
+        ans+='[CQ:image,file=debt.png]'
+    else:
+        ans+='目前没有可借的贷款！'
+    return ans
 
 def dealWithRequest(funcStr:str,message_list:list[str],qid:str):
     if funcStr in commands:

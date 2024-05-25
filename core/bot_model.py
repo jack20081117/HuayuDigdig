@@ -309,12 +309,13 @@ class Debt(Model):
     __table__='debts'
 
     debtID=IntegerField(primaryKey=True)
-    creditor_id=StringField(columnType='varchar(20)') # 钱多的人
-    debitor_id=StringField(columnType='varchar(20)')  # 钱少的人
-    money = IntegerField()  # 贷款金额
+    creditor_id=StringField(columnType='varchar(20)') # 债权人
+    debitor_id=StringField(columnType='varchar(20)')  # 债务人
+    money=IntegerField()  # 贷款金额
+    duration=IntegerField()
     starttime=IntegerField()
     endtime=IntegerField()
-    daily_interest=FloatField()
+    interest=FloatField()
 
 
     
