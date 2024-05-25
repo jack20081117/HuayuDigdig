@@ -1,9 +1,14 @@
+import random
 from datetime import datetime
 from matplotlib import pyplot as plt
 from apscheduler.schedulers.background import BackgroundScheduler as bgsc
 
 
 plt.rcParams['font.family']=['Microsoft YaHei']
+chars = "0123456789abcdef"
+
+def generate_random_digits(wei:int):
+    return "".join(random.choice(chars) for i in wei)
 
 
 def drawtable(data:list,filename:str):

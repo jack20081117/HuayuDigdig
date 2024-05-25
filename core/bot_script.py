@@ -3,6 +3,7 @@ import requests
 import re
 import markdown
 import imgkit
+import time
 import numpy as np
 from datetime import datetime
 
@@ -781,6 +782,65 @@ def getHelp(message_list:list[str],qid:str):
     imgkit.from_string(html,'../go-cqhttp/data/images/help.png',config=imgkit_config,css='./style.css')
     ans='[CQ:image,file=help.png]'
     return ans
+
+@handler("借出")
+def lend_out(message_list:list[str], qid:str):
+    """
+    :param message_list: 借出 q`QQ号`/`学号` $`金额` `借出时间` `利率`
+    :param qid: 借出者的qq号
+    :return: 借出提示信息
+    """
+    assert len(message_list)==5,'借出失败:您的借出格式不正确！'
+    _, target, money_, debt_time, interest = message_list
+    assert money_.startswith("$"),'借出失败:您的金额格式不正确！'
+    try:
+        money = int(money[1:])
+    except Exception:
+        raise AssertionError("借出失败:您的金额格式不正确！应当为:$`金额`")
+    
+    lend_time = 0
+    if debt_time.endswith("m"):
+        lend_time = int(debt_time[:-1]) * 60
+    elif debt_time.endswith("h"):
+        lend_time = int(debt_time[:-1]) * 60 * 60
+    elif debt_time.endswith("d"):
+        lend_time = int(debt_time[:-1]) * 60 * 60 * 24
+    else:
+        return "借出失败:您的借出时间格式不正确！应当为:`借出时间`(m/h/d)"
+    
+    if target.startswith("q"):
+        targetID = target[1:]
+        debitor = User.find(targetID, mysql)
+    else:
+        targetID = target
+        debitor = User.findAll(mysql,'schoolID=?',(targetID, ))[0]
+    creditor = User.find(qid, mysql)
+    
+    if creditor.money < money:
+        return "借出失败:您的余额不足！"
+    creditor.money -= money
+    debitor.money += money
+    
+    creditor.update(mysql)
+    debitor.update(mysql)
+    current_time = int(time.time())
+    
+    debt = Debt(
+        debtID = random.randint(0, 10**8),
+        creditor_id = qid,
+        debitor_id = targetID,
+        money = money,
+        starttime = current_time,
+        endtime = current_time + lend_time,
+        daily_interest = float(interest)
+    )
+    debt.save()
+    dt = datetime.fromtimestamp(current_time + lend_time)
+    
+    return "借出成功！您已成功借出 %s 元矿币，若对方未在 %s 前主动还款，系统将自动扣除其包含1.5倍利息的金额进入您的账户。如果强制还款时对方金额不足，则该债务将保留未完成状态，您可随时使用 催债 命令来拿到对方剩余金额和债务未偿还部分两者中较低的部分。" % (
+        money, dt.strftime("%Y-%m-%d %H:%M:%S")
+    )
+    
 
 def dealWithRequest(funcStr:str,message_list:list[str],qid:str):
     if funcStr in commands:

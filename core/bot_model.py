@@ -309,14 +309,17 @@ class Debt(Model):
     __table__='debts'
 
     debtID=IntegerField(primaryKey=True)
-    creditor_id=StringField(columnType='varchar(20)')
-    debitor_id=StringField(columnType='varchar(20)')
+    creditor_id=StringField(columnType='varchar(20)') # 钱多的人
+    debitor_id=StringField(columnType='varchar(20)')  # 钱少的人
+    money = IntegerField()  # 贷款金额
     starttime=IntegerField()
     endtime=IntegerField()
     daily_interest=FloatField()
 
 
-
+    
+    
+    
 if __name__ == '__main__':#创建新表
     mysql=(env=='prod')
     User.create(mysql)
@@ -325,6 +328,7 @@ if __name__ == '__main__':#创建新表
     Purchase.create(mysql)
     Auction.create(mysql)
     Stock.create(mysql)
+    Debt.create(mysql)
     for i in range(1,5):
         _mine=Mine(mineID=i,abundance=0.0)
         _mine.save(mysql)
