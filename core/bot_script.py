@@ -761,7 +761,8 @@ def issue(message_list:list[str],qid:str):
     selfRetain:float=float(message_list[5])
 
     stockID:int=max([0]+[stock.tradeID for stock in Stock.findAll(mysql)])+1
-    stock=Stock(stockID=stockID,stockNum=stockNum,stockAbbr=stockAbbr,issue_qid=qid,price=price,self_retain=selfRetain)
+    stock=Stock(stockID=stockID,stockNum=stockNum,stockAbbr=stockAbbr,issue_qid=qid,price=price,self_retain=selfRetain,
+                histprice='{}',shareholders='{}',avg_dividend=0.0)
 
 @handler("支付")
 def pay(message_list:list[str],qid:str):
