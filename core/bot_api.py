@@ -2,6 +2,7 @@ from flask import Flask,request
 from datetime import datetime
 from bot_script import *
 import warnings
+import signal
 warnings.filterwarnings('ignore')
 
 app=Flask(__name__)
@@ -20,6 +21,13 @@ def post():
         handle(res,group=True)
 
     return 'OK'
+
+def shutdownApp(signum, frame):
+    print('HuayuDigDig 后端正在关闭……')
+    connection.close()
+    raise SystemExit(0)
+
+signal.signal(signal.SIGINT, shutdownApp)
 
 if __name__=='__main__':
     app.run("127.0.0.1",port=5701,debug=False)  # 注意，这里的端口要和配置文件中的保持一致
