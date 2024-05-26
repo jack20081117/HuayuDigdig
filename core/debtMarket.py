@@ -2,10 +2,9 @@ from datetime import datetime
 
 from tools import handler,setTimeTask,drawtable,send
 from model import User,Debt
-from config import mysql,delay
+from globalConfig import mysql,delay
 from updateServices import updateDebt
 
-@handler("放贷")
 def prelend(message_list:list[str],qid:str):
     """
     :param message_list: 放贷 金额 放贷时间 利率 起始时间 终止时间
@@ -55,7 +54,6 @@ def prelend(message_list:list[str],qid:str):
     ans='放贷成功！'
     return ans
 
-@handler("借贷")
 def borrow(message_list:list[str],qid:str):
     """
     :param message_list: 借贷 债券编号 金额
@@ -99,7 +97,6 @@ def borrow(message_list:list[str],qid:str):
     ans='借贷成功！请注意在借贷时限内还款！'
     return ans
 
-@handler("还款")
 def repay(message_list:list[str],qid:str):
     """
     :param message_list: 还款 债券编号 金额
@@ -135,7 +132,6 @@ def repay(message_list:list[str],qid:str):
         ans='还款成功！剩余贷款金额:%d'%debt.money
     return ans
 
-@handler("债市")
 def debtMarket(message_list:list[str],qid:str):
     """
     :param message_list: 债市

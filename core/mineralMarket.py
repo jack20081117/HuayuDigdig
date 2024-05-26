@@ -2,10 +2,9 @@ from datetime import datetime
 
 from tools import handler,drawtable,setTimeTask,send
 from model import User,Sale,Purchase,Auction
-from config import mysql,delay,deposit
+from globalConfig import mysql,delay,deposit
 from updateServices import updateSale,updatePurchase,updateAuction
 
-@handler("预售")
 def presell(message_list:list[str],qid:str):
     """
     在市场上预售矿石
@@ -53,7 +52,6 @@ def presell(message_list:list[str],qid:str):
     ans='预售成功！编号:%d'%tradeID
     return ans
 
-@handler("购买")
 def buy(message_list:list[str],qid:str):
     """
     在市场上购买矿石
@@ -101,7 +99,6 @@ def buy(message_list:list[str],qid:str):
     send(tqid,'您预售的商品(编号:%d)已被卖出！'%tradeID,False)
     return ans
 
-@handler('预订')
 def prebuy(message_list:list[str],qid:str):
     """
     在市场上预订矿石
@@ -143,7 +140,6 @@ def prebuy(message_list:list[str],qid:str):
     ans='预订成功！编号:%d'%tradeID
     return ans
 
-@handler('售卖')
 def sell(message_list:list[str],qid:str):
     """
     在市场上售卖矿石
@@ -198,7 +194,6 @@ def sell(message_list:list[str],qid:str):
     send(tqid,'您预订的商品(编号:%d)已被买入！'%tradeID,False)
     return ans
 
-@handler("拍卖")
 def preauction(message_list:list[str],qid:str):
     """
     在市场上拍卖矿石
@@ -248,7 +243,6 @@ def preauction(message_list:list[str],qid:str):
     ans='拍卖成功！编号:%d'%tradeID
     return ans
 
-@handler("投标")
 def bid(message_list:list[str],qid:str):
     """
     在市场上对矿石进行投标
@@ -300,7 +294,6 @@ def bid(message_list:list[str],qid:str):
     ans='投标成功！'
     return ans
 
-@handler("市场")
 def mineralMarket(message_list:list[str],qid:str):
     """
     查看市场

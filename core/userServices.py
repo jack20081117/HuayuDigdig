@@ -2,17 +2,15 @@ import re,markdown,imgkit
 from datetime import datetime
 
 from tools import handler
-from config import mysql,effisStr,info_msg,imgkit_config,player_tax
+from globalConfig import mysql,effisStr,info_msg,imgkit_config,player_tax
 from model import User
 
-@handler("time")
 def returnTime(m,q):
     """
     返回当前时间
     """
     return '当前时间为:%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-@handler("注册")
 def signup(message_list:list[str],qid:str):
     """
     用户注册
@@ -32,7 +30,6 @@ def signup(message_list:list[str],qid:str):
     ans="注册成功！"
     return ans
 
-@handler("查询")
 def getUserInfo(message_list:list[str],qid:str):
     """
     查询用户个人信息
@@ -73,7 +70,6 @@ def getUserInfo(message_list:list[str],qid:str):
                   mres,factory_num,eres,mineres)
     return ans
 
-@handler("帮助")
 def getHelp(message_list:list[str],qid:str):
     with open('help_msg.md','r',encoding='utf-8') as help_msg:
         html=markdown.markdown(help_msg.read())
@@ -81,7 +77,6 @@ def getHelp(message_list:list[str],qid:str):
     ans='[CQ:image,file=help.png]'
     return ans
 
-@handler("支付")
 def pay(message_list:list[str],qid:str):
     """
     :param message_list: 支付 q`QQ号`/`学号` $`金额`

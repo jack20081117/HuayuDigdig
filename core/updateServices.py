@@ -2,7 +2,7 @@ from datetime import datetime
 
 from tools import send
 from model import User,Mine,Sale,Purchase,Auction,Debt
-from config import mysql,deposit
+from globalConfig import mysql,deposit
 
 def init():
     """

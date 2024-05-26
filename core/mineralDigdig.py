@@ -2,7 +2,7 @@ import numpy as np
 
 from tools import handler,sigmoid
 from model import User,Mine
-from config import mysql
+from globalConfig import mysql
 
 def extract(qid,mineralID,mineID):
     """获取矿石
@@ -41,7 +41,6 @@ def extract(qid,mineralID,mineID):
         ans='开采成功！您获得了编号为%d的矿石！'%mineralID
     return ans
 
-@handler("开采")
 def getMineral(message_list:list[str],qid:str):
     """
     根据传入的信息开采矿井
@@ -67,7 +66,6 @@ def getMineral(message_list:list[str],qid:str):
         ans='开采失败:不存在此矿井！'
     return ans
 
-@handler("兑换")
 def exchange(message_list:list[str],qid:str):
     """
     兑换矿石

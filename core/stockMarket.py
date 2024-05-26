@@ -1,8 +1,7 @@
 from tools import handler,drawtable
 from model import Stock
-from config import mysql
+from globalConfig import mysql
 
-@handler("发行")
 def issue(message_list:list[str],qid:str):
     """
     :param message_list: 发行 股票名称 缩写 发行量 价格 自我保留比例
@@ -24,7 +23,6 @@ def issue(message_list:list[str],qid:str):
     stock.add(mysql)
     ans='发行成功！'
 
-@handler('股市')
 def stockMarket(message_list:list[str],qid:str):
     """
     :param message_list: 股市

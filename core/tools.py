@@ -6,7 +6,7 @@ plt.rcParams['font.family']=['Microsoft YaHei']
 
 from apscheduler.schedulers.background import BackgroundScheduler as bgsc
 
-from config import *
+from globalConfig import *
 
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 

@@ -1,6 +1,6 @@
 import logging,sqlite3
 #logging.basicConfig(level=logging.INFO)
-from config import *
+from globalConfig import *
 
 createArgsString=lambda num:('?,'*num)[:-1]#生成参数占位符字符串
 
