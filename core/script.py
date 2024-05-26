@@ -1,12 +1,13 @@
-from model import *
-from globalConfig import *
 from tools import send
-from userServices import *
+from globalConfig import group_ids
+
+from services import *
 from mineralDigdig import *
 from mineralMarket import *
 from stockMarket import *
 from debtMarket import *
 
+commands:dict={}
 
 def register(funcStr: str,func: callable):
     """
@@ -20,30 +21,6 @@ def register(funcStr: str,func: callable):
 def registerByDict(registers: dict[str,callable]):
     for funcStr,func in registers.items():
         register(funcStr,func)
-
-
-registerByDict({
-    "time":returnTime,
-    "注册":signup,
-    "开采":getMineral,
-    "兑换":exchange,
-    "查询":getUserInfo,
-    "预售":presell,
-    "购买":buy,
-    "预定":prebuy,
-    "售卖":sell,
-    "拍卖":preauction,
-    "投标":bid,
-    "市场":mineralMarket,
-    "发行":issue,
-    "股市":stockMarket,
-    "支付":pay,
-    "帮助":getHelp,
-    "放贷":prelend,
-    "借贷":borrow,
-    "还款":repay,
-    "债市":debtMarket
-})
 
 def dealWithRequest(funcStr:str,message_list:list[str],qid:str):
     if funcStr in commands:
@@ -84,3 +61,29 @@ def handle(res,group):
             send(qid,ans,group=False)
         except AssertionError as err:
             send(qid,err,group=False)
+       
+registerByDict({
+    "time": returnTime,
+    "注册": signup,
+    "开采": getMineral,
+    "兑换": exchange,
+    "查询": getUserInfo,
+    "预售": presell,
+    "购买": buy,
+    "预定": prebuy,
+    "售卖": sell,
+    "拍卖": preauction,
+    "投标": bid,
+    "市场": mineralMarket,
+    "发行": issue,
+    "股市": stockMarket,
+    "支付": pay,
+    "帮助": getHelp,
+    "放贷": prelend,
+    "借贷": borrow,
+    "还款": repay,
+    "债市": debtMarket
+})
+
+     
+            

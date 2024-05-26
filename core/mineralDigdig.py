@@ -1,6 +1,6 @@
 import numpy as np
 
-from tools import handler,sigmoid
+from tools import sigmoid
 from model import User,Mine
 from globalConfig import mysql
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from tools import handler,drawtable,setTimeTask,send
+from tools import drawtable,setTimeTask,send
 from model import User,Sale,Purchase,Auction
 from globalConfig import mysql,delay,deposit
 from updateServices import updateSale,updatePurchase,updateAuction

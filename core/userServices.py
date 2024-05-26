@@ -1,15 +1,6 @@
-import re,markdown,imgkit
-from datetime import datetime
-
-from tools import handler
-from globalConfig import mysql,effisStr,info_msg,imgkit_config,player_tax
+import re
+from globalConfig import mysql,effisStr,info_msg,player_tax
 from model import User
-
-def returnTime(m,q):
-    """
-    返回当前时间
-    """
-    return '当前时间为:%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 def signup(message_list:list[str],qid:str):
     """
@@ -68,13 +59,6 @@ def getUserInfo(message_list:list[str],qid:str):
 
     ans:str=info_msg%(qid,schoolID,money,processTech,extractTech,refineTech,digable,
                   mres,factory_num,eres,mineres)
-    return ans
-
-def getHelp(message_list:list[str],qid:str):
-    with open('help_msg.md','r',encoding='utf-8') as help_msg:
-        html=markdown.markdown(help_msg.read())
-    imgkit.from_string(html,'../go-cqhttp/data/images/help.png',config=imgkit_config,css='./style.css')
-    ans='[CQ:image,file=help.png]'
     return ans
 
 def pay(message_list:list[str],qid:str):

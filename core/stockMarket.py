@@ -1,4 +1,4 @@
-from tools import handler,drawtable
+from tools import drawtable
 from model import Stock
 from globalConfig import mysql
 

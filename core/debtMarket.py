@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from tools import handler,setTimeTask,drawtable,send
+from tools import setTimeTask,drawtable,send
 from model import User,Debt
 from globalConfig import mysql,delay
 from updateServices import updateDebt

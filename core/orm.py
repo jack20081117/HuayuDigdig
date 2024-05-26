@@ -14,6 +14,7 @@ def select(sql,mysql=False,args=()):
             cursor.close()
     else:
         #sql占位符是?,mysql占位符是%s,所以要对字符串进行replace操作
+        connection.ping()
         mysqlcursor.execute(sql.replace('?','%s'),args)
         res=mysqlcursor.fetchall()
     return res
@@ -26,6 +27,7 @@ def execute(sql,mysql=False,args=()):
             conn.commit()
             cursor.close()
     else:
+        connection.ping()
         mysqlcursor.execute(sql.replace('?','%s'),args)
         connection.commit()
 

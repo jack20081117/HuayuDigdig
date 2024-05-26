@@ -26,7 +26,6 @@ if mysql:
                                db=dbconfig["db"],charset="utf8")
     mysqlcursor=connection.cursor()
 
-commands:dict={}
 effisStr=['分解效率','合成效率','复制效率','修饰效率','炼油效率','建工效率']
 
 info_msg="查询到QQ号为:%s的用户信息\n"\

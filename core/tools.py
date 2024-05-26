@@ -10,16 +10,6 @@ from globalConfig import *
 
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 
-def handler(funcStr:str):
-    """
-    该装饰器装饰的函数会自动加入handle函数
-    :param funcStr: 功能
-    """
-    def real_handler(func:callable):
-        commands[funcStr]=func
-        return func
-
-    return real_handler
 
 def generate_random_digits(wei:int):
     return "".join(random.choice(chars) for i in wei)
