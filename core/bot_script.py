@@ -82,7 +82,7 @@ def updateSale(sale:Sale):
     :param sale: 到达截止时间的预售
     """
     qid:str=sale.qid
-    tradeID:str=sale.tradeID
+    tradeID:int=sale.tradeID
     user:User=User.find(qid,mysql)
     if Sale.find(tradeID,mysql) is None:#预售已成功进行
         return None
@@ -105,7 +105,7 @@ def updatePurchase(purchase:Purchase):
     :param purchase: 到达截止时间的预订
     """
     qid:str=purchase.qid
-    tradeID:str=purchase.tradeID
+    tradeID:int=purchase.tradeID
     user:User=User.find(qid,mysql)
     if Purchase.find(tradeID,mysql) is None:#预订已成功进行
         return None
@@ -123,7 +123,7 @@ def updateAuction(auction:Auction):
     :param auction: 到达截止时间的拍卖
     """
     qid:str=auction.qid
-    tradeID:str=auction.tradeID
+    tradeID:int=auction.tradeID
     user:User=User.find(qid,mysql)
     offersList:list=list(eval(auction.offers))
 
@@ -179,6 +179,73 @@ def updateAuction(auction:Auction):
         auction.remove(mysql)
 
         send(qid,'您的拍卖:%s未能进行,矿石已返还到您的账户'%tradeID,False)
+
+def updateDebt(debt:Debt):
+    """
+    :param debt: 到达截止时间的债券
+    """
+    creditor_id:str=debt.creditor_id
+    debitor_id:str=debt.debitor_id
+    interest:float=debt.interest
+    debtID:int=debt.debtID
+    money:int=round(debt.money*(1+interest))
+
+    if Debt.find(debtID,mysql) is None:#债务已还清
+        return None
+
+    creditor:User=User.find(creditor_id)
+    if debitor_id=='nobody':#未被借贷的债券
+        creditor.money+=debt.money
+        creditor.save(mysql)
+
+        send(creditor_id,'您的债券:%s未被借贷，金额已返还到您的账户'%debtID,False)
+        return None
+
+    debitor:User=User.find(debitor_id)
+
+    if debitor.money>=money:#还清贷款
+        creditor.money+=money
+        debitor.money-=money
+
+        debt.remove(mysql)#删除债券
+        creditor.save(mysql)
+        debitor.save(mysql)
+
+        send(creditor_id,'您的债券:%s已还款完毕，金额已返还到您的账户！'%debtID,False)
+        send(debitor_id,'您的债券%s已强制还款，金额已从您的账户中扣除！'%debtID,False)
+    else:#贷款无法还清
+        money-=debitor.money
+        creditor.money+=debitor.money
+        debitor.money=0
+        schoolID:str=debitor.schoolID
+        mineralDict=dict(eval(debitor.mineral))
+
+        for mineralID in mineralDict.keys():
+            if int(schoolID)%mineralID==0\
+            or int(schoolID[:3])%mineralID==0\
+            or int(schoolID[2:])%mineralID==0\
+            or int(schoolID[:2]+'0'+schoolID[2:])%mineralID==0:
+                while money>0 and mineralDict[mineralID]>0:
+                    mineralDict[mineralID]-=1
+                    money-=mineralID
+                    creditor.money+=mineralID
+                if money<0:
+                    break
+        debitor.mineral=str(mineralDict)
+        if money<=0:#还清贷款
+            creditor.money+=money#兑换矿石多余的钱
+            debitor.money-=money#兑换矿石多余的钱
+
+            debt.remove(mysql)#删除债券
+            creditor.save(mysql)
+            debitor.save(mysql)
+
+            send(creditor_id,'您的债券:%s已还款完毕，金额已返还到您的账户！'%debtID,False)
+            send(debitor_id,'您的债券%s已强制还款，金额已从您的账户中扣除！'%debtID,False)
+        else:#TODO:破产清算
+            debitor.money=-money
+            creditor.save(mysql)
+            debitor.save(mysql)
 
 def extract(qid,mineralID,mineID):
     """获取矿石
@@ -789,7 +856,7 @@ def prelend(message_list:list[str],qid:str):
     :param qid: 放贷者的qq号
     :return: 放贷提示信息
     """
-    assert len(message_list)==5,'放贷失败:您的放贷格式不正确！'
+    assert len(message_list)==6,'放贷失败:您的放贷格式不正确！'
     nowtime:int=round(datetime.timestamp(datetime.now()))
     try:
         money=int(message_list[1])
@@ -827,6 +894,7 @@ def prelend(message_list:list[str],qid:str):
     debt=Debt(debtID=debtID,creditor_id=qid,debitor_id='nobody',money=money,
               duration=duration,starttime=starttime,endtime=endtime,interest=float(interest))
     debt.add(mysql)
+    setTimeTask(updateDebt,endtime,debt)
 
     ans='放贷成功！'
     return ans
@@ -848,7 +916,9 @@ def borrow(message_list:list[str],qid:str):
     debt=Debt.find(debtID,mysql)
     assert debt is not None,"借贷失败:不存在此债券！"
     assert debt.debitor_id=='nobody',"借贷失败:此债券已被贷款！"
-    assert debt.money>money,"借贷失败:贷款金额过大！"
+    assert debt.creditor_id!=qid,'借贷失败:您不能向自己贷款！'
+    assert money>0,"借贷失败:借贷金额必须为正！"
+    assert debt.money>=money,"借贷失败:贷款金额过大！"
     assert debt.starttime<nowtime,"借贷失败:此债券尚未开始放贷！"
     assert debt.endtime>nowtime,"借贷失败:此债券已结束放贷！"
 
@@ -857,12 +927,30 @@ def borrow(message_list:list[str],qid:str):
     creditor_id=debt.creditor_id
     duration=debt.duration
     interest=debt.interest
+    if debt.money<=0:
+        debt.remove(mysql)
 
     newdebtID:int=max([0]+[debt.debtID for debt in Debt.findAll(mysql)])+1
     newdebt=Debt(debtID=newdebtID,creditor_id=creditor_id,debitor_id=qid,money=money,
                  duration=duration,starttime=nowtime,endtime=nowtime+duration,interest=interest)
-    newdebt.save(mysql)
+    newdebt.add(mysql)
+    setTimeTask(updateDebt,nowtime+duration,newdebt)
+
+    debitor=User.find(qid,mysql)
+    debitor.money+=money
+    debitor.save(mysql)
+
     ans='借贷成功！请注意在借贷时限内还款！'
+    return ans
+
+@handler("还款")
+def repay(message_list:list[str],qid:str):
+    """
+    :param message_list: 还款 债券编号 金额
+    :param qid: 还款者的qq号
+    :return: 还款提示信息
+    """
+    assert len(message_list)==3,'还款失败:您的还款格式不正确！'
 
 @handler("债市")
 def debtMarket(message_list:list[str],qid:str):
@@ -879,14 +967,14 @@ def debtMarket(message_list:list[str],qid:str):
         for debt in debts:
             debttime:str=''
             if debt.duration//86400:
-                debttime+='%d天'%debt.duration//86400
+                debttime+='%d天'%(debt.duration//86400)
             if (debt.duration%86400)//3600:
-                debttime+='%d小时'%(debt.duration%86400)//3600
+                debttime+='%d小时'%((debt.duration%86400)//3600)
             if (debt.duration%3600)//60:
-                debttime+='%d分钟'%(debt.duration%3600)//60
+                debttime+='%d分钟'%((debt.duration%3600)//60)
             starttime:str=datetime.fromtimestamp(float(debt.starttime)).strftime('%Y-%m-%d %H:%M:%S')
             endtime:str=datetime.fromtimestamp(float(debt.endtime)).strftime('%Y-%m-%d %H:%M:%S')
-            debtData.append([debt.debtID,debt.money,debt.creditor_id,debt.duration,debt.interest,starttime,endtime])
+            debtData.append([debt.debtID,debt.money,debt.creditor_id,debttime,debt.interest,starttime,endtime])
         drawtable(debtData,'debt.png')
         ans+='[CQ:image,file=debt.png]'
     else:
