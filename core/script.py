@@ -1,7 +1,8 @@
 from tools import send
 from globalConfig import group_ids
 
-from services import *
+from userServices import *
+from staticServices import *
 from mineralDigdig import *
 from mineralMarket import *
 from stockMarket import *
@@ -70,7 +71,7 @@ registerByDict({
     "查询": getUserInfo,
     "预售": presell,
     "购买": buy,
-    "预定": prebuy,
+    "预订": prebuy,
     "售卖": sell,
     "拍卖": preauction,
     "投标": bid,
