@@ -1,0 +1,119 @@
+import re,markdown,imgkit
+from datetime import datetime
+
+from tools import handler
+from config import mysql,effisStr,info_msg,imgkit_config,player_tax
+from model import User
+
+@handler("time")
+def returnTime(m,q):
+    """
+    返回当前时间
+    """
+    return '当前时间为:%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+@handler("注册")
+def signup(message_list:list[str],qid:str):
+    """
+    用户注册
+    :param message_list: 注册 学号
+    :param qid: 注册者的qq号
+    :return: 注册提示信息
+    """
+    assert len(message_list)==2 and re.match(r'\d{5}',message_list[1]) and len(message_list[1])==5,'注册失败:请注意您的输入格式！'
+    schoolID:str=message_list[1]
+    assert not User.find(qid,mysql) and not User.findAll(mysql,'schoolID=?',(schoolID,)),'注册失败:您已经注册过，无法重复注册！'
+    user=User(
+        qid=qid,schoolID=schoolID,money=0,mineral='{}',
+        process_tech=0.0,extract_tech=0.0,refine_tech=0.0,digable=1,
+        factory_num=0,effis='[0.0,0.0,0.0,0.0,0.0,0.0]',mines='[]'
+    )#注册新用户
+    user.add(mysql)
+    ans="注册成功！"
+    return ans
+
+@handler("查询")
+def getUserInfo(message_list:list[str],qid:str):
+    """
+    查询用户个人信息
+    :param message_list: 查询
+    :param qid: 查询者的qq号
+    :return: 查询提示信息
+    """
+    user:User=User.find(qid,mysql)
+    schoolID:str=user.schoolID
+    money:int=user.money
+    mineral:str=user.mineral
+    processTech:float=user.process_tech
+    extractTech:float=user.extract_tech
+    refineTech:float=user.refine_tech
+    digable:bool=user.digable
+    mineralDict:dict=dict(eval(mineral))
+    factory_num:int=user.factory_num
+    effisList:list=list(eval(user.effis))
+    mineList:list=list(eval(user.mines))
+    sortedMineralDict:dict={key:mineralDict[key] for key in sorted(mineralDict.keys())}
+
+    mres:str=""
+    for mid,mnum in sortedMineralDict.items():
+        if mid==0:
+            mres+="燃油%s个单位；\n"%mnum
+        else:
+            mres+="编号%s的矿石%s个；\n"%(mid,mnum)
+
+    eres:str=''    #生产效率信息
+    for index in range(6):
+        eres+=effisStr[index]+":%s\n" % effisList[index]
+
+    mineres:str='' #私有矿井信息
+    for mine in mineList:
+        mineres+='%s,' % mine
+
+    ans:str=info_msg%(qid,schoolID,money,processTech,extractTech,refineTech,digable,
+                  mres,factory_num,eres,mineres)
+    return ans
+
+@handler("帮助")
+def getHelp(message_list:list[str],qid:str):
+    with open('help_msg.md','r',encoding='utf-8') as help_msg:
+        html=markdown.markdown(help_msg.read())
+    imgkit.from_string(html,'../go-cqhttp/data/images/help.png',config=imgkit_config,css='./style.css')
+    ans='[CQ:image,file=help.png]'
+    return ans
+
+@handler("支付")
+def pay(message_list:list[str],qid:str):
+    """
+    :param message_list: 支付 q`QQ号`/`学号` $`金额`
+    :param qid: 支付者的qq号
+    :return: 支付提示信息
+    """
+    assert len(message_list)==3,'支付失败:您的支付格式不正确！'
+    target=str(message_list[1])
+    assert message_list[2].startswith("$"),'支付失败:您的金额格式不正确！'
+    try:
+        money:int=int(str(message_list[2])[1:])
+    except ValueError:
+        return "支付失败:您的金额格式不正确！应当为:$`金额`"
+
+    user:User=User.find(qid,mysql)
+
+    assert user.money>=money,"支付失败:您的余额不足！"
+    if target.startswith("q"):
+        # 通过QQ号查找对方
+        tqid:str=target[1:]
+        tuser:User=User.find(tqid,mysql)
+        assert tuser,"支付失败:QQ号为%s的用户未注册！"%tqid
+    else:
+        tschoolID:str=target
+        # 通过学号查找
+        assert User.findAll(mysql,'schoolID=?',(tschoolID,)),"支付失败:学号为%s的用户未注册！"%tschoolID
+        tuser:User=User.findAll(mysql,'schoolID=?',(tschoolID,))[0]
+
+    user.money-=money
+    tuser.money+=round(money*(1-player_tax))
+
+    user.save(mysql)
+    tuser.save(mysql)
+
+    return "支付成功！"

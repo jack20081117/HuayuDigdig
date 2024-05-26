@@ -1,11 +1,25 @@
-import random
+import random,requests
 from datetime import datetime
+import numpy as np
 from matplotlib import pyplot as plt
+plt.rcParams['font.family']=['Microsoft YaHei']
+
 from apscheduler.schedulers.background import BackgroundScheduler as bgsc
 
+from config import *
 
-plt.rcParams['font.family']=['Microsoft YaHei']
-chars = "0123456789abcdef"
+def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
+
+def handler(funcStr:str):
+    """
+    该装饰器装饰的函数会自动加入handle函数
+    :param funcStr: 功能
+    """
+    def real_handler(func:callable):
+        commands[funcStr]=func
+        return func
+
+    return real_handler
 
 def generate_random_digits(wei:int):
     return "".join(random.choice(chars) for i in wei)
@@ -49,7 +63,7 @@ def setCrontab(func:callable,*args,**kwargs):
     :param args: 任务参数
     """
     scheduler=bgsc()
-    scheduler.add_job(func,'cron',minute=0,args=args,kwargs=kwargs)
+    scheduler.add_job(func,'cron',day_of_week='mon-sun',hour='0-23',minute=0,args=args,kwargs=kwargs)
     scheduler.start()
 
 def setTimeTask(func:callable,runtime:int,*args,**kwargs):
@@ -62,4 +76,26 @@ def setTimeTask(func:callable,runtime:int,*args,**kwargs):
     scheduler=bgsc()
     scheduler.add_job(func,"date",args=args,kwargs=kwargs,run_date=datetime.fromtimestamp(float(runtime)))
     scheduler.start()
-  
+
+def send(qid:str,message:str,group=False):
+    """
+    用于发送消息的函数
+    :param qid: 用户id 或 群id
+    :param message: 发送的消息
+    :param group: 是否为群消息
+    :return:none
+    """
+
+    if not group:
+        # 如果发送的为私聊消息
+        params={
+            "user_id":qid,
+            "message":message,
+        }
+        _=requests.get("http://127.0.0.1:5700/send_private_msg",params=params)
+    else:
+        params={
+            'group_id':qid,
+            "message":message
+        }
+        _=requests.get("http://127.0.0.1:5700/send_group_msg",params=params)
