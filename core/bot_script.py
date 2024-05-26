@@ -57,8 +57,15 @@ def init():
     """
     在矿井刷新时进行初始化
     """
-    execute('update users set digable=?',mysql,(1,))
-    execute('update mines set abundance=?',mysql,(0.0,))
+    for user in User.findAll(mysql):
+        user.digable=1
+        user.save(mysql)
+    for mine in Mine.findAll(mysql):
+        mine.abundance=0.0
+        mine.save(mysql)
+    for debt in Debt.findAll(mysql):
+        debt.money=round(debt.money*(1+debt.interest))
+        debt.save(mysql)
     update()
 
 def update():
@@ -69,6 +76,7 @@ def update():
     endedSales:list[Sale]=Sale.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预售
     endedPurchases:list[Purchase]=Purchase.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预订
     endedAuctions:list[Auction]=Auction.findAll(mysql,'endtime<?',(nowtime,)) #已经结束的拍卖
+    endedDebts:list[Debt]=Debt.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的债券
 
     for sale in endedSales:
         updateSale(sale)
@@ -76,6 +84,8 @@ def update():
         updatePurchase(purchase)
     for auction in endedAuctions:
         updateAuction(auction)
+    for debt in endedDebts:
+        updateDebt(debt)
 
 def updateSale(sale:Sale):
     """
@@ -197,6 +207,7 @@ def updateDebt(debt:Debt):
     if debitor_id=='nobody':#未被借贷的债券
         creditor.money+=debt.money
         creditor.save(mysql)
+        debt.remove(mysql)
 
         send(creditor_id,'您的债券:%s未被借贷，金额已返还到您的账户'%debtID,False)
         return None
@@ -433,8 +444,8 @@ def presell(message_list:list[str],qid:str):
             endtime:int=starttime+delay[message_list[5]]
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
-    except Exception as err:
-        raise AssertionError('预售失败:请按照规定格式进行预售！')
+    except ValueError:
+        return '预售失败:请按照规定格式进行预售！'
 
     user:User=User.find(qid,mysql)
     mineralDict:dict=dict(eval(user.mineral))
@@ -470,8 +481,8 @@ def buy(message_list:list[str],qid:str):
     assert len(message_list)==2,'购买失败:请按照规定格式进行购买！'
     try:
         tradeID:int=int(message_list[1])
-    except Exception:
-        raise AssertionError('购买失败:请按照规定格式进行购买！')
+    except ValueError:
+        return '购买失败:请按照规定格式进行购买！'
     sale:Sale=Sale.find(tradeID,mysql)
     assert sale,'购买失败:不存在此卖品！'
     user:User=User.find(qid,mysql)
@@ -529,8 +540,8 @@ def prebuy(message_list:list[str],qid:str):
             endtime:int=starttime+delay[message_list[5]]
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
-    except Exception as err:
-        raise AssertionError('预订失败:请按照规定格式进行预订！')
+    except ValueError:
+        return '预订失败:请按照规定格式进行预订！'
     user:User=User.find(qid,mysql)
 
     assert user.money>=price,'预订失败:您的余额不足！'
@@ -560,8 +571,8 @@ def sell(message_list:list[str],qid:str):
     assert len(message_list)==2,'售卖失败:请按照规定进行售卖！'
     try:
         tradeID:int=int(message_list[1])
-    except Exception:
-        raise AssertionError('购买失败:请按照规定格式进行购买！')
+    except ValueError:
+        return '购买失败:请按照规定格式进行购买！'
     purchase:Purchase=Purchase.find(tradeID,mysql)
     assert purchase,'购买失败:不存在此卖品！'
     user:User=User.find(qid,mysql)
@@ -627,8 +638,8 @@ def preauction(message_list:list[str],qid:str):
             endtime:int=starttime+delay[message_list[5]]
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
-    except Exception as err:
-        raise AssertionError('拍卖失败:请按照规定格式进行拍卖！')
+    except ValueError:
+        return '拍卖失败:请按照规定格式进行拍卖！'
 
     user:User=User.find(qid,mysql)
     mineralDict:dict=dict(eval(user.mineral))
@@ -667,8 +678,8 @@ def bid(message_list:list[str],qid:str):
     try:
         tradeID:int=int(message_list[1])
         userprice:int=int(message_list[2])
-    except Exception as err:
-        raise AssertionError('投标失败:请按照规定格式进行投标！')
+    except ValueError:
+        return '投标失败:请按照规定格式进行投标！'
     auction:Auction=Auction.find(tradeID,mysql)
     assert auction,'投标失败:不存在此卖品！'
     user:User=User.find(qid,mysql)
@@ -816,8 +827,8 @@ def pay(message_list:list[str],qid:str):
     assert message_list[2].startswith("$"),'支付失败:您的金额格式不正确！'
     try:
         money:int=int(str(message_list[2])[1:])
-    except Exception:
-        raise AssertionError("支付失败:您的金额格式不正确！应当为:$`金额`")
+    except ValueError:
+        return "支付失败:您的金额格式不正确！应当为:$`金额`"
 
     user:User=User.find(qid,mysql)
 
@@ -870,7 +881,7 @@ def prelend(message_list:list[str],qid:str):
             endtime:int=starttime+delay[message_list[5]]
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
-    except Exception:
+    except ValueError:
         return "放贷失败:您的金额格式不正确！"
 
     duration:int=0
@@ -911,7 +922,7 @@ def borrow(message_list:list[str],qid:str):
     try:
         debtID:int=int(message_list[1])
         money:int=int(message_list[2])
-    except Exception:
+    except ValueError:
         return "借贷失败:您的借贷格式不正确！"
     debt=Debt.find(debtID,mysql)
     assert debt is not None,"借贷失败:不存在此债券！"
@@ -951,6 +962,33 @@ def repay(message_list:list[str],qid:str):
     :return: 还款提示信息
     """
     assert len(message_list)==3,'还款失败:您的还款格式不正确！'
+    nowtime:int=round(datetime.timestamp(datetime.now()))
+    try:
+        debtID:int=int(message_list[1])
+        money:int=int(message_list[2])
+    except ValueError:
+        return '还款失败:您的还款格式不正确！'
+    debt=Debt.find(debtID,mysql)
+    debitor=User.find(qid,mysql)
+    assert debt is not None,"还款失败:不存在此债券！"
+    assert debt.debitor_id==qid,'还款失败:您不是此债券的债务人！'
+    assert money>0,'还款失败:还款金额必须为正！'
+    assert debitor.money>money,'还款失败:您的余额不足！'
+    assert debt.endtime>nowtime,'还款失败:此债券已结束还款！'
+
+    if money>=debt.money:
+        debitor.money-=(money-debt.money)#返还多余的还款
+        debitor.save(mysql)
+        debt.remove(mysql)
+        ans='还款成功！您已还清此贷款！'
+        send(debt.creditor_id,'您的债券:%s已还款完毕，贷款已送到您的账户'%debtID,False)
+    else:
+        debt.money-=money
+        debitor.money-=money
+        debt.save(mysql)
+        debitor.save(mysql)
+        ans='还款成功！剩余贷款金额:%d'%debt.money
+    return ans
 
 @handler("债市")
 def debtMarket(message_list:list[str],qid:str):
