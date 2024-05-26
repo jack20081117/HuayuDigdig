@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from tools import drawtable,setTimeTask,send
+from tools import drawtable,setTimeTask,send,generateTime
 from model import User,Sale,Purchase,Auction
-from globalConfig import mysql,delay,deposit
+from globalConfig import mysql,deposit
 from updateServices import updateSale,updatePurchase,updateAuction
 
 def presell(message_list:list[str],qid:str):
@@ -22,8 +22,8 @@ def presell(message_list:list[str],qid:str):
             starttime:int=nowtime
         else:
             starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
-        if message_list[5] in delay:
-            endtime:int=starttime+delay[message_list[5]]
+        if generateTime(message_list[5]):
+            endtime:int=starttime+generateTime(message_list[5])
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except ValueError:
@@ -116,8 +116,8 @@ def prebuy(message_list:list[str],qid:str):
             starttime:int=nowtime
         else:
             starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
-        if message_list[5] in delay:
-            endtime:int=starttime+delay[message_list[5]]
+        if generateTime(message_list[5]):
+            endtime:int=starttime+generateTime(message_list[5])
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except ValueError:
@@ -212,8 +212,8 @@ def preauction(message_list:list[str],qid:str):
             starttime:int=nowtime
         else:
             starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
-        if message_list[5] in delay:
-            endtime:int=starttime+delay[message_list[5]]
+        if generateTime(message_list[5]):
+            endtime:int=starttime+generateTime(message_list[5])
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except ValueError:

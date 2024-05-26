@@ -14,6 +14,23 @@ def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 def generate_random_digits(wei:int):
     return "".join(random.choice(chars) for i in wei)
 
+def generateTime(timeStr:str)->int:
+    """
+    根据字符串生成秒数
+    :param timeStr:格式:3min/2h/5d
+    :return:对应的秒数
+    """
+    try:
+        if timeStr.endswith('min'):
+            return int(timeStr[:-3])*60
+        elif timeStr.endswith('h'):
+            return int(timeStr[:-1])*3600
+        elif timeStr.endswith('d'):
+            return int(timeStr[:-1])*86400
+        else:
+            return 0
+    except ValueError:
+        return 0
 
 def drawtable(data:list,filename:str):
     """

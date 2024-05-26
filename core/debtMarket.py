@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from tools import setTimeTask,drawtable,send
+from tools import setTimeTask,drawtable,send,generateTime
 from model import User,Debt
-from globalConfig import mysql,delay
+from globalConfig import mysql
 from updateServices import updateDebt
 
 def prelend(message_list:list[str],qid:str):
@@ -15,28 +15,18 @@ def prelend(message_list:list[str],qid:str):
     nowtime:int=round(datetime.timestamp(datetime.now()))
     try:
         money=int(message_list[1])
-        debttime=message_list[2]
+        duration=generateTime(message_list[2])
         interest=float(message_list[3])
         if message_list[4]=='现在' or message_list[4]=='now':
             starttime:int=nowtime
         else:
             starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
-        if message_list[5] in delay:
-            endtime:int=starttime+delay[message_list[5]]
+        if generateTime(message_list[5]):
+            endtime:int=starttime+generateTime(message_list[5])
         else:
             endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
     except ValueError:
-        return "放贷失败:您的金额格式不正确！"
-
-    duration:int=0
-    if debttime.endswith("min"):
-        duration=int(debttime[:-3])*60
-    elif debttime.endswith("h"):
-        duration=int(debttime[:-1])*3600
-    elif debttime.endswith("d"):
-        duration=int(debttime[:-1])*86400
-    else:
-        return "放贷失败:您的时间格式不正确！应当为:`借出时间`(min/h/d)"
+        return "放贷失败:您的放贷格式不正确！"
 
     creditor=User.find(qid,mysql)
     assert creditor.money>money,"放贷失败:您的余额不足！"

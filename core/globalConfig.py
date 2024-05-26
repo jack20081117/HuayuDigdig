@@ -13,7 +13,6 @@ with open("./config.json","r",encoding='utf-8') as config:
 env:str=config["env"]
 player_tax:float=config["tax"]["player"]
 deposit:float=config["deposit"]
-delay:dict=config['delay']
 group_ids:list=config['group_ids']
 mysql:bool=(env=='prod')
 

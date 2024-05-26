@@ -1,6 +1,4 @@
-from tools import send
 from globalConfig import group_ids
-
 from userServices import *
 from staticServices import *
 from mineralDigdig import *
