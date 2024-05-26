@@ -885,14 +885,14 @@ def prelend(message_list:list[str],qid:str):
         return "放贷失败:您的金额格式不正确！"
 
     duration:int=0
-    if debttime.endswith("m"):
-        duration=int(debttime[:-1])*60
+    if debttime.endswith("min"):
+        duration=int(debttime[:-3])*60
     elif debttime.endswith("h"):
         duration=int(debttime[:-1])*3600
     elif debttime.endswith("d"):
         duration=int(debttime[:-1])*86400
     else:
-        return "放贷失败:您的时间格式不正确！应当为:`借出时间`(m/h/d)"
+        return "放贷失败:您的时间格式不正确！应当为:`借出时间`(min/h/d)"
 
     creditor=User.find(qid,mysql)
     assert creditor.money>money,"放贷失败:您的余额不足！"
