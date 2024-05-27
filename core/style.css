@@ -5,3 +5,15 @@ body {
 code {
     font-family:楷体,Arial,sans-serif;
 }
+
+table {
+  border-collapse:collapse;
+  width:100%;
+}
+
+th,td {
+  border-bottom:1px solid #ddd;
+  text-align:center;
+}
+
+tr:nth-child(even) {background-color:#f2f2f2;}

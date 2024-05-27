@@ -1,12 +1,11 @@
 import random,requests
 from datetime import datetime
 import numpy as np
-from matplotlib import pyplot as plt
-plt.rcParams['font.family']=['Microsoft YaHei']
+import imgkit
 
 from apscheduler.schedulers.background import BackgroundScheduler as bgsc
 
-from globalConfig import *
+from globalConfig import chars,imgkit_config
 
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 
@@ -39,18 +38,21 @@ def drawtable(data:list,filename:str):
     :param filename: 存储图片地址
     :return:
     """
-    fig,ax=plt.subplots()
-    table=ax.table(cellText=data,loc='center')
-    table.auto_set_font_size(False)
-    #table.set_fontsize(10)
 
-    for key,cell in table.get_celld().items():
-        cell.set_text_props(fontsize=8,ha='center',va='center')
-
-    table.auto_set_column_width(col=list(range(len(data[0]))))
-
-    ax.axis('off')
-    plt.savefig('../go-cqhttp/data/images/%s'%filename)
+    html='<table>'
+    title=data[0]
+    markdownStr=0
+    html+='<tr>'
+    for element in title:
+        html+='<th>%s</th>'%element
+    html+='</tr>'
+    for datum in data[1:]:
+        html+='<tr>'
+        for element in datum:
+            html+='<td>%s</td>'%element
+        html+='</tr>'
+    html+='</table>'
+    imgkit.from_string(html,'../go-cqhttp/data/images/%s'%filename,config=imgkit_config,css='./style.css')
 
 def setInterval(func:callable,interval:int,*args,**kwargs):
     """
