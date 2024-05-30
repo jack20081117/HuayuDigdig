@@ -1,8 +1,8 @@
 from flask import Flask,request
 from script import handle
-from updateServices import init
+from update import init
 from tools import setCrontab
-from globalConfig import connection
+from globalConfig import mysql
 import warnings
 import signal
 warnings.filterwarnings('ignore')
@@ -25,11 +25,13 @@ def post():
     return 'OK'
 
 def shutdownApp(signum, frame):
+    from globalConfig import connection
     print('HuayuDigDig 后端正在关闭……')
     connection.close()
     raise SystemExit(0)
 
-signal.signal(signal.SIGINT, shutdownApp)
+if mysql:
+    signal.signal(signal.SIGINT, shutdownApp)
 
 if __name__=='__main__':
     app.run("127.0.0.1",port=5701,debug=True)  # 注意，这里的端口要和配置文件中的保持一致

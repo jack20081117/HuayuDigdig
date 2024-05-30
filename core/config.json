@@ -1,5 +1,5 @@
 {
-    "env": "prod",
+    "env": "dev",
     "tax":{
         "player": 0.01
     },

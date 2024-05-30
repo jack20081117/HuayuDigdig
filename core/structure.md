@@ -3,12 +3,12 @@
 |-|-|-|
 |1|网关|api|
 |2|分发|script|
-|3|分层业务|userServices,mineralDigDig,mineralMarket,stockMarket,debtMarket|
-|4|更新业务|updateServices|
+|3|分层业务|user,extract,industrial,market,stock,debt|
+|4|更新业务|update|
 |5|数据模型|model|
 |6|数据管理|orm|
 |7|底层函数|tools|
-|8|底层配置|config|
+|8|底层配置|globalConfig|
 |-|-|以下为非bot内部架构|
 |9|数据库|MySQL,SQLite|
 |10|日志|logging|
