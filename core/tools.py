@@ -17,7 +17,7 @@ def smart_interval(seconds:float):
     if seconds < 60:
         return "%ss" % seconds
     if seconds < 3600:
-        return "%sm" % (seconds / 60)
+        return "%smin" % (seconds / 60)
     if seconds < 86400:
         return "%sh" % (seconds / 3600)
     return "%sd" % (seconds / 86400)
