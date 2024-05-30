@@ -1,11 +1,11 @@
 from globalConfig import group_ids
-from userServices import *
-from staticServices import *
-from mineralDigdig import *
-from mineralMarket import *
-from stockMarket import *
-from debtMarket import *
-from industrial import *
+from user import *
+from static import *
+from extract import *
+from market import *
+from stock import *
+from debt import *
+from process import *
 
 commands:dict={}
 
@@ -88,8 +88,6 @@ registerByDict({
     "修饰": decorate,
     "复制": duplicate,
     "炼化": refine,
-    "取消": cancelPlan,
-    "执行": enactPlan
 })
 
      

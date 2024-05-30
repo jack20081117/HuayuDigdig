@@ -3,7 +3,7 @@ from datetime import datetime
 from tools import setTimeTask,drawtable,send,generateTime
 from model import User,Debt
 from globalConfig import mysql
-from updateServices import updateDebt
+from update import updateDebt
 
 def prelend(message_list:list[str],qid:str):
     """

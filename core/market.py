@@ -3,7 +3,7 @@ from datetime import datetime
 from tools import drawtable,setTimeTask,send,generateTime
 from model import User,Sale,Purchase,Auction
 from globalConfig import mysql,deposit
-from updateServices import updateSale,updatePurchase,updateAuction
+from update import updateSale,updatePurchase,updateAuction
 
 def presell(message_list:list[str],qid:str):
     """

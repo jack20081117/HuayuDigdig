@@ -111,6 +111,7 @@ class Debt(Model):
 
 if __name__=='__main__':  #创建新表
     User.create(mysql)
+    Plan.create(mysql)
     Mine.create(mysql)
     Sale.create(mysql)
     Purchase.create(mysql)
@@ -119,4 +120,4 @@ if __name__=='__main__':  #创建新表
     Debt.create(mysql)
     for i in range(1,5):
         _mine=Mine(mineID=i,abundance=0.0)
-        _mine.save(mysql)
+        _mine.add(mysql)
