@@ -6,7 +6,7 @@ class User(Model):
 
     qid=StringField(columnType='varchar(20)',primaryKey=True)
     schoolID=StringField(columnType='varchar(5)')
-    money=IntegerField()
+    money=FloatField()
     mineral=StringField(columnType='varchar(2000)')
     industrial_tech=FloatField()
     extract_tech=FloatField()
@@ -19,6 +19,8 @@ class User(Model):
     enacted_plan_types=StringField(columnType='varchar(200)') #dict for plan types
     busy_factory_num=IntegerField()
     time_since_last_effis = IntegerField()
+    input_tax=FloatField() #进项税额（抵扣）
+    output_tax=FloatField() #销项税额
 
 
 class Plan(Model):

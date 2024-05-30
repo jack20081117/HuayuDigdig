@@ -49,7 +49,7 @@ def decompose(message_list:list[str],qid:str):
     ingredients = str(ingredient_dict)
 
 
-    planID:int=max([0]+[plan.tradeID for plan in Plan.findAll(mysql)])+1
+    planID:int=max([0]+[plan.planID for plan in Plan.findAll(mysql)])+1
     plan:Plan=Plan(planID=planID,qid=qid,schoolID=user.schoolID,jobtype=0,factory_num=factory_num,
                     ingredients=ingredients,products=products,time_enacted=starttime,time_required=time_required,
                     enacted=False)
@@ -110,8 +110,8 @@ def synthesize(message_list:list[str],qid:str):
     ingredient_dict[0] = round(fuel_required)
     ingredients = str(ingredient_dict)
 
-    planID: int = max([0] + [plan.tradeID for plan in Plan.findAll(mysql)]) + 1
-    plan: Plan = Plan(tradeID=planID, qid=qid, schoolID=user.schoolID, jobtype=1, factory_num=factory_num,
+    planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
+    plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=1, factory_num=factory_num,
                       ingredients=ingredients, products=products, time_enacted=starttime, time_required=time_required,
                       enacted=False)
     plan.add(mysql)
@@ -158,7 +158,7 @@ def duplicate(message_list:list[str],qid:str):
     ingredient_dict:dict = {0: round(fuel_required), ingredient: duplication}
     ingredients = str(ingredient_dict)
 
-    planID:int=max([0]+[plan.tradeID for plan in Plan.findAll(mysql)])+1
+    planID:int=max([0]+[plan.planID for plan in Plan.findAll(mysql)])+1
     plan:Plan=Plan(planID=planID,qid=qid,schoolID=user.schoolID,jobtype=0,factory_num=factory_num,
                     ingredients=ingredients,products=products,time_enacted=starttime,time_required=time_required,
                     enacted=False)
@@ -209,7 +209,7 @@ def decorate(message_list:list[str],qid:str):
     ingredients = str(ingredient_dict)
 
 
-    planID:int=max([0]+[plan.tradeID for plan in Plan.findAll(mysql)])+1
+    planID:int=max([0]+[plan.planID for plan in Plan.findAll(mysql)])+1
     plan:Plan=Plan(planID=planID,qid=qid,schoolID=user.schoolID,jobtype=0,factory_num=factory_num,
                     ingredients=ingredients,products=products,time_enacted=starttime,time_required=time_required,
                     enacted=False)
@@ -262,7 +262,7 @@ def refine(message_list:list[str],qid:str):
     ingredients = str(ingredient_dict)
 
 
-    planID:int=max([0]+[plan.tradeID for plan in Plan.findAll(mysql)])+1
+    planID:int=max([0]+[plan.planID for plan in Plan.findAll(mysql)])+1
     plan:Plan=Plan(planID=planID,qid=qid,schoolID=user.schoolID,jobtype=0,factory_num=factory_num,
                     ingredients=ingredients,products=products,time_enacted=starttime,time_required=time_required,
                     enacted=False)
@@ -276,8 +276,8 @@ def refine(message_list:list[str],qid:str):
 
 def enactPlan(message_list:list[str],qid:str):
     """
-    制定炼化计划
-    :param message_list: 炼化 原料 份数 调拨工厂数
+    激活计划，开始执行生产
+    :param message_list: 执行 计划编号 时间
     :param qid: 制定者的qq号
     :return: 制定提示信息
     """
@@ -287,7 +287,7 @@ def enactPlan(message_list:list[str],qid:str):
 
 def cancelPlan(message_list: list[str], qid: str):
     """
-    制定炼化计划
+    取消计划
     :param message_list: 炼化 原料 份数 调拨工厂数
     :param qid: 制定者的qq号
     :return: 制定提示信息
