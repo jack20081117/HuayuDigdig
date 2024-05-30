@@ -88,6 +88,8 @@ registerByDict({
     "修饰": decorate,
     "复制": duplicate,
     "炼化": refine,
+    "取消": cancelPlan,
+    "执行": enactPlan
 })
 
      

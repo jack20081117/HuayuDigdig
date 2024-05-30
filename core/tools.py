@@ -22,6 +22,20 @@ def smart_interval(seconds:float):
         return "%sh" % (seconds / 3600)
     return "%sd" % (seconds / 86400)
 
+def is_prime(n)->bool:
+    if n <= 1:
+        return False
+    if n <= 3:
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
+            return False
+        i += 6
+    return True
+
 def generateTime(timeStr:str)->int:
     """
     根据字符串生成秒数
