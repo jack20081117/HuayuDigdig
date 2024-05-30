@@ -8,7 +8,7 @@ class User(Model):
     schoolID=StringField(columnType='varchar(5)')
     money=IntegerField()
     mineral=StringField(columnType='varchar(2000)')
-    process_tech=FloatField()
+    industrial_tech=FloatField()
     extract_tech=FloatField()
     refine_tech=FloatField()
     digable=BooleanField()

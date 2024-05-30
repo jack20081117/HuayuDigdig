@@ -5,7 +5,7 @@ from extract import *
 from market import *
 from stock import *
 from debt import *
-from process import *
+from industrial import *
 
 commands:dict={}
 

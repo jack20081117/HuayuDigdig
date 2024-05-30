@@ -38,7 +38,7 @@ def decompose(message_list:list[str],qid:str):
     minor_product=min(divide,int(ingredient/divide))
     time_required=6*duplication*minor_product*log(log(ingredient)+1)/\
                   (sigmoid(decomp_eff)*log(minor_product)*factory_num)
-    fuel_required=factory_num*time_required/(6*sigmoid(user.process_tech))
+    fuel_required=factory_num*time_required/(6*sigmoid(user.industrial_tech))
 
     product_dict:dict={divide:duplication,int(ingredient/divide):duplication}
     products=str(product_dict)

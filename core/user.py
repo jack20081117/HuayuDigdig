@@ -14,7 +14,7 @@ def signup(message_list:list[str],qid:str):
     assert not User.find(qid,mysql) and not User.findAll(mysql,'schoolID=?',(schoolID,)),'注册失败:您已经注册过，无法重复注册！'
     user=User(
         qid=qid,schoolID=schoolID,money=0,mineral='{}',
-        process_tech=0.0,extract_tech=0.0,refine_tech=0.0,digable=1,
+        industrial_tech=0.0,extract_tech=0.0,refine_tech=0.0,digable=1,
         factory_num=0,effis='[0.0,0.0,0.0,0.0,0.0,0.0]',mines='[]'
     )#注册新用户
     user.add(mysql)
@@ -32,7 +32,7 @@ def getUserInfo(message_list:list[str],qid:str):
     schoolID:str=user.schoolID
     money:int=user.money
     mineral:str=user.mineral
-    processTech:float=user.process_tech
+    industrialTech:float=user.industrial_tech
     extractTech:float=user.extract_tech
     refineTech:float=user.refine_tech
     digable:bool=user.digable
@@ -57,7 +57,7 @@ def getUserInfo(message_list:list[str],qid:str):
     for mine in mineList:
         mineres+='%s,' % mine
 
-    ans:str=info_msg%(qid,schoolID,money,processTech,extractTech,refineTech,digable,
+    ans:str=info_msg%(qid,schoolID,money,industrialTech,extractTech,refineTech,digable,
                   mres,factory_num,eres,mineres)
     return ans
 
