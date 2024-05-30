@@ -161,6 +161,7 @@ def sell(message_list:list[str],qid:str):
     mineralNum:int=purchase.mineralNum
     price:int=purchase.price
     starttime:int=purchase.starttime
+    assert isinstance(purchase.endtime, object)
     endtime:int=purchase.endtime
 
     nowtime:int=round(datetime.timestamp(datetime.now()))  #现在的时间

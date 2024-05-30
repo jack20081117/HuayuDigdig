@@ -14,6 +14,14 @@ def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 def generate_random_digits(wei:int):
     return "".join(random.choice(chars) for i in wei)
 
+def smart_interval(seconds:float):
+    if seconds < 60:
+        return "%ss" % seconds
+    if seconds < 3600:
+        return "%sm" % (seconds / 60)
+    if seconds < 86400:
+        return "%sh" % (seconds / 3600)
+    return "%sd" % (seconds / 86400)
 
 def drawtable(data:list,filename:str):
     """

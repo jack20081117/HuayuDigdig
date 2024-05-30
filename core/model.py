@@ -16,17 +16,24 @@ class User(Model):
     effis=StringField(columnType='varchar(200)')
     mines=StringField(columnType='varchar(200)')
     stocks=StringField(columnType='varchar(2000)')
+    enacted_plan_types=StringField(columnType='varchar(200)') #dict for plan types
+    busy_factory_num=IntegerField()
+    time_since_last_effis = IntegerField()
 
 
 class Plan(Model):
     __table__='plans'
 
     planID=IntegerField(primaryKey=True)
+    qid = StringField(columnType='varchar(20)')
+    schoolID = StringField(columnType='varchar(5)')
     jobtype=IntegerField()
+    factory_num=IntegerField()
     ingredients=StringField(columnType='varchar(50)')
-    product=StringField(columnType='varchar(50)')
-    accumulated=FloatField()
-    requirement=FloatField()
+    products=StringField(columnType='varchar(50)')
+    time_enacted=IntegerField()
+    time_required=IntegerField()
+    enacted = BooleanField()
 
 
 class Mine(Model):

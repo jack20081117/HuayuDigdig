@@ -26,7 +26,8 @@ if mysql:
                                db=dbconfig["db"],charset="utf8")
     mysqlcursor=connection.cursor()
 
-effisStr=['分解效率','合成效率','复制效率','修饰效率','炼油效率','建工效率']
+effisStr=['分解效率','合成效率','复制效率','修饰效率','炼油效率','建工效率','科研效率']
+effisNameDict={'分解':0,'合成':1,'复制':2,'修饰':3,'炼油':4,'建工':5,'科研':6}
 
 info_msg="查询到QQ号为:%s的用户信息\n"\
          "学号:%s\n"\

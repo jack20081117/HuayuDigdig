@@ -7,6 +7,7 @@ from mineralDigdig import *
 from mineralMarket import *
 from stockMarket import *
 from debtMarket import *
+from industrial import *
 
 commands:dict={}
 
@@ -83,7 +84,14 @@ registerByDict({
     "放贷": prelend,
     "借贷": borrow,
     "还款": repay,
-    "债市": debtMarket
+    "债市": debtMarket,
+    "分解": decompose,
+    "合成": synthesize,
+    "修饰": decorate,
+    "复制": duplicate,
+    "炼化": refine,
+    "取消": cancelPlan,
+    "执行": enactPlan
 })
 
      
