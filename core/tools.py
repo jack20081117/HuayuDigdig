@@ -9,6 +9,7 @@ from globalConfig import chars,imgkit_config
 
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 
+def sqrtmoid(x:float)->float:return 0.25*np.sqrt(x)+0.5
 
 def generate_random_digits(wei:int):
     return "".join(random.choice(chars) for i in wei)
@@ -35,6 +36,9 @@ def is_prime(n)->bool:
             return False
         i += 6
     return True
+
+def getnowtime():
+    return round(datetime.timestamp(datetime.now()))
 
 def generateTime(timeStr:str)->int:
     """

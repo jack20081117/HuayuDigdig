@@ -18,7 +18,7 @@ class User(Model):
     stocks=StringField(columnType='varchar(2000)')
     enacted_plan_types=StringField(columnType='varchar(200)') #dict for plan types
     busy_factory_num=IntegerField()
-    time_since_last_effis = IntegerField()
+    last_effis_update_time = IntegerField()
     input_tax=FloatField() #进项税额（抵扣）
     output_tax=FloatField() #销项税额
 
@@ -33,6 +33,7 @@ class Plan(Model):
     factory_num=IntegerField()
     ingredients=StringField(columnType='varchar(50)')
     products=StringField(columnType='varchar(50)')
+    work_units_required=IntegerField()
     time_enacted=IntegerField()
     time_required=IntegerField()
     enacted = BooleanField()

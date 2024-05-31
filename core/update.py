@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from tools import send
+from tools import send,sigmoid,getnowtime
 from model import User,Mine,Sale,Purchase,Auction,Debt
-from globalConfig import mysql,deposit
+from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate
 
 def init():
     """
@@ -23,7 +23,7 @@ def update():
     """
     防止由于程序中止而未能成功进行事务更新
     """
-    nowtime=round(datetime.timestamp(datetime.now()))
+    nowtime=getnowtime()
     endedSales:list[Sale]=Sale.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预售
     endedPurchases:list[Purchase]=Purchase.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预订
     endedAuctions:list[Auction]=Auction.findAll(mysql,'endtime<?',(nowtime,)) #已经结束的拍卖
@@ -208,3 +208,63 @@ def updateDebt(debt:Debt):
             debitor.money=-money
             creditor.save(mysql)
             debitor.save(mysql)
+
+def updateEfficiency(user:User,finished_plan):
+    """
+    :param 
+    user : 涉及到的用户 \n
+    finished_plan: 到达截止时间的生产计划，如无填0
+    """
+    nowtime = getnowtime()
+    effisDict:dict = dict(eval(user.effis))
+    enacted_plans_by_type:dict = dict(eval(user.enacted_plan_types))
+    last_update_time = user.last_effis_update_time
+    elapsed_time = nowtime - last_update_time
+    for i in range(effisItemCount):
+        enacted_plans_by_type.setdefault(i,0)
+        effisDict.setdefault(i,0.0)
+        if i == finished_plan.jobtype:
+            if i == 4: # 特判炼油科技
+                tech = user.refine_tech
+            else:
+                tech = user.industrial_tech
+            effisDict[i] += 4 * plan.time_required * sqrtmoid(tech) * effisDailyDecreaseRate/86400
+        elif enacted_plans_by_type[i] == 0:
+            effisDict[i] -= elapsed_time * effisDailyDecreaseRate/86400
+            effisDict[i] = max(0,effisDict[i])
+
+    user.last_effis_update_time = nowtime
+    user.effis = str(effisDict)
+    user.save(mysql)
+    
+   
+def updatePlan(plan:Plan):
+    """
+    :param plan: 到达截止时间的生产计划
+    """
+    qid: str = plan.qid
+    planID: int = plan.planID
+    user: User = User.find(qid, mysql)
+    if Plan.find(planID, mysql) is None:  # 计划已取消
+        return None
+
+    productDict: dict = dict(eval(plan.products))
+    mineralDict: dict = dict(eval(user.mineral))
+    for mid, mnum in enumerate(productDict):
+        if mid not in mineralDict:
+            mineralDict[mid] = 0
+        mineralDict[mid] += mnum  # 将矿石增加给生产者
+    user.mineral = str(mineralDict) #更新矿石字典
+    
+    updateEfficiency(user, plan) #效率修正
+    
+    enacted_plan_types = dict(eval(user.enacted_plan_types)) # 取消当前门类的生产状态
+    enacted_plan_types[plan.jobtype] -= 1
+    user.enacted_plan_types = str(enacted_plan_types)
+
+    user.busy_factory_num -= plan.factory_num #释放被占用的工厂
+    
+    user.save(mysql)
+    plan.remove(mysql)
+
+    send(qid, '您的生产:%s成功完成,矿石已增加到您的账户！' % planID, False)
