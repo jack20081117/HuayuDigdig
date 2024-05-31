@@ -135,8 +135,7 @@ def duplicate(message_list: list[str], qid: str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    user_effis: list = list(eval(user.effis))
-    duplicate_eff = user_effis[2]
+    duplicate_eff = user.effis[2]
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     assert ingredient > 1, '制定生产计划失败:原料无效！'
@@ -150,11 +149,9 @@ def duplicate(message_list: list[str], qid: str):
     time_required = work_units_required / (sigmoid(duplicate_eff))
     fuel_required = factory_num * time_required / (sqrtmoid(user.industrial_tech))
 
-    product_dict: dict = {ingredient: duplication * 2}
-    products = str(product_dict)
+    products: dict = {ingredient: duplication * 2}
 
-    ingredient_dict: dict = {0: round(fuel_required), ingredient: duplication}
-    ingredients = str(ingredient_dict)
+    ingredients: dict = {0: round(fuel_required), ingredient: duplication}
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=2, factory_num=factory_num,
@@ -186,8 +183,7 @@ def decorate(message_list: list[str], qid: str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    user_effis: list = list(eval(user.effis))
-    decorate_eff = user_effis[3]
+    decorate_eff = user.effis[3]
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     assert ingredient > 1, '制定生产计划失败:原料无效！'
@@ -203,11 +199,9 @@ def decorate(message_list: list[str], qid: str):
                     (sigmoid(decorate_eff))
     fuel_required = factory_num * time_required / (2 * sqrtmoid(user.industrial_tech))
 
-    product_dict: dict = {ingredient + 1: duplication}
-    products = str(product_dict)
+    products: dict = {ingredient + 1: duplication}
 
-    ingredient_dict: dict = {0: round(fuel_required), ingredient: duplication}
-    ingredients = str(ingredient_dict)
+    ingredients: dict = {0: round(fuel_required), ingredient: duplication}
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=3, factory_num=factory_num,
@@ -239,8 +233,7 @@ def refine(message_list: list[str], qid: str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    user_effis: list = list(eval(user.effis))
-    decorate_eff = user_effis[3]
+    refine_eff = user.effis[3]
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     assert ingredient > 1, '制定生产计划失败:原料无效！'
@@ -253,14 +246,12 @@ def refine(message_list: list[str], qid: str):
 
     work_units_required = duplication * ingredient * log(log(ingredient) + 1) / \
                           (log(ingredient) * factory_num)
-    time_required = work_units_required / sigmoid(decorate_eff)
+    time_required = work_units_required / sigmoid(refine_eff)
     fuel_required = factory_num * time_required / (sqrtmoid(user.refine_tech))
 
-    product_dict: dict = {0: duplication * ingredient}
-    products = str(product_dict)
+    products: dict = {0: duplication * ingredient}
 
-    ingredient_dict: dict = {0: round(fuel_required), ingredient: duplication}
-    ingredients = str(ingredient_dict)
+    ingredients: dict = {0: round(fuel_required), ingredient: duplication}
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=4, factory_num=factory_num,
@@ -327,28 +318,28 @@ def enaction(plan: Plan):
     assert required_factory_num <= idle_factory_num, "计划执行失败：工厂不足！"
     updateEfficiency(user, 0)
 
-    mineralDict: dict = dict(eval(user.mineral))
-    effisDict: dict = dict(eval(user.effis))
-    ingredientDict: dict = dict(eval(plan.ingredients))
+    mineral: dict = user.mineral
+
+    ingredients: dict = plan.ingredients
 
     if plan.jobtype == 4:  # 特判炼油科技
         tech = user.refine_tech
     else:
         tech = user.industrial_tech
 
-    time_required = plan.work_units_required / sigmoid(effisDict[plan.jobtype])
+    time_required = plan.work_units_required / sigmoid(user.effis[plan.jobtype])
     fuel_required = idle_factory_num * time_required / (2 * sqrtmoid(tech))
-    ingredientDict[0] = round(fuel_required)
+    ingredients[0] = round(fuel_required)
     success: bool = True
     ans = ""
 
-    for mId, mNum in ingredientDict.items():
+    for mId, mNum in ingredients.items():
         if mId == 0:
             mName = "燃油",
         else:
             mName = "矿物%s" % mId
-        if not mineralDict[mId] <= mNum:
-            ans += "%s不足！您目前有%s，计划%s需要%s单位。\n" % (mName, mineralDict[mId], plan.planID, mNum)
+        if not mineral[mId] <= mNum:
+            ans += "%s不足！您目前有%s，计划%s需要%s单位。\n" % (mName, mineral[mId], plan.planID, mNum)
             success = False
 
     if not success:
@@ -356,13 +347,13 @@ def enaction(plan: Plan):
     else:
         ans += "计划%s成功开工！按照当前效率条件，需消耗%s时间，%s单位燃油。" % (plan.planID,
                                                       smart_interval(time_required), round(fuel_required))
-        for mId, mNum in ingredientDict.items():
-            mineralDict[mId] -= mNum
-            if mineralDict[mId] <= 0: mineralDict.pop(mId)
+        for mId, mNum in ingredients.items():
+            mineral[mId] -= mNum
+            if mineral[mId] <= 0: mineral.pop(mId)
 
-        user.mineral = str(mineralDict)
+        user.mineral = mineral
         user.busy_factory_num += required_factory_num
-        enacted_plan_types = dict(eval(user.enacted_plan_types))
+        enacted_plan_types = user.enacted_plan_types
         enacted_plan_types.setdefault(plan.jobtype, 0)
         enacted_plan_types[plan.jobtype] += 1
         user.save(mysql)
@@ -400,24 +391,25 @@ def cancelPlan(message_list: list[str], qid: str):
         ans = '计划取消成功！'
     else:
         updateEfficiency(user, 0)  # 没有完成生产任务带来的超额增加，但是此前在生产中的时间不会导致该项效率下降。
-        mineralDict: dict = dict(eval(user.mineral))
-        ingredientDict: dict = dict(eval(plan.ingredients))
-        for mid, mnum in enumerate(ingredientDict):
-            if mid not in mineralDict:
-                mineralDict[mid] = 0
+        mineral: dict[int,int] = user.mineral
+        ingredients: dict = plan.ingredients
+        for mid, mnum in enumerate(ingredients):
+            if mid not in mineral:
+                mineral[mid] = 0
             if mid == 0:
-                mineralDict[mid] += mnum * (nowtime - plan.time_enacted) / plan.time_required  # 燃油按剩余时间比例返还
+                mineral[mid] += mnum * (nowtime - plan.time_enacted) / plan.time_required  # 燃油按剩余时间比例返还
             else:
-                mineralDict[mid] += mnum
+                mineral[mid] += mnum
 
-        enacted_plan_types = dict(eval(user.enacted_plan_types))  # 取消当前门类的生产状态
+        enacted_plan_types = user.enacted_plan_types  # 取消当前门类的生产状态
         enacted_plan_types[plan.jobtype] -= 1
-        user.enacted_plan_types = str(enacted_plan_types)
+        user.enacted_plan_types = enacted_plan_types
 
         user.busy_factory_num -= plan.factory_num  # 释放被占用的工厂
 
         ans = "计划取消成功，矿石以及部分未消耗燃料已经返还到您的账户。"
 
     plan.remove(mysql)
+    user.save(mysql)
 
     return ans
