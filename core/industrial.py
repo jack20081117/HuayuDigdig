@@ -233,7 +233,7 @@ def refine(message_list: list[str], qid: str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    refine_eff = user.effis[3]
+    refine_eff = user.effis[4]
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     assert ingredient > 1, '制定生产计划失败:原料无效！'
@@ -251,9 +251,9 @@ def refine(message_list: list[str], qid: str):
 
     if ingredient > 64:
         products: dict = {0: duplication * ingredient}
-        ingredients: dict = {0: round(fuel_required), ingredient: duplication}
+        ingredients: dict = {0: fuel_required, ingredient: duplication}
     else:
-        products: dict = {0: duplication * (ingredient - round(fuel_required))}
+        products: dict = {0: duplication * (ingredient - fuel_required)}
         ingredients: dict = {0: 0, ingredient: duplication}
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
