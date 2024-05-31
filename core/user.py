@@ -52,14 +52,14 @@ def getUserInfo(message_list:list[str],qid:str):
     extractTech:float=user.extract_tech
     refineTech:float=user.refine_tech
     digable:bool=user.digable
-    mineralDict:dict=dict(eval(mineral))
+    mineral:dict[int,int]=user.mineral
     factory_num:int=user.factory_num
-    effisDict:dict=dict(eval(user.effis))
-    mineList:list=list(eval(user.mines))
-    sortedMineralDict:dict={key:mineralDict[key] for key in sorted(mineralDict.keys())}
+    effis=user.effis
+    mines=user.mines
+    sortedMineral:dict[int,int]={key:mineral[key] for key in sorted(mineral.keys())}
 
     mres:str=""
-    for mid,mnum in sortedMineralDict.items():
+    for mid,mnum in sortedMineral.items():
         if mid==0:
             mres+="燃油%s个单位；\n"%mnum
         else:
@@ -67,11 +67,11 @@ def getUserInfo(message_list:list[str],qid:str):
 
     eres:str=''    #生产效率信息
     for index in range(effisItemCount):
-        effisDict.setdefault(index, 0.0)
-        eres+=effisStr[index]+":%s\n" % effisDict[index]
+        effis.setdefault(index,0.0)
+        eres+=effisStr[index]+":%s\n" % effis[index]
 
     mineres:str='' #私有矿井信息
-    for mine in mineList:
+    for mine in mines:
         mineres+='%s,' % mine
 
     ans:str=info_msg%(qid,schoolID,money,industrialTech,extractTech,refineTech,digable,

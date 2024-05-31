@@ -30,18 +30,19 @@ def presell(message_list:list[str],qid:str):
         return '预售失败:请按照规定格式进行预售！'
 
     user:User=User.find(qid,mysql)
-    mineralDict:dict=dict(eval(user.mineral))
+    mineral=user.mineral
     assert mineralNum>=1,'预售失败:您必须至少预售1个矿石！'
-    assert mineralID in mineralDict,'预售失败:您不具备此矿石！'
-    assert mineralDict[mineralID]>=mineralNum,'预售失败:您的矿石数量不足！'
+    assert mineralID in mineral,'预售失败:您不具备此矿石！'
+    assert mineral[mineralID]>=mineralNum,'预售失败:您的矿石数量不足！'
     assert price>0,'预售失败:预售价格必须为正数！'
     assert endtime>nowtime,'预售失败:已经超过截止期限！'
     starttime=max(nowtime,starttime)
 
-    mineralDict[mineralID]-=mineralNum
-    if mineralDict[mineralID]<=0:mineralDict.pop(mineralID)
+    mineral[mineralID]-=mineralNum
+    if mineral[mineralID]<=0:
+        mineral.pop(mineralID)
 
-    user.mineral=str(mineralDict)
+    user.mineral=mineral
     user.save(mysql)
 
     tradeID:int=max([0]+[sale.tradeID for sale in Sale.findAll(mysql)])+1
@@ -85,11 +86,11 @@ def buy(message_list:list[str],qid:str):
     tuser:User=User.find(tqid,mysql)
     tuser.money+=price#得钱
 
-    mineralDict:dict=dict(eval(user.mineral))
-    if mineralID not in mineralDict:
-        mineralDict[mineralID]=0
-    mineralDict[mineralID]+=mineralNum#增加矿石
-    user.mineral=str(mineralDict)
+    mineral=user.mineral
+    if mineralID not in mineral:
+        mineral[mineralID]=0
+    mineral[mineralID]+=mineralNum#增加矿石
+    user.mineral=mineral
 
     sale.remove(mysql)#删除市场上的此条记录
     user.save(mysql)
@@ -169,23 +170,24 @@ def sell(message_list:list[str],qid:str):
     assert nowtime>=starttime,'售卖失败:尚未到开始售卖时间！'
     assert nowtime<=endtime,'售卖失败:此商品预订已结束！'
 
-    mineralDict:dict=dict(eval(user.mineral))
-    assert mineralID in mineralDict,'售卖失败:您不具备此矿石！'
-    assert mineralDict[mineralID]>=mineralNum,'售卖失败:您的矿石数量不足！'
-    mineralDict[mineralID]-=mineralNum
-    if mineralDict[mineralID]<=0:mineralDict.pop(mineralID)
+    mineral=user.mineral
+    assert mineralID in mineral,'售卖失败:您不具备此矿石！'
+    assert mineral[mineralID]>=mineralNum,'售卖失败:您的矿石数量不足！'
+    mineral[mineralID]-=mineralNum
+    if mineral[mineralID]<=0:
+        mineral.pop(mineralID)
 
     user.money+=price  #得钱
-    user.mineral=str(mineralDict)
+    user.mineral=mineral
     user.save(mysql)
 
     tuser:User=User.find(tqid,mysql)
 
-    tmineralDict:dict=dict(eval(tuser.mineral))
-    if mineralID not in tmineralDict:
-        tmineralDict[mineralID]=0
-    tmineralDict[mineralID]+=mineralNum  #增加矿石
-    tuser.mineral=str(tmineralDict)
+    tmineral=tuser.mineral
+    if mineralID not in tmineral:
+        tmineral[mineralID]=0
+    tmineral[mineralID]+=mineralNum  #增加矿石
+    tuser.mineral=tmineral
 
     purchase.remove(mysql)#删除市场上的此条记录
 
@@ -221,18 +223,19 @@ def preauction(message_list:list[str],qid:str):
         return '拍卖失败:请按照规定格式进行拍卖！'
 
     user:User=User.find(qid,mysql)
-    mineralDict:dict=dict(eval(user.mineral))
+    mineral=user.mineral
     assert mineralNum>=1,'拍卖失败:您必须至少拍卖1个矿石！'
-    assert mineralID in mineralDict,'拍卖失败:您不具备此矿石！'
-    assert mineralDict[mineralID]>=mineralNum,'拍卖失败:您的矿石数量不足！'
+    assert mineralID in mineral,'拍卖失败:您不具备此矿石！'
+    assert mineral[mineralID]>=mineralNum,'拍卖失败:您的矿石数量不足！'
     assert price>0,'拍卖失败:底价必须为正数！'
     assert endtime>nowtime,'拍卖失败:已经超过截止期限！'
     starttime=max(nowtime,starttime)
 
-    mineralDict[mineralID]-=mineralNum
-    if mineralDict[mineralID]<=0:mineralDict.pop(mineralID)
+    mineral[mineralID]-=mineralNum
+    if mineral[mineralID]<=0:
+        mineral.pop(mineralID)
 
-    user.mineral=str(mineralDict)
+    user.mineral=mineral
     user.save(mysql)
 
     tradeID:int=max([0]+[auction.tradeID for auction in Auction.findAll(mysql)])+1

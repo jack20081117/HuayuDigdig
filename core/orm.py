@@ -1,6 +1,7 @@
 import logging,sqlite3
 #logging.basicConfig(level=logging.INFO)
 from globalConfig import *
+from tools import fromstr,tostr
 
 createArgsString=lambda num:('?,'*num)[:-1]#生成参数占位符字符串
 
@@ -165,6 +166,7 @@ class Model(dict,metaclass=ModelMetaclass):
             else:
                 raise ValueError('Invalid limit value:%s'%str(limit))
         results=select(' '.join(sql),mysql,tuple(args))
+        results=fromstr(results)
         return [cls(*result) for result in results]
 
     @classmethod
@@ -178,7 +180,8 @@ class Model(dict,metaclass=ModelMetaclass):
         results=select('%s where `%s`=?'%(cls.__select__,cls.__primaryKey__),mysql,(primaryKey,))
         if not results:
             return None
-        return cls(*results[0])
+        result=fromstr(results[0])
+        return cls(*result)
 
     @classmethod
     def create(cls,mysql=False):
@@ -195,6 +198,7 @@ class Model(dict,metaclass=ModelMetaclass):
         """
         args=[self.getValueOrDefault(self.__primaryKey__)]
         args.extend(list(map(self.getValueOrDefault,self.__fields__)))
+        args=list(map(tostr,args))
         execute(self.__insert__,mysql,tuple(args))
 
     def save(self,mysql=False):
@@ -204,6 +208,7 @@ class Model(dict,metaclass=ModelMetaclass):
         """
         args=list(map(self.getValue,self.__fields__))
         args.append(self.getValue(self.__primaryKey__))
+        args=list(map(tostr,args))
         execute(self.__update__,mysql,tuple(args))
 
     def remove(self,mysql=False):
