@@ -246,12 +246,15 @@ def refine(message_list: list[str], qid: str):
 
     work_units_required = duplication * ingredient * log(log(ingredient) + 1) / \
                           (log(ingredient) * factory_num)
-    time_required = work_units_required / sigmoid(refine_eff)
-    fuel_required = factory_num * time_required / (sqrtmoid(user.refine_tech))
+    time_required = round(work_units_required / sigmoid(refine_eff))
+    fuel_required = round(factory_num * time_required / (2 * sqrtmoid(user.refine_tech)))
 
-    products: dict = {0: duplication * ingredient}
-
-    ingredients: dict = {0: round(fuel_required), ingredient: duplication}
+    if ingredient > 20:
+        products: dict = {0: duplication * ingredient}
+        ingredients: dict = {0: fuel_required, ingredient: duplication}
+    else:
+        products: dict = {0: duplication * (ingredient - fuel_required)}
+        ingredients: dict = {0: 0, ingredient: duplication}
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=4, factory_num=factory_num,

@@ -33,8 +33,8 @@ def handle(res,group):
     ans:str=''  #回复给用户的内容
     if group:#是群发消息
         message:str=res.get("raw_message")
-        qid:str=res.get('sender').get('user_id')  #发消息者的qq号
-        gid:str=res.get('group_id')  #群的qq号
+        qid:str=str(res.get('sender').get('user_id'))  #发消息者的qq号
+        gid:str=str(res.get('group_id'))  #群的qq号
         if gid not in group_ids:
             return None
         if "[CQ:at,qq=2470751924]" not in message:#必须在自己被at的情况下才能作出回复
@@ -52,7 +52,7 @@ def handle(res,group):
 
     else:
         message:str=res.get("raw_message")
-        qid:str=res.get('sender').get('user_id')
+        qid:str=str(res.get('sender').get('user_id'))
         message_list:list=message.split(' ')
         funcStr:str=message_list[0]
 
