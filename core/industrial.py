@@ -21,8 +21,7 @@ def decompose(message_list:list[str],qid:str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    user_effis:list=list(eval(user.effis))
-    decomp_eff=user_effis[0]
+    decomp_eff=user.effis[0]
 
     assert duplication>=1,'制定生产计划失败:倍数无效！'
     assert ingredient>1,'制定生产计划失败:原料无效！'
@@ -41,11 +40,9 @@ def decompose(message_list:list[str],qid:str):
                     (sigmoid(decomp_eff) * log(minor_product) * factory_num)
     fuel_required = factory_num * time_required / (6 * sigmoid(user.industrial_tech))
 
-    product_dict:dict = {divide:duplication, int(ingredient / divide):duplication}
-    products = str(product_dict)
+    products:dict = {divide:duplication, int(ingredient / divide):duplication}
 
-    ingredient_dict:dict = {0: round(fuel_required), ingredient: duplication}
-    ingredients = str(ingredient_dict)
+    ingredients:dict = {0: round(fuel_required), ingredient: duplication}
 
 
     planID:int=max([0]+[plan.tradeID for plan in Plan.findAll(mysql)])+1
@@ -80,8 +77,7 @@ def synthesize(message_list:list[str],qid:str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    user_effis:list = list(eval(user.effis))
-    synth_eff = user_effis[1]
+    synth_eff = user.effis[1]
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     for ingredient in ingredient_list:
@@ -92,21 +88,19 @@ def synthesize(message_list:list[str],qid:str):
     nowtime: int = round(datetime.timestamp(datetime.now()))
     starttime = nowtime
 
-    ingredient_dict = {}
+    ingredients = {}
     final_product = 1
     for ingredient in ingredient_list:
         final_product*= ingredient
-        ingredient_dict[ingredient] = duplication
+        ingredients[ingredient] = duplication
 
     time_required = 6 * duplication * final_product * log(log(final_product)+1) / \
                     (sigmoid(synth_eff) * log(final_product) * factory_num)
     fuel_required = factory_num * time_required / (6 * sigmoid(user.industrial_tech))
 
-    product_dict:dict = {final_product: duplication}
-    products = str(product_dict)
+    products:dict = {final_product: duplication}
 
-    ingredient_dict[0] = round(fuel_required)
-    ingredients = str(ingredient_dict)
+    ingredients[0] = round(fuel_required)
 
     planID: int = max([0] + [plan.tradeID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(tradeID=planID, qid=qid, schoolID=user.schoolID, jobtype=1, factory_num=factory_num,

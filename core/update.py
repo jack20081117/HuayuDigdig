@@ -50,11 +50,11 @@ def updateSale(sale:Sale):
 
     mineralID:int=sale.mineralID
     mineralNum:int=sale.mineralNum
-    mineralDict:dict=dict(eval(user.mineral))
-    if mineralID not in mineralDict:
-        mineralDict[mineralID]=0
-    mineralDict[mineralID]+=mineralNum#将矿石返还给预售者
-    user.mineral=str(mineralDict)
+    mineral:dict[int,int]=user.mineral
+    if mineralID not in mineral:
+        mineral[mineralID]=0
+    mineral[mineralID]+=mineralNum#将矿石返还给预售者
+    user.mineral=mineral
 
     user.save(mysql)
     sale.remove(mysql)
@@ -103,11 +103,11 @@ def updateAuction(auction:Auction):
         if tuser.money+round(bids[0][1]*deposit)>=bids[1][1]:#第一人现金+第一人押金>=第二人出价
             success=True#投标成功
             tuser.money-=bids[0][1]-round(bids[0][1]*deposit)#扣除剩余金额
-            tmineralDict:dict=dict(eval(tuser.mineral))
-            if mineralID not in tmineralDict:
-                tmineralDict[mineralID]=0
-            tmineralDict[mineralID]+=mineralNum#给予矿石
-            tuser.mineral=str(tmineralDict)
+            tmineral:dict[int,int]=tuser.mineral
+            if mineralID not in tmineral:
+                tmineral[mineralID]=0
+            tmineral[mineralID]+=mineralNum#给予矿石
+            tuser.mineral=tmineral
             tuser.save(mysql)
             send(tqid,'您在拍卖:%s中竞拍成功，矿石已发送到您的账户'%tradeID,False)
 
@@ -130,11 +130,11 @@ def updateAuction(auction:Auction):
         if success:#结束投标
             break
     if not bids:
-        mineralDict:dict=dict(eval(user.mineral))
-        if mineralID not in mineralDict:
-            mineralDict[mineralID]=0
-        mineralDict[mineralID]+=mineralNum  #将矿石返还给拍卖者
-        user.mineral=str(mineralDict)
+        mineral:dict[int,int]=user.mineral
+        if mineralID not in mineral:
+            mineral[mineralID]=0
+        mineral[mineralID]+=mineralNum  #将矿石返还给拍卖者
+        user.mineral=mineral
 
         user.save(mysql)
         auction.remove(mysql)
@@ -180,20 +180,20 @@ def updateDebt(debt:Debt):
         creditor.money+=debitor.money
         debitor.money=0
         schoolID:str=debitor.schoolID
-        mineralDict=dict(eval(debitor.mineral))
+        mineral:dict[int,int]=debitor.mineral
 
-        for mineralID in mineralDict.keys():
+        for mineralID in mineral.keys():
             if int(schoolID)%mineralID==0\
             or int(schoolID[:3])%mineralID==0\
             or int(schoolID[2:])%mineralID==0\
             or int(schoolID[:2]+'0'+schoolID[2:])%mineralID==0:
-                while money>0 and mineralDict[mineralID]>0:
-                    mineralDict[mineralID]-=1
+                while money>0 and mineral[mineralID]>0:
+                    mineral[mineralID]-=1
                     money-=mineralID
                     creditor.money+=mineralID
                 if money<0:
                     break
-        debitor.mineral=str(mineralDict)
+        debitor.mineral=mineral
         if money<=0:#还清贷款
             creditor.money+=money#兑换矿石多余的钱
             debitor.money-=money#兑换矿石多余的钱

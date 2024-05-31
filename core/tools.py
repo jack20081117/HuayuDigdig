@@ -9,6 +9,25 @@ from globalConfig import chars,imgkit_config
 
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 
+def fromstr(data):
+    if isinstance(data,str):
+        try:
+            realData=eval(data)
+            if isinstance(realData,dict) or isinstance(realData,list) or isinstance(realData,tuple):
+                data=realData
+        except Exception:
+            pass
+    elif isinstance(data,list) or isinstance(data,tuple):
+        data=[fromstr(datum) for datum in data]
+    elif isinstance(data,dict):
+        for key,value in data:
+            data[key]=fromstr(value)
+    return data
+
+def tostr(data):
+    if isinstance(data,int) or isinstance(data,float):
+        return data
+    return str(data)
 
 def generate_random_digits(wei:int):
     return "".join(random.choice(chars) for i in wei)
