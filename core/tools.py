@@ -36,12 +36,12 @@ def generate_random_digits(wei:int):
 
 def smart_interval(seconds:float):
     if seconds < 60:
-        return "%ss" % seconds
+        return "%.2fs" % seconds
     if seconds < 3600:
-        return "%smin" % (seconds / 60)
+        return "%.2fmin" % (seconds / 60)
     if seconds < 86400:
-        return "%sh" % (seconds / 3600)
-    return "%sd" % (seconds / 86400)
+        return "%.2fh" % (seconds / 3600)
+    return "%.2fd" % (seconds / 86400)
 
 def is_prime(n)->bool:
     if n <= 1:

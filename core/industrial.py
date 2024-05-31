@@ -247,9 +247,9 @@ def refine(message_list: list[str], qid: str):
     work_units_required = duplication * ingredient * log(log(ingredient) + 1) / \
                           (log(ingredient) * factory_num)
     time_required = work_units_required / sigmoid(refine_eff)
-    fuel_required = factory_num * time_required / (2 * sqrtmoid(user.refine_tech))
+    fuel_required = factory_num * time_required / (2 * sqrtmoid(user.refine_tech)) - 1.055
 
-    if ingredient > 20:
+    if ingredient > 64:
         products: dict = {0: duplication * ingredient}
         ingredients: dict = {0: round(fuel_required), ingredient: duplication}
     else:
