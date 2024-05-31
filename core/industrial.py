@@ -233,7 +233,7 @@ def refine(message_list: list[str], qid: str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    refine_eff = user.effis[3]
+    refine_eff = user.effis[4]
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     assert ingredient > 1, '制定生产计划失败:原料无效！'

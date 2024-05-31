@@ -12,10 +12,11 @@ def signup(message_list:list[str],qid:str):
     assert len(message_list)==2 and re.match(r'\d{5}',message_list[1]) and len(message_list[1])==5,'注册失败:请注意您的输入格式！'
     schoolID:str=message_list[1]
     assert not User.find(qid,mysql) and not User.findAll(mysql,'schoolID=?',(schoolID,)),'注册失败:您已经注册过，无法重复注册！'
+    effis={key:0.0 for key in range(0,5)}
     user=User(
-        qid=qid,schoolID=schoolID,money=0,mineral='{}',
+        qid=qid,schoolID=schoolID,money=0,mineral={},
         industrial_tech=0.0,extract_tech=0.0,refine_tech=0.0,digable=1,
-        factory_num=0,effis='{}',mines='[]'
+        factory_num=1,effis=effis,mines=[]
     )#注册新用户
     user.add(mysql)
     ans="注册成功！"
