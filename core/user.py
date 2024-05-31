@@ -1,5 +1,5 @@
 import re
-from globalConfig import mysql,effisStr,info_msg,player_tax
+from globalConfig import mysql,effisStr,info_msg,player_tax,effisItemCount
 from model import User
 
 def signup(message_list:list[str],qid:str):
@@ -15,7 +15,7 @@ def signup(message_list:list[str],qid:str):
     user=User(
         qid=qid,schoolID=schoolID,money=0,mineral='{}',
         industrial_tech=0.0,extract_tech=0.0,refine_tech=0.0,digable=1,
-        factory_num=0,effis='[0.0,0.0,0.0,0.0,0.0,0.0]',mines='[]'
+        factory_num=0,effis='{}',mines='[]'
     )#注册新用户
     user.add(mysql)
     ans="注册成功！"
@@ -38,9 +38,15 @@ def getUserInfo(message_list:list[str],qid:str):
     digable:bool=user.digable
     mineral:dict[int,int]=user.mineral
     factory_num:int=user.factory_num
+<<<<<<< HEAD
     effis=user.effis
     mines=user.mines
     sortedMineral:dict[int,int]={key:mineral[key] for key in sorted(mineral.keys())}
+=======
+    effisDict:dict=dict(eval(user.effis))
+    mineList:list=list(eval(user.mines))
+    sortedMineralDict:dict={key:mineralDict[key] for key in sorted(mineralDict.keys())}
+>>>>>>> 210eeaf5efcf39369bf7fba2d4f28a5ba6037d72
 
     mres:str=""
     for mid,mnum in sortedMineral.items():
@@ -50,8 +56,14 @@ def getUserInfo(message_list:list[str],qid:str):
             mres+="编号%s的矿石%s个；\n"%(mid,mnum)
 
     eres:str=''    #生产效率信息
+<<<<<<< HEAD
     for index in range(6):
         eres+=effisStr[index]+":%s\n" % effis[index]
+=======
+    for index in range(effisItemCount):
+        effisDict.setdefault(index, 0.0)
+        eres+=effisStr[index]+":%s\n" % effisDict[index]
+>>>>>>> 210eeaf5efcf39369bf7fba2d4f28a5ba6037d72
 
     mineres:str='' #私有矿井信息
     for mine in mines:

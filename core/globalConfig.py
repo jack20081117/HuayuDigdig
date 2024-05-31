@@ -15,6 +15,7 @@ player_tax:float=config["tax"]["player"]
 deposit:float=config["deposit"]
 group_ids:list=config['group_ids']
 mysql:bool=(env=='prod')
+effisItemCount:int=config["effis_item_count"]
 
 if mysql:
     with open("./mysql.json","a") as config:
@@ -25,8 +26,8 @@ if mysql:
                                db=dbconfig["db"],charset="utf8")
     mysqlcursor=connection.cursor()
 
-effisStr=['分解效率','合成效率','复制效率','修饰效率','炼油效率','建工效率','科研效率']
-effisNameDict={'分解':0,'合成':1,'复制':2,'修饰':3,'炼油':4,'建工':5,'科研':6}
+effisStr=['分解效率','合成效率','复制效率','修饰效率','炼油效率','建工效率','科研效率','间谍效率']
+effisNameDict={'分解':0,'合成':1,'复制':2,'修饰':3,'炼油':4,'建工':5,'科研':6,'间谍':7}
 
 info_msg="查询到QQ号为:%s的用户信息\n"\
          "学号:%s\n"\

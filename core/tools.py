@@ -29,6 +29,8 @@ def tostr(data):
         return data
     return str(data)
 
+def sqrtmoid(x:float)->float:return 0.25*np.sqrt(x)+0.5
+
 def generate_random_digits(wei:int):
     return "".join(random.choice(chars) for i in wei)
 
@@ -40,6 +42,23 @@ def smart_interval(seconds:float):
     if seconds < 86400:
         return "%sh" % (seconds / 3600)
     return "%sd" % (seconds / 86400)
+
+def is_prime(n)->bool:
+    if n <= 1:
+        return False
+    if n <= 3:
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
+            return False
+        i += 6
+    return True
+
+def getnowtime():
+    return round(datetime.timestamp(datetime.now()))
 
 def generateTime(timeStr:str)->int:
     """
