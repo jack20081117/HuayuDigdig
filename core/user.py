@@ -1,5 +1,6 @@
 import re
 from globalConfig import mysql,effisStr,info_msg,player_tax,effisItemCount
+from tools import getnowtime
 from model import User
 
 def signup(message_list:list[str],qid:str):
@@ -11,11 +12,26 @@ def signup(message_list:list[str],qid:str):
     """
     assert len(message_list)==2 and re.match(r'\d{5}',message_list[1]) and len(message_list[1])==5,'注册失败:请注意您的输入格式！'
     schoolID:str=message_list[1]
+    nowtime = getnowtime()
     assert not User.find(qid,mysql) and not User.findAll(mysql,'schoolID=?',(schoolID,)),'注册失败:您已经注册过，无法重复注册！'
     user=User(
-        qid=qid,schoolID=schoolID,money=0,mineral='{}',
-        industrial_tech=0.0,extract_tech=0.0,refine_tech=0.0,digable=1,
-        factory_num=0,effis='{}',mines='[]'
+        qid=qid,
+        schoolID=schoolID,
+        money = 0,
+        mineral='{}',
+        industrial_tech=0.0,
+        extract_tech=0.0,
+        refine_tech=0.0,
+        digable=1,
+        factory_num=1,
+        effis='{}',
+        mines='[]',
+        stocks='[]',
+        enacted_plan_types='{}',
+        busy_factory_num=0,
+        last_effis_update_time = nowtime,
+        input_tax=0.0, #进项税额（抵扣）
+        output_tax=0.0 #销项税额
     )#注册新用户
     user.add(mysql)
     ans="注册成功！"
