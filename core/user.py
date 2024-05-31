@@ -38,15 +38,9 @@ def getUserInfo(message_list:list[str],qid:str):
     digable:bool=user.digable
     mineral:dict[int,int]=user.mineral
     factory_num:int=user.factory_num
-<<<<<<< HEAD
     effis=user.effis
     mines=user.mines
     sortedMineral:dict[int,int]={key:mineral[key] for key in sorted(mineral.keys())}
-=======
-    effisDict:dict=dict(eval(user.effis))
-    mineList:list=list(eval(user.mines))
-    sortedMineralDict:dict={key:mineralDict[key] for key in sorted(mineralDict.keys())}
->>>>>>> 210eeaf5efcf39369bf7fba2d4f28a5ba6037d72
 
     mres:str=""
     for mid,mnum in sortedMineral.items():
@@ -56,14 +50,9 @@ def getUserInfo(message_list:list[str],qid:str):
             mres+="编号%s的矿石%s个；\n"%(mid,mnum)
 
     eres:str=''    #生产效率信息
-<<<<<<< HEAD
-    for index in range(6):
-        eres+=effisStr[index]+":%s\n" % effis[index]
-=======
     for index in range(effisItemCount):
-        effisDict.setdefault(index, 0.0)
-        eres+=effisStr[index]+":%s\n" % effisDict[index]
->>>>>>> 210eeaf5efcf39369bf7fba2d4f28a5ba6037d72
+        effis.setdefault(index,0.0)
+        eres+=effisStr[index]+":%s\n" % effis[index]
 
     mineres:str='' #私有矿井信息
     for mine in mines:

@@ -1,8 +1,7 @@
-from datetime import datetime
-
 from tools import send,sigmoid,getnowtime
-from model import User,Mine,Sale,Purchase,Auction,Debt
+from model import User,Mine,Sale,Purchase,Auction,Debt,Plan
 from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate
+from tools import sqrtmoid
 
 def init():
     """
@@ -86,7 +85,7 @@ def updateAuction(auction:Auction):
     qid:str=auction.qid
     tradeID:int=auction.tradeID
     user:User=User.find(qid,mysql)
-    offersList:list=list(eval(auction.offers))
+    offersList:list=auction.offers
 
     bids:list[tuple[str,int,int]]=sorted(offersList,key=lambda t:(t[1],-t[2]),reverse=True)#先按出价从大到小排序再按时间从小到大排序
     mineralID:int=auction.mineralID
@@ -216,25 +215,25 @@ def updateEfficiency(user:User,finished_plan):
     finished_plan: 到达截止时间的生产计划，如无填0
     """
     nowtime = getnowtime()
-    effisDict:dict = dict(eval(user.effis))
-    enacted_plans_by_type:dict = dict(eval(user.enacted_plan_types))
+    effis:dict = user.effis
+    enacted_plans_by_type:dict = user.enacted_plan_types
     last_update_time = user.last_effis_update_time
     elapsed_time = nowtime - last_update_time
     for i in range(effisItemCount):
         enacted_plans_by_type.setdefault(i,0)
-        effisDict.setdefault(i,0.0)
+        effis.setdefault(i,0.0)
         if i == finished_plan.jobtype:
             if i == 4: # 特判炼油科技
                 tech = user.refine_tech
             else:
                 tech = user.industrial_tech
-            effisDict[i] += 4 * plan.time_required * sqrtmoid(tech) * effisDailyDecreaseRate/86400
+            effis[i] += 4 * finished_plan.time_required * sqrtmoid(tech) * effisDailyDecreaseRate/86400
         elif enacted_plans_by_type[i] == 0:
-            effisDict[i] -= elapsed_time * effisDailyDecreaseRate/86400
-            effisDict[i] = max(0,effisDict[i])
+            effis[i] -= elapsed_time * effisDailyDecreaseRate/86400
+            effis[i] = max(0,effis[i])
 
     user.last_effis_update_time = nowtime
-    user.effis = str(effisDict)
+    user.effis = effis
     user.save(mysql)
     
    
@@ -248,19 +247,19 @@ def updatePlan(plan:Plan):
     if Plan.find(planID, mysql) is None:  # 计划已取消
         return None
 
-    productDict: dict = dict(eval(plan.products))
-    mineralDict: dict = dict(eval(user.mineral))
-    for mid, mnum in enumerate(productDict):
-        if mid not in mineralDict:
-            mineralDict[mid] = 0
-        mineralDict[mid] += mnum  # 将矿石增加给生产者
-    user.mineral = str(mineralDict) #更新矿石字典
+    products:dict=plan.products
+    mineral:dict[int,int]=user.mineral
+    for mid, mnum in enumerate(products):
+        if mid not in mineral:
+            mineral[mid] = 0
+        mineral[mid] += mnum  # 将矿石增加给生产者
+    user.mineral = mineral #更新矿石字典
     
     updateEfficiency(user, plan) #效率修正
     
-    enacted_plan_types = dict(eval(user.enacted_plan_types)) # 取消当前门类的生产状态
+    enacted_plan_types = user.enacted_plan_types # 取消当前门类的生产状态
     enacted_plan_types[plan.jobtype] -= 1
-    user.enacted_plan_types = str(enacted_plan_types)
+    user.enacted_plan_types = enacted_plan_types
 
     user.busy_factory_num -= plan.factory_num #释放被占用的工厂
     

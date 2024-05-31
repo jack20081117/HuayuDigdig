@@ -16,6 +16,7 @@ deposit:float=config["deposit"]
 group_ids:list=config['group_ids']
 mysql:bool=(env=='prod')
 effisItemCount:int=config["effis_item_count"]
+effisDailyDecreaseRate:float=config["effis_daily_decrease_rate"]
 
 if mysql:
     with open("./mysql.json","a") as config:
