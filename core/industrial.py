@@ -2,7 +2,7 @@ from datetime import datetime
 from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smart_interval, generateTime, is_prime, getnowtime
 from model import User, Plan
 from update import updateEfficiency, updatePlan
-from globalConfig import mysql
+from globalConfig import mysql,effisValueDict
 from numpy import log
 
 
@@ -415,4 +415,33 @@ def cancelPlan(message_list: list[str], qid: str):
     plan.remove(mysql)
     user.save(mysql)
 
+    return ans
+
+def showPlan(message_list:list[str],qid:str):
+    """
+    查看计划
+    :param message_list: 计划
+    :param qid: 查看者的qq号
+    :return: 自己拥有的生产计划
+    """
+    plans:list[Plan]=Plan.findAll(mysql,where='qid=?',args=(qid,))
+    planData=[["计划编号","生产类型","调拨工厂数","原料","产品","用时"]]
+    if not plans:
+        return '您目前未制定生产计划！'
+    for plan in plans:
+        ingredients=[]
+        for iId,iNum in plan.ingredients.items():
+            if iId==0:
+                ingredients.append('燃油:%s单位'%iNum)
+            else:
+                ingredients.append('矿石%s:%s个'%(iId,iNum))
+        products=[]
+        for pId,pNum in plan.products.items():
+            if pId==0:
+                products.append('燃油:%s单位'%pNum)
+            else:
+                products.append('矿石%s:%s个'%(pId,pNum))
+        planData.append([plan.planID,effisValueDict[plan.jobtype],plan.factory_num,','.join(ingredients),','.join(products),smart_interval(plan.time_required)])
+    drawtable(planData,'plan.png')
+    ans='[CQ:image,file=plan.png]'
     return ans
