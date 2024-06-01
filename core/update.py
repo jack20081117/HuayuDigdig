@@ -210,9 +210,8 @@ def updateDebt(debt:Debt):
 
 def updateEfficiency(user:User,finished_plan):
     """
-    :param 
-    user : 涉及到的用户 \n
-    finished_plan: 到达截止时间的生产计划，如无填0
+    :param user : 涉及到的用户
+    :param finished_plan: 到达截止时间的生产计划，如无填0
     """
     nowtime = getnowtime()
     effis:dict = user.effis
@@ -222,7 +221,7 @@ def updateEfficiency(user:User,finished_plan):
     for i in range(effisItemCount):
         enacted_plans_by_type.setdefault(i,0)
         effis.setdefault(i,0.0)
-        if i == finished_plan.jobtype:
+        if finished_plan and i == finished_plan.jobtype:
             if i == 4: # 特判炼油科技
                 tech = user.refine_tech
             else:
@@ -249,18 +248,15 @@ def updatePlan(plan:Plan):
 
     products:dict=plan.products
     mineral:dict[int,int]=user.mineral
-    for mid, mnum in enumerate(products):
+    for mid, mnum in products.items():
         if mid not in mineral:
             mineral[mid] = 0
         mineral[mid] += mnum  # 将矿石增加给生产者
     user.mineral = mineral #更新矿石字典
     
     updateEfficiency(user, plan) #效率修正
-    
-    enacted_plan_types = user.enacted_plan_types # 取消当前门类的生产状态
-    enacted_plan_types[plan.jobtype] -= 1
-    user.enacted_plan_types = enacted_plan_types
 
+    user.enacted_plan_types[plan.jobtype] -= 1 # 取消当前门类的生产状态
     user.busy_factory_num -= plan.factory_num #释放被占用的工厂
     
     user.save(mysql)

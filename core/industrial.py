@@ -23,7 +23,7 @@ def decompose(message_list: list[str], qid: str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    decomp_eff=user.effis[0]
+    decomp_eff=user.effis[0]#用户的分解效率
 
     assert duplication>=1,'制定生产计划失败:倍数无效！'
     assert ingredient>1,'制定生产计划失败:原料无效！'
@@ -36,15 +36,15 @@ def decompose(message_list: list[str], qid: str):
     nowtime: int = getnowtime()
     starttime = nowtime
 
-    minor_product = min(divide, int(ingredient / divide))
+    minor_product = min(divide, ingredient // divide)
     work_units_required = 4 * duplication * minor_product * log(log(ingredient) + 1) / \
                           (log(minor_product) * factory_num)
-    time_required = work_units_required / sigmoid(decomp_eff)
-    fuel_required = factory_num * time_required / (4 * sqrtmoid(user.industrial_tech))
+    time_required = work_units_required / sigmoid(decomp_eff)#生产用时
+    fuel_required = round(factory_num * time_required / (4 * sqrtmoid(user.industrial_tech)))#所用燃油
 
-    products:dict = {divide:duplication, int(ingredient / divide):duplication}
+    products:dict = {divide:duplication, (ingredient // divide):duplication}#生成产品
 
-    ingredients:dict = {0: round(fuel_required), ingredient: duplication}
+    ingredients:dict = {0: fuel_required, ingredient: duplication}#所需原料
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=0, factory_num=factory_num,
@@ -79,7 +79,7 @@ def synthesize(message_list: list[str], qid: str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    synth_eff = user.effis[1]
+    synth_eff = user.effis[1]#用户的合成效率
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     for ingredient in ingredient_list:
@@ -90,7 +90,7 @@ def synthesize(message_list: list[str], qid: str):
     nowtime: int = getnowtime()
     starttime = nowtime
 
-    ingredients = {}
+    ingredients = {}#所需原料
     final_product = 1
     for ingredient in ingredient_list:
 
@@ -99,12 +99,12 @@ def synthesize(message_list: list[str], qid: str):
 
     work_units_required = 4 * duplication * final_product * log(log(final_product) + 1) / \
                           (log(final_product) * factory_num)
-    time_required = work_units_required / (sigmoid(synth_eff))
-    fuel_required = factory_num * time_required / (4 * sqrtmoid(user.industrial_tech))
+    time_required = work_units_required / (sigmoid(synth_eff))#生产用时
+    fuel_required = round(factory_num * time_required / (4 * sqrtmoid(user.industrial_tech)))#所用燃油
 
-    products:dict = {final_product: duplication}
+    products:dict = {final_product: duplication}#生成产品
 
-    ingredients[0] = round(fuel_required)
+    ingredients[0] = fuel_required
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=1, factory_num=factory_num,
@@ -135,7 +135,7 @@ def duplicate(message_list: list[str], qid: str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    duplicate_eff = user.effis[2]
+    duplicate_eff = user.effis[2]#用户的复制效率
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     assert ingredient > 1, '制定生产计划失败:原料无效！'
@@ -146,12 +146,12 @@ def duplicate(message_list: list[str], qid: str):
     starttime = nowtime
 
     work_units_required = duplication * ingredient * log(log(ingredient) + 1) / factory_num
-    time_required = work_units_required / (sigmoid(duplicate_eff))
-    fuel_required = factory_num * time_required / (sqrtmoid(user.industrial_tech))
+    time_required = work_units_required / (sigmoid(duplicate_eff))#生产用时
+    fuel_required = round(factory_num * time_required / (sqrtmoid(user.industrial_tech)))#所用燃油
 
-    products: dict = {ingredient: duplication * 2}
+    products: dict = {ingredient: duplication * 2}#生成成品
 
-    ingredients: dict = {0: round(fuel_required), ingredient: duplication}
+    ingredients: dict = {0: fuel_required, ingredient: duplication}#所需原料
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=2, factory_num=factory_num,
@@ -160,8 +160,7 @@ def duplicate(message_list: list[str], qid: str):
     plan.add(mysql)
 
     ans = '编号为%s的复制计划制定成功！按照此计划，%s个工厂将被调用，预计消耗%s单位燃油和%s时间！。' % (planID, factory_num,
-                                                                fuel_required, smart_interval(time_required),
-                                                                )
+                                                                fuel_required, smart_interval(time_required))
 
     return ans
 
@@ -183,7 +182,7 @@ def decorate(message_list: list[str], qid: str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    decorate_eff = user.effis[3]
+    decorate_eff = user.effis[3]#用户的复制效率
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     assert ingredient > 1, '制定生产计划失败:原料无效！'
@@ -196,12 +195,12 @@ def decorate(message_list: list[str], qid: str):
     work_units_required = duplication * (ingredient + 1) * log(log(ingredient + 1) + 1) / \
                           (log(ingredient + 1) * factory_num)
     time_required = work_units_required / \
-                    (sigmoid(decorate_eff))
-    fuel_required = factory_num * time_required / (2 * sqrtmoid(user.industrial_tech))
+                    (sigmoid(decorate_eff))#生产用时
+    fuel_required = round(factory_num * time_required / (2 * sqrtmoid(user.industrial_tech)))#所用燃料
 
-    products: dict = {ingredient + 1: duplication}
+    products: dict = {ingredient + 1: duplication}#生成产品
 
-    ingredients: dict = {0: round(fuel_required), ingredient: duplication}
+    ingredients: dict = {0: fuel_required, ingredient: duplication}#所需原料
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=3, factory_num=factory_num,
@@ -233,7 +232,7 @@ def refine(message_list: list[str], qid: str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    refine_eff = user.effis[4]
+    refine_eff = user.effis[4]#用户的炼化效率
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     assert ingredient > 1, '制定生产计划失败:原料无效！'
@@ -246,13 +245,13 @@ def refine(message_list: list[str], qid: str):
 
     work_units_required = duplication * ingredient * log(log(ingredient) + 1) / \
                           (log(ingredient) * factory_num)
-    time_required = work_units_required / sigmoid(refine_eff)
-    fuel_required = factory_num * time_required / (2 * sqrtmoid(user.refine_tech)) - 1.055
+    time_required = work_units_required / sigmoid(refine_eff)#生产用时
+    fuel_required = round(factory_num * time_required / (2 * sqrtmoid(user.refine_tech)) - 1.055)#所需燃油
 
     if ingredient > 64:
         products: dict = {0: duplication * ingredient}
         ingredients: dict = {0: fuel_required, ingredient: duplication}
-    else:
+    else:#对较小的质数，可以使用炼化出的燃油重炼化，防止炼化燃油无法进行
         products: dict = {0: duplication * (ingredient - fuel_required)}
         ingredients: dict = {0: 0, ingredient: duplication}
 
@@ -296,7 +295,7 @@ def enactPlan(message_list: list[str], qid: str):
     assert plan, '不存在此计划！'
     assert plan.qid == qid, '您无权执行此计划！'
 
-    factory_num = user.factory_num
+    factory_num = user.factory_num#用户所有的工厂数
     idle_factory_num = factory_num - user.busy_factory_num
     ans = ''
     if idle_factory_num < plan.factory_num and starttime != nowtime:
@@ -304,7 +303,7 @@ def enactPlan(message_list: list[str], qid: str):
 
     setTimeTask(enaction_wrapper, starttime, plan)
 
-    ans = '设置成功！该计划将在指定时间开始执行。编号:%d' % planID
+    ans += '设置成功！该计划将在指定时间开始执行。编号:%d' % planID
 
     return ans
 
@@ -331,8 +330,8 @@ def enaction(plan: Plan):
         tech = user.industrial_tech
 
     time_required = plan.work_units_required / sigmoid(user.effis[plan.jobtype])
-    fuel_required = idle_factory_num * time_required / (2 * sqrtmoid(tech))
-    ingredients[0] = round(fuel_required)
+    fuel_required = round(idle_factory_num * time_required / (2 * sqrtmoid(tech)))
+    ingredients[0] = fuel_required
     success: bool = True
     ans = ""
 
@@ -341,13 +340,13 @@ def enaction(plan: Plan):
             mName = "燃油",
         else:
             mName = "矿物%s" % mId
+        if mId not in mineral:
+            mineral[mId]=0
         if not mineral[mId] <= mNum:
             ans += "%s不足！您目前有%s，计划%s需要%s单位。\n" % (mName, mineral[mId], plan.planID, mNum)
             success = False
 
-    if not success:
-        return ans
-    else:
+    if success:
         ans += "计划%s成功开工！按照当前效率条件，需消耗%s时间，%s单位燃油。" % (plan.planID,
                                                       smart_interval(time_required), round(fuel_required))
         for mId, mNum in ingredients.items():
@@ -368,6 +367,7 @@ def enaction(plan: Plan):
         plan.save(mysql)
 
         setTimeTask(updatePlan, nowtime + round(time_required), plan)
+    return ans
 
 
 def cancelPlan(message_list: list[str], qid: str):

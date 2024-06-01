@@ -1,6 +1,6 @@
 import re
 from globalConfig import mysql,effisStr,info_msg,player_tax,effisItemCount
-from tools import getnowtime
+from tools import getnowtime,sigmoid
 from model import User
 
 def signup(message_list:list[str],qid:str):
@@ -69,7 +69,7 @@ def getUserInfo(message_list:list[str],qid:str):
     eres:str=''    #生产效率信息
     for index in range(effisItemCount):
         effis.setdefault(index,0.0)
-        eres+=effisStr[index]+":%s\n" % effis[index]
+        eres+=effisStr[index]+":%.4f%%\n" % (sigmoid(effis[index])*100)
 
     mineres:str='' #私有矿井信息
     for mine in mines:
@@ -77,6 +77,7 @@ def getUserInfo(message_list:list[str],qid:str):
 
     ans:str=info_msg%(qid,schoolID,money,industrialTech,extractTech,refineTech,digable,
                   mres,factory_num,eres,mineres)
+
     return ans
 
 def pay(message_list:list[str],qid:str):
