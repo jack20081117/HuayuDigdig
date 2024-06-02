@@ -6,6 +6,18 @@ from globalConfig import mysql,effisValueDict
 from numpy import log
 
 
+def expense_calculator(multiplier:float,duplication:int,primary_scale:int,secondary_scale:int,
+                       tech:float,efficiency:float,factory_num:int,fuel_factor:float,use_log_divisor=True):
+
+    work_units_required = multiplier * duplication * primary_scale * log(log(secondary_scale) + 1)
+    if use_log_divisor:
+        work_units_required /= log(primary_scale)
+    time_required = work_units_required / (sigmoid(efficiency) * factory_num)
+    fuel_required = round(work_units_required / (fuel_factor * sqrtmoid(tech) * sigmoid(efficiency)))#所用燃油
+
+    return work_units_required, time_required, fuel_required
+
+
 def decompose(message_list: list[str], qid: str):
     """
     制定分解计划
@@ -37,10 +49,13 @@ def decompose(message_list: list[str], qid: str):
     starttime = nowtime
 
     minor_product = min(divide, ingredient // divide)
-    work_units_required = 4 * duplication * minor_product * log(log(ingredient) + 1) / \
-                          (log(minor_product) * factory_num)
-    time_required = work_units_required / sigmoid(decomp_eff)#生产用时
-    fuel_required = round(factory_num * time_required / (4 * sqrtmoid(user.industrial_tech)))#所用燃油
+
+    work_units_required, time_required, fuel_required = \
+        expense_calculator(4,duplication,minor_product,ingredient,user.industrial_tech,decomp_eff,factory_num,4)
+
+    #work_units_required = 4 * duplication * minor_product * log(log(ingredient) + 1) / log(minor_product)
+    #time_required = work_units_required / (sigmoid(decomp_eff) * factory_num)
+    #fuel_required = round(work_units_required / (4 * sqrtmoid(user.industrial_tech) * sigmoid(decomp_eff)))#所用燃油
 
     products:dict = {divide:duplication, (ingredient // divide):duplication}#生成产品
 
@@ -97,10 +112,8 @@ def synthesize(message_list: list[str], qid: str):
         final_product *= ingredient
         ingredients[ingredient] = duplication
 
-    work_units_required = 4 * duplication * final_product * log(log(final_product) + 1) / \
-                          (log(final_product) * factory_num)
-    time_required = work_units_required / (sigmoid(synth_eff))#生产用时
-    fuel_required = round(factory_num * time_required / (4 * sqrtmoid(user.industrial_tech)))#所用燃油
+    work_units_required, time_required, fuel_required = \
+        expense_calculator(4,duplication,final_product,final_product,user.industrial_tech,synth_eff,factory_num,4)
 
     products:dict = {final_product: duplication}#生成产品
 
@@ -145,9 +158,9 @@ def duplicate(message_list: list[str], qid: str):
     nowtime: int = getnowtime()
     starttime = nowtime
 
-    work_units_required = duplication * ingredient * log(log(ingredient) + 1) / factory_num
-    time_required = work_units_required / (sigmoid(duplicate_eff))#生产用时
-    fuel_required = round(factory_num * time_required / (sqrtmoid(user.industrial_tech)))#所用燃油
+    work_units_required, time_required, fuel_required = \
+        expense_calculator(1,duplication,ingredient+64,ingredient+64,
+                           user.industrial_tech,duplicate_eff,factory_num,1,use_log_divisor=False)
 
     products: dict = {ingredient: duplication * 2}#生成成品
 
@@ -182,7 +195,7 @@ def decorate(message_list: list[str], qid: str):
     except ValueError:
         return '制定生产计划失败:请按照规定格式进行计划！'
 
-    decorate_eff = user.effis[3]#用户的复制效率
+    decorate_eff = user.effis[3]#用户的修饰效率
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     assert ingredient > 1, '制定生产计划失败:原料无效！'
@@ -192,11 +205,8 @@ def decorate(message_list: list[str], qid: str):
     nowtime: int = getnowtime()
     starttime = nowtime
 
-    work_units_required = duplication * (ingredient + 1) * log(log(ingredient + 1) + 1) / \
-                          (log(ingredient + 1) * factory_num)
-    time_required = work_units_required / \
-                    (sigmoid(decorate_eff))#生产用时
-    fuel_required = round(factory_num * time_required / (2 * sqrtmoid(user.industrial_tech)))#所用燃料
+    work_units_required, time_required, fuel_required = \
+        expense_calculator(1,duplication,ingredient+1,ingredient+1,user.industrial_tech,decorate_eff,factory_num,2)
 
     products: dict = {ingredient + 1: duplication}#生成产品
 
@@ -243,10 +253,10 @@ def refine(message_list: list[str], qid: str):
     nowtime: int = getnowtime()
     starttime = nowtime
 
-    work_units_required = duplication * ingredient * log(log(ingredient) + 1) / \
-                          (log(ingredient) * factory_num)
-    time_required = work_units_required / sigmoid(refine_eff)#生产用时
-    fuel_required = round(factory_num * time_required / (2 * sqrtmoid(user.refine_tech)) - 1.055)#所需燃油
+    work_units_required, time_required, fuel_required = \
+        expense_calculator(2,duplication,ingredient,ingredient,user.refine_tech,refine_eff,factory_num,4)
+
+    fuel_required -= 1.06 # 消除负收益
 
     if ingredient > 64:
         products: dict = {0: duplication * ingredient}
