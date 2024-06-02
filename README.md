@@ -9,6 +9,7 @@
 通过go-cqhttp协议制作QQ机器人与用户进行交互。关于交互指令，详见[help_msg.md](core/help_msg.md)。
 
 ## 基本机制
+注：以下内容已较为过时，更新版见[https://hackmd.io/@Equinox159/FactorMinerDoc](http://)。
 ### 学号与兑换
 每个玩家都有<a href="https://hywiki.xyz/wiki/%E5%8D%8E%E8%82%B2%E5%AD%A6%E5%8F%B7%E7%B3%BB%E7%BB%9F">学号</a>，有多种形式，如三位、五位和六位。
 
