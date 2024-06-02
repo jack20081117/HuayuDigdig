@@ -107,10 +107,12 @@ def updateAuction(auction:Auction):
                 tmineral[mineralID]=0
             tmineral[mineralID]+=mineralNum#给予矿石
             tuser.mineral=tmineral
+            tuser.input_tax += bids[0][1] * vat_rate
             tuser.save(mysql)
             send(tqid,'您在拍卖:%s中竞拍成功，矿石已发送到您的账户'%tradeID,False)
 
             user.money+=bids[0][1]
+            user.output_tax += bids[0][1]*vat_rate
             user.save(mysql)
 
             for otherbid in bids[1:]:#返还剩余玩家押金

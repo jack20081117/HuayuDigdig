@@ -1,6 +1,6 @@
 from tools import drawtable,setTimeTask,send,generateTime,getnowtime,generateTimeStr,generateTimeStamp
 from model import User,Sale,Purchase,Auction
-from globalConfig import mysql,deposit
+from globalConfig import mysql,deposit,vat_rate
 from update import updateSale,updatePurchase,updateAuction
 
 def presell(message_list:list[str],qid:str):
@@ -81,8 +81,10 @@ def buy(message_list:list[str],qid:str):
     assert user.money>=price,'购买失败:您的余额不足！'
 
     user.money-=price#付钱
+    user.input_tax += price*vat_rate
     tuser:User=User.find(tqid,mysql)
     tuser.money+=price#得钱
+    tuser.output_tax+=price*vat_rate #增值税销项税额增加
 
     mineral=user.mineral
     if mineralID not in mineral:
@@ -176,6 +178,7 @@ def sell(message_list:list[str],qid:str):
         mineral.pop(mineralID)
 
     user.money+=price  #得钱
+    user.output_tax+=price*vat_rate #销项税额增加
     user.mineral=mineral
     user.save(mysql)
 
@@ -186,6 +189,7 @@ def sell(message_list:list[str],qid:str):
         tmineral[mineralID]=0
     tmineral[mineralID]+=mineralNum  #增加矿石
     tuser.mineral=tmineral
+    tuser.input_tax += price*vat_rate #购买者进项税额增加
 
     purchase.remove(mysql)#删除市场上的此条记录
 

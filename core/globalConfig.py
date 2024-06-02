@@ -11,7 +11,7 @@ imgkit_config=imgkit.config(wkhtmltoimage=r'D:/Program Files/wkhtmltopdf/bin/wkh
 with open("./config.json","r",encoding='utf-8') as config:
     config=json.load(config)
 env:str=config["env"]
-player_tax:float=config["tax"]["player"]
+vat_rate:float=config["tax"]["vat"]
 deposit:float=config["deposit"]
 group_ids:list=config['group_ids']
 mysql:bool=(env=='prod')

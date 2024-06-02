@@ -21,6 +21,7 @@ class User(Model):
     last_effis_update_time = IntegerField()
     input_tax=FloatField() #进项税额（抵扣）
     output_tax=FloatField() #销项税额
+    paid_taxes=BooleanField()
 
 
 class Plan(Model):
@@ -89,13 +90,17 @@ class Stock(Model):
     __table__='stocks'
 
     stockID=StringField(columnType='varchar(3)',primaryKey=True)
-    stockName=StringField(columnType='varchar(8)')
+    stockName=StringField(columnType='varchar(12)')
     stockNum=IntegerField()
+    primary_sold=IntegerField()
     issue_qid=StringField(columnType='varchar(20)')
-    price=IntegerField()
+    price=FloatField()
     self_retain=FloatField()
     histprice=StringField(columnType='varchar(2000)')
     shareholders=StringField(columnType='varchar(2000)')
+    primaryEndTime = IntegerField()
+    primary_ended=BooleanField()
+    secondary_open=BooleanField()
     avg_dividend=FloatField()
 
 

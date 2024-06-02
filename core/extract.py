@@ -2,7 +2,7 @@ import numpy as np
 
 from tools import sigmoid
 from model import User,Mine
-from globalConfig import mysql
+from globalConfig import mysql,vat_rate
 
 def extract(qid,mineralID,mineID):
     """获取矿石
@@ -90,6 +90,7 @@ def exchange(message_list:list[str],qid:str):
 
     user.mineral=mineral
     user.money+=mineralID
+    user.output_tax += mineralID * vat_rate #增值税
     user.save(mysql)
 
     ans='兑换成功！'
