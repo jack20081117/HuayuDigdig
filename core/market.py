@@ -1,6 +1,4 @@
-from datetime import datetime
-
-from tools import drawtable,setTimeTask,send,generateTime,getnowtime
+from tools import drawtable,setTimeTask,send,generateTime,getnowtime,generateTimeStr,generateTimeStamp
 from model import User,Sale,Purchase,Auction
 from globalConfig import mysql,deposit
 from update import updateSale,updatePurchase,updateAuction
@@ -21,11 +19,11 @@ def presell(message_list:list[str],qid:str):
         if message_list[4]=='now':
             starttime:int=nowtime
         else:
-            starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
+            starttime:int=generateTimeStamp(message_list[4])
         if generateTime(message_list[5]):
             endtime:int=starttime+generateTime(message_list[5])
         else:
-            endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
+            endtime:int=generateTimeStamp(message_list[5])
     except ValueError:
         return '预售失败:请按照规定格式进行预售！'
 
@@ -113,14 +111,14 @@ def prebuy(message_list:list[str],qid:str):
         mineralID:int=int(message_list[1])
         mineralNum:int=int(message_list[2])
         price:int=int(message_list[3])
-        if message_list[4]=='现在' or message_list[4]=='now':
+        if message_list[4]=='now':
             starttime:int=nowtime
         else:
-            starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
+            starttime:int=generateTimeStamp(message_list[4])
         if generateTime(message_list[5]):
             endtime:int=starttime+generateTime(message_list[5])
         else:
-            endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
+            endtime:int=generateTimeStamp(message_list[5])
     except ValueError:
         return '预订失败:请按照规定格式进行预订！'
     user:User=User.find(qid,mysql)
@@ -214,11 +212,11 @@ def preauction(message_list:list[str],qid:str):
         if message_list[4]=='现在' or message_list[4]=='now':
             starttime:int=nowtime
         else:
-            starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
+            starttime:int=generateTimeStamp(message_list[4])
         if generateTime(message_list[5]):
             endtime:int=starttime+generateTime(message_list[5])
         else:
-            endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
+            endtime:int=generateTimeStamp(message_list[5])
     except ValueError:
         return '拍卖失败:请按照规定格式进行拍卖！'
 
@@ -287,10 +285,8 @@ def bid(message_list:list[str],qid:str):
         assert userprice>bestprice,'投标失败:您的出价低于当前最高价！'
         user.money-=round(userprice*deposit)#支付押金
 
-    offersList:list[tuple[str,str,int]]=list(eval(auction.offers))
-    offersList.append((qid,userprice,nowtime))
+    auction.offers.append((qid,userprice,nowtime))
     auction.bestprice=max(userprice,auction.bestprice)
-    auction.offers=str(offersList)
 
     auction.save(mysql)
     user.save(mysql)
@@ -313,8 +309,8 @@ def mineralMarket(message_list:list[str],qid:str):
         ans+='以下是所有处于预售中的商品:\n'
         saleData=[['交易编号','矿石编号','矿石数目','价格','起始时间','结束时间']]
         for sale in sales:
-            starttime:str=datetime.fromtimestamp(float(sale.starttime)).strftime('%Y-%m-%d %H:%M:%S')
-            endtime:str=datetime.fromtimestamp(float(sale.endtime)).strftime('%Y-%m-%d %H:%M:%S')
+            starttime:str=generateTimeStr(sale.starttime)
+            endtime:str=generateTimeStr(sale.endtime)
             saleData.append([sale.tradeID,sale.mineralID,sale.mineralNum,sale.price,starttime,endtime])
         drawtable(saleData,'sale.png')
         ans+='[CQ:image,file=sale.png]\n'
@@ -325,8 +321,8 @@ def mineralMarket(message_list:list[str],qid:str):
         ans+='以下是所有处于预订中的商品:\n'
         purchaseData=[['交易编号','矿石编号','矿石数目','价格','起始时间','结束时间']]
         for purchase in purchases:
-            starttime:str=datetime.fromtimestamp(float(purchase.starttime)).strftime('%Y-%m-%d %H:%M:%S')
-            endtime:str=datetime.fromtimestamp(float(purchase.endtime)).strftime('%Y-%m-%d %H:%M:%S')
+            starttime:str=generateTimeStr(purchase.starttime)
+            endtime:str=generateTimeStr(purchase.endtime)
             purchaseData.append([purchase.tradeID,purchase.mineralID,purchase.mineralNum,purchase.price,starttime,endtime])
         drawtable(purchaseData,'purchase.png')
         ans+='[CQ:image,file=purchase.png]\n'
@@ -337,8 +333,8 @@ def mineralMarket(message_list:list[str],qid:str):
         ans+='以下是所有处于拍卖中的商品:\n'
         auctionData=[['交易编号','矿石编号','矿石数目','底价','起始时间','结束时间','当前最高价']]
         for auction in auctions:
-            starttime:str=datetime.fromtimestamp(float(auction.starttime)).strftime('%Y-%m-%d %H:%M:%S')
-            endtime:str=datetime.fromtimestamp(float(auction.endtime)).strftime('%Y-%m-%d %H:%M:%S')
+            starttime:str=generateTimeStr(auction.starttime)
+            endtime:str=generateTimeStr(auction.endtime)
             auctionDatum=[auction.tradeID,auction.mineralID,auction.mineralNum,auction.price,starttime,endtime]
             if auction.secret:
                 auctionDatum.append('-')

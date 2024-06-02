@@ -1,6 +1,4 @@
-from datetime import datetime
-
-from tools import setTimeTask,drawtable,send,generateTime,getnowtime
+from tools import setTimeTask,drawtable,send,generateTime,getnowtime,generateTimeStr,generateTimeStamp
 from model import User,Debt
 from globalConfig import mysql
 from update import updateDebt
@@ -20,11 +18,11 @@ def prelend(message_list:list[str],qid:str):
         if message_list[4]=='现在' or message_list[4]=='now':
             starttime:int=nowtime
         else:
-            starttime:int=int(datetime.strptime(message_list[4],'%Y-%m-%d,%H:%M:%S').timestamp())
+            starttime:int=generateTimeStamp(message_list[4])
         if generateTime(message_list[5]):
             endtime:int=starttime+generateTime(message_list[5])
         else:
-            endtime:int=int(datetime.strptime(message_list[5],'%Y-%m-%d,%H:%M:%S').timestamp())
+            endtime:int=generateTimeStamp(message_list[5])
     except ValueError:
         return "放贷失败:您的放贷格式不正确！"
 
@@ -141,8 +139,8 @@ def debtMarket(message_list:list[str],qid:str):
                 debttime+='%d小时'%((debt.duration%86400)//3600)
             if (debt.duration%3600)//60:
                 debttime+='%d分钟'%((debt.duration%3600)//60)
-            starttime:str=datetime.fromtimestamp(float(debt.starttime)).strftime('%Y-%m-%d %H:%M:%S')
-            endtime:str=datetime.fromtimestamp(float(debt.endtime)).strftime('%Y-%m-%d %H:%M:%S')
+            starttime:str=generateTimeStr(debt.starttime)
+            endtime:str=generateTimeStr(debt.endtime)
             debtData.append([debt.debtID,debt.money,debt.creditor_id,debttime,debt.interest,starttime,endtime])
         drawtable(debtData,'debt.png')
         ans+='[CQ:image,file=debt.png]'

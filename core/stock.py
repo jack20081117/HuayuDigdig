@@ -22,6 +22,7 @@ def issue(message_list:list[str],qid:str):
                 histprice='{}',shareholders='{}',avg_dividend=0.0)
     stock.add(mysql)
     ans='发行成功！'
+    return ans
 
 def stockMarket(message_list:list[str],qid:str):
     """

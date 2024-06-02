@@ -60,23 +60,39 @@ def is_prime(n)->bool:
 def getnowtime():
     return round(datetime.timestamp(datetime.now()))
 
-def generateTime(timeStr:str)->int:
+def generateTime(timestr:str)->int:
     """
     根据字符串生成秒数
-    :param timeStr:格式:3min/2h/5d
+    :param timestr:格式:3min/2h/5d
     :return:对应的秒数
     """
     try:
-        if timeStr.endswith('min'):
-            return int(timeStr[:-3])*60
-        elif timeStr.endswith('h'):
-            return int(timeStr[:-1])*3600
-        elif timeStr.endswith('d'):
-            return int(timeStr[:-1])*86400
+        if timestr.endswith('min'):
+            return int(timestr[:-3])*60
+        elif timestr.endswith('h'):
+            return int(timestr[:-1])*3600
+        elif timestr.endswith('d'):
+            return int(timestr[:-1])*86400
         else:
             return 0
     except ValueError:
         return 0
+
+def generateTimeStamp(timestr:str)->int:
+    """
+    根据字符串生成timestamp
+    :param timestr: %Y-%m-%d,%H:%M:%S格式的字符串，如2024-01-01,12:00:00
+    :return: 字符串对应的timestamp
+    """
+    return int(datetime.strptime(timestr,'%Y-%m-%d,%H:%M:%S').timestamp())
+
+def generateTimeStr(timestamp:int)->str:
+    """
+    根据timestamp生成字符串
+    :param timestamp: 一个整数，如1704081600
+    :return: timestamp对应的字符串
+    """
+    return datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d,%H:%M:%S')
 
 def drawtable(data:list,filename:str):
     """

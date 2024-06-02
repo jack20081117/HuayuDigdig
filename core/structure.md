@@ -1,9 +1,9 @@
 ## 项目架构（软件架构）
 |层级|名称|相应模块|
-|-|-|-|
+|---|---|---|
 |1|网关|api|
 |2|分发|script|
-|3|分层业务|user,extract,industrial,market,stock,debt|
+|3|分层业务|static,user,extract,industrial,market,stock,debt|
 |4|更新业务|update|
 |5|数据模型|model|
 |6|数据管理|orm|
