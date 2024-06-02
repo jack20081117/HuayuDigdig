@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from tools import drawtable,setTimeTask,send,generateTime
+from tools import drawtable,setTimeTask,send,generateTime,getnowtime
 from model import User,Sale,Purchase,Auction
 from globalConfig import mysql,deposit
 from update import updateSale,updatePurchase,updateAuction
@@ -13,7 +13,7 @@ def presell(message_list:list[str],qid:str):
     :return: 预售提示信息
     """
     assert len(message_list)==6,'预售失败:请按照规定格式进行预售！'
-    nowtime:int=round(datetime.timestamp(datetime.now()))
+    nowtime:int=getnowtime()#现在的时间
     try:
         mineralID:int=int(message_list[1])
         mineralNum:int=int(message_list[2])
@@ -76,7 +76,7 @@ def buy(message_list:list[str],qid:str):
     starttime:int=sale.starttime
     endtime:int=sale.endtime
 
-    nowtime:int=round(datetime.timestamp(datetime.now()))#现在的时间
+    nowtime:int=getnowtime()#现在的时间
     assert qid!=tqid,'购买失败:您不能购买自己的商品！'
     assert nowtime>=starttime,'购买失败:尚未到开始购买时间！'
     assert nowtime<=endtime,'购买失败:此商品预售已结束！'
@@ -108,7 +108,7 @@ def prebuy(message_list:list[str],qid:str):
     :return: 预订提示信息
     """
     assert len(message_list)==6,'预订失败:请按照规定格式进行预订！'
-    nowtime:int=round(datetime.timestamp(datetime.now()))
+    nowtime:int=getnowtime()#现在的时间
     try:
         mineralID:int=int(message_list[1])
         mineralNum:int=int(message_list[2])
@@ -165,7 +165,7 @@ def sell(message_list:list[str],qid:str):
     assert isinstance(purchase.endtime, object)
     endtime:int=purchase.endtime
 
-    nowtime:int=round(datetime.timestamp(datetime.now()))  #现在的时间
+    nowtime:int=getnowtime()#现在的时间
     assert qid!=tqid,'售卖失败:您不能向自己售卖商品！'
     assert nowtime>=starttime,'售卖失败:尚未到开始售卖时间！'
     assert nowtime<=endtime,'售卖失败:此商品预订已结束！'
@@ -205,7 +205,7 @@ def preauction(message_list:list[str],qid:str):
     :return: 拍卖提示信息
     """
     assert len(message_list)==7,'拍卖失败:请按照规定格式进行拍卖！'
-    nowtime:int=round(datetime.timestamp(datetime.now()))
+    nowtime:int=getnowtime()#现在的时间
     try:
         mineralID:int=int(message_list[1])
         mineralNum:int=int(message_list[2])
@@ -255,7 +255,7 @@ def bid(message_list:list[str],qid:str):
     :return: 投标提示信息
     """
     assert len(message_list)==3,'投标失败:请按照规定格式进行投标！'
-    nowtime=datetime.timestamp(datetime.now())
+    nowtime=getnowtime()#现在的时间
     try:
         tradeID:int=int(message_list[1])
         userprice:int=int(message_list[2])
@@ -273,7 +273,6 @@ def bid(message_list:list[str],qid:str):
     endtime:int=auction.endtime
     secret:bool=auction.secret#是否对出价保密
 
-    nowtime=round(datetime.timestamp(datetime.now()))#现在的时间
     assert qid!=tqid,'投标失败:您不能购买自己的商品！'
     assert nowtime>=starttime,'投标失败:尚未到开始拍卖时间！'
     assert nowtime<=endtime,'投标失败:此商品拍卖已结束！'

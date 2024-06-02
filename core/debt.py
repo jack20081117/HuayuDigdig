@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from tools import setTimeTask,drawtable,send,generateTime
+from tools import setTimeTask,drawtable,send,generateTime,getnowtime
 from model import User,Debt
 from globalConfig import mysql
 from update import updateDebt
@@ -12,7 +12,7 @@ def prelend(message_list:list[str],qid:str):
     :return: 放贷提示信息
     """
     assert len(message_list)==6,'放贷失败:您的放贷格式不正确！'
-    nowtime:int=round(datetime.timestamp(datetime.now()))
+    nowtime:int=getnowtime()#现在的时间
     try:
         money=int(message_list[1])
         duration=generateTime(message_list[2])
@@ -51,7 +51,7 @@ def borrow(message_list:list[str],qid:str):
     :return: 借贷提示信息
     """
     assert len(message_list)==3,"借贷失败:您的借贷格式不正确！"
-    nowtime:int=round(datetime.timestamp(datetime.now()))
+    nowtime:int=getnowtime()#现在的时间
     try:
         debtID:int=int(message_list[1])
         money:int=int(message_list[2])
@@ -94,7 +94,7 @@ def repay(message_list:list[str],qid:str):
     :return: 还款提示信息
     """
     assert len(message_list)==3,'还款失败:您的还款格式不正确！'
-    nowtime:int=round(datetime.timestamp(datetime.now()))
+    nowtime:int=getnowtime()#现在的时间
     try:
         debtID:int=int(message_list[1])
         money:int=int(message_list[2])
