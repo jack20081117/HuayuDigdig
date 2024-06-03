@@ -92,17 +92,24 @@ class Stock(Model):
     stockID=StringField(columnType='varchar(3)',primaryKey=True)
     stockName=StringField(columnType='varchar(12)')
     stockNum=IntegerField()
-    primary_sold=IntegerField()
-    issue_qid=StringField(columnType='varchar(20)')
+    openStockNum=IntegerField() #一级市场认购时仍未被认购的股数
+    provisionalFunds=FloatField() #一级市场认购进行时临时资金的存放处，如果成功上市将转移给发行人
+    issue_qid=StringField(columnType='varchar(20)') #发行人qid
     price=FloatField()
-    self_retain=FloatField()
+    self_retain=FloatField() #一级市场发行时自留比例
     histprice=StringField(columnType='varchar(2000)')
     shareholders=StringField(columnType='varchar(2000)')
-    primaryEndTime = IntegerField()
-    primary_ended=BooleanField()
-    secondary_open=BooleanField()
+    bids=StringField(columnType='varchar(500)') # 买入委托列表
+    asks=StringField(columnType='varchar(500)') # 卖出委托列表
+    primaryEndTime = IntegerField() #一级市场认购结束时间
+    primaryClosed=BooleanField()
+    secondaryOpen=BooleanField()
     avg_dividend=FloatField()
 
+class Order(Model): #股市委托
+    __table__ = 'orders'
+
+    #TODO
 
 class Debt(Model):
     __table__='debts'
