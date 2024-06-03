@@ -90,7 +90,9 @@ registerByDict({
     "炼化": refine,
     "取消": cancelPlan,
     "执行": enactPlan,
-    "计划": showPlan
+    "计划": showPlan,
+    "转让债权": transferDebt,
+    "免除债务": forgiveDebt,
 })
 
      

@@ -82,7 +82,7 @@ def borrow(message_list:list[str],qid:str):
     debitor.money+=money
     debitor.save(mysql)
 
-    ans='借贷成功！请注意在借贷时限内还款！'
+    ans='借贷成功！该债务编号为%s，请注意在借贷时限内还款！' % newdebtID
     return ans
 
 def repay(message_list:list[str],qid:str):
@@ -119,6 +119,68 @@ def repay(message_list:list[str],qid:str):
         debitor.save(mysql)
         ans='还款成功！剩余贷款金额:%d'%debt.money
     return ans
+
+def transferDebt(message_list:list[str],qid:str):
+    """
+    :param message_list: 转让债权 债券编号 转让对象(学号/q+QQ号）
+    :param qid: 还款者的qq号
+    :return: 还款提示信息
+    """
+    assert len(message_list) == 3, '转让债权失败:您的转让格式不正确！'
+    try:
+        debtID:int=int(message_list[1])
+        new_creditor_id:str=str(message_list[2])
+    except ValueError:
+        return '转让债权失败:您的债券编号不正确！'
+
+    debt=Debt.find(debtID,mysql)
+    assert debt is not None,"转让债权失败:不存在此债券！"
+    assert debt.creditor_id==qid,'转让债权失败:您不是此债券的债权人！'
+    assert debt.endtime > nowtime, '转让失败:此债券已结束还款！'
+
+    if new_creditor_id.startswith("q"):
+        # 通过QQ号查找对方
+        tqid: str = target[1:]
+        new_creditor: User = User.find(tqid, mysql)
+        assert new_creditor, "转让失败:QQ号为%s的用户未注册！" % tqid
+    else:
+        tschoolID: str = target
+        # 通过学号查找
+        assert User.findAll(mysql, 'schoolID=?', (tschoolID,)), "转让失败:学号为%s的用户未注册！" % tschoolID
+        new_creditor: User = User.findAll(mysql, 'schoolID=?', (tschoolID,))[0]
+
+    assert new_creditor.qid != debt.debitor_id, "转让失败：不能转让给债务人！"
+
+    debt.creditor_id = new_creditor.qid
+    debt.save(mysql)
+    ans = '编号%s的债券已成功转让给%s，该债券还有%.2f待偿还！' % (debt.debtID, new_creditor_id, debt.money)
+
+    return ans
+
+def forgiveDebt(message_list:list[str],qid:str):
+    """
+    :param message_list: 免除债务 债券编号
+    :param qid:
+    :return: 提示信息
+    """
+    assert len(message_list) == 2, '免除债务失败:您的转让格式不正确！'
+    try:
+        debtID:int=int(message_list[1])
+    except ValueError:
+        return '免除债务失败:您的债券编号不正确！'
+
+    debt = Debt.find(debtID, mysql)
+    assert debt is not None,"转让债权失败:不存在此债券！"
+    assert debt.creditor_id==qid,'转让债权失败:您不是此债券的债权人！'
+    assert debt.endtime > nowtime, '转让失败:此债券已结束还款！'
+
+
+    ans="免除债务成功！债券编号%s已被销毁，债务人%s现在无需偿还剩余的%.2f元！" % (debtID, debt.debitor_id, debt.money)
+    send(debt.debitor_id,"债权人%s已经免除了您编号%s的债务，您现在无需偿还剩下的%.2f元！" % (debt.creditor_id, debtID, debt.money))
+    debt.remove(mysql)
+
+    return ans
+
 
 def debtMarket(message_list:list[str],qid:str):
     """

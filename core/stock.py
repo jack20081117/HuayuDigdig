@@ -32,7 +32,7 @@ def issue(message_list:list[str],qid:str):
 def primaryClosing(stock:Stock):
     shareholders:dict = stock.shareholders
     #for holderID, amount in shareholders.items():
-        
+
     return None
 
 def acquireStock(message_list:list[str],qid:str):
