@@ -106,10 +106,10 @@ class Stock(Model):
     secondaryOpen=BooleanField()
     avg_dividend=FloatField()
 
-class Order(Model): #股市委托
-    __table__ = 'orders'
-
-    #TODO
+# class Order(Model): #股市委托
+#     __table__ = 'orders'
+#
+#     #TODO
 
 class Debt(Model):
     __table__='debts'
