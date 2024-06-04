@@ -96,7 +96,7 @@ class Stock(Model):
     provisionalFunds=FloatField() #一级市场认购进行时临时资金的存放处，如果成功上市将转移给发行人
     issue_qid=StringField(columnType='varchar(20)') #发行人qid
     price=FloatField()
-    selfRetain=FloatField() #一级市场发行时自留比例
+    selfRetain=FloatField() #一级市场发行时自留股数
     histprice=StringField(columnType='varchar(2000)')
     shareholders=StringField(columnType='varchar(2000)')
     bids=StringField(columnType='varchar(500)') # 买入委托列表
