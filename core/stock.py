@@ -29,14 +29,27 @@ def issue(message_list:list[str],qid:str):
 
     nowtime = getnowtime()
     primaryEndTime = nowtime + 86400
-    stock=Stock(stockID=stockID,stockName=stockName,stockNum=stockNum,issue_qid=qid,price=price,self_retain=selfRetain,
-                primaryEndTime=primaryEndTime,histprice={},shareholders={},avg_dividend=0.0)
+    stock=Stock(stockID=stockID,
+                stockName=stockName,
+                stockNum=stockNum,
+                openStockNum=stockNum - selfRetain,
+                provisionalFunds=0,
+                issue_qid=qid,
+                price=price,
+                selfRetain=selfRetain,
+                primaryEndTime=primaryEndTime,
+                histprice={'designated_issue_price':price},
+                shareholders={qid:selfRetain},
+                avg_dividend=0.0)
     stock.add(mysql)
     setTimeTask(primaryClosing,primaryEndTime,stock) #一级市场认购结束事件
     ans='发行成功！您的股票将在一级市场开放认购24小时，随后开始在二级市场流通。'
     return ans
 
 def primaryClosing(stock:Stock):
+    if stock.openStockNum == 0:
+        send(stock.issue_qid,"您的股票%s在一级市场已按%.2f一股全部认购完毕，将在下一次开盘进入二级市场交易！" % (stock.stockName,stock.price))
+        #send(public_group,"股票%s的一级市场认购成功结束，将在下一次开盘进入")
     shareholders:dict = stock.shareholders
     #for holderID, amount in shareholders.items():
 
