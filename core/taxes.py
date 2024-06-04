@@ -1,6 +1,6 @@
 from model import User
-from globalConfig import vat_rate, mysql
-from tools import setCrontab
+from globalConfig import vat_rate, mysql,group_ids
+from tools import setCrontab,getnowtime,send
 
 def pay_tax(message_list:list[str],qid:str):
     """
@@ -14,7 +14,7 @@ def pay_tax(message_list:list[str],qid:str):
     try:
         money:int=int(message_list[1])
     except ValueError:
-        return '还款失败:您的还款格式不正确！'
+        return '缴税失败:您的缴税格式不正确！'
 
     taxpayer = User.find(qid,mysql)
     treasury = User.find('treasury',mysql)
@@ -57,7 +57,7 @@ def tax_update():
     treasury:User=User.find('treasury',mysql)
     pre_tax_amount = treasury.money
     for user in User.findAll(mysql):
-        if not user.qid in ['treasury']:
+        if user.qid not in ['treasury']:
             if user.paid_taxes:
                 user.paid_taxes = False
                 user.save(mysql)
@@ -74,7 +74,8 @@ def tax_update():
                 user.save(mysql)
                 send(user.qid, '提醒：本期您未报税，且流动资金不充裕，请于下一期内主动结清拖欠的税款，以及加征的10%滞纳金！如果继续逾期您可能面临强制措施！')
     taxed_amount = treasury.money - pre_tax_amount
-    send('788951477','本期总共征税%.2f元,感谢各位对我游税务工作的支持。' % taxed_amount,group=True)
+    for group_id in group_ids:
+        send(group_id,'本期总共征税%.2f元,感谢各位对我游税务工作的支持。' % taxed_amount,group=True)
     treasury.save(mysql)
 
 

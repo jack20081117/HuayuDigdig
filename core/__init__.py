@@ -1,7 +1,7 @@
 from model import *
 from orm import execute
 from globalConfig import dbconfig
-from tools import setCrontab
+from tools import setCrontab,getnowtime
 from taxes import tax_update
 
 def create_treasury():
@@ -20,7 +20,7 @@ def create_treasury():
         stocks=[],
         enacted_plan_types={},
         busy_factory_num=0,
-        last_effis_update_time=nowtime,
+        last_effis_update_time=getnowtime(),
         input_tax=0.0,  # 进项税额（抵扣）
         output_tax=0.0,  # 销项税额
         paid_taxes=True

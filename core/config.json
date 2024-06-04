@@ -1,13 +1,15 @@
 {
     "env": "dev",
     "tax":{
-        "vat": 0.05
+        "vat": 0.05,
+        "player": 0.01
     },
     "deposit": 0.3,
     "group_ids": [
         "788951477",
         "753573821"
     ],
+    "bot_id": "2470751924",
     "effis_item_count": 8,
     "effis_daily_decrease_rate": 4
 }

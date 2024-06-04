@@ -1,4 +1,4 @@
-from globalConfig import group_ids
+from globalConfig import group_ids,bot_id
 from user import *
 from static import *
 from extract import *
@@ -37,7 +37,7 @@ def handle(res,group):
         gid:str=str(res.get('group_id'))  #群的qq号
         if gid not in group_ids:
             return None
-        if "[CQ:at,qq=2470751924]" not in message:#必须在自己被at的情况下才能作出回复
+        if "[CQ:at,qq=%s]"%bot_id not in message:#必须在自己被at的情况下才能作出回复
             return None
 
         message_list:list=message.split(' ')

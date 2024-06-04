@@ -12,8 +12,10 @@ with open("./config.json","r",encoding='utf-8') as config:
     config=json.load(config)
 env:str=config["env"]
 vat_rate:float=config["tax"]["vat"]
+player_tax:float=config['tax']['player']
 deposit:float=config["deposit"]
 group_ids:list=config['group_ids']
+bot_id:str=config['bot_id']
 mysql:bool=(env=='prod')
 effisItemCount:int=config["effis_item_count"]
 effisDailyDecreaseRate:float=config["effis_daily_decrease_rate"]
