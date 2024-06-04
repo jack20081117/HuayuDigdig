@@ -93,6 +93,7 @@ registerByDict({
     "计划": showPlan,
     "转让债权": transferDebt,
     "免除债务": forgiveDebt,
+    "认购": acquireStock
 })
 
      

@@ -1,5 +1,5 @@
 from tools import drawtable,setTimeTask,getnowtime
-from model import User,Stock
+from model import User,Stock,Order
 from globalConfig import mysql
 
 def issue(message_list:list[str],qid:str):
@@ -172,3 +172,21 @@ def stockMarket(message_list:list[str],qid:str):
     else:
         ans+='目前没有发行的股票！'
     return ans
+
+
+
+def makeRequest(qid:str, stockID:int, direction:str, amount:int, price_limit:float):
+    nowtime = getnowtime()
+    newOrderID: int = max([0] + [order.debtID for order in Order.findAll(mysql)]) + 1
+    order: Order = Order(
+        orderID = newOrderID,
+        stockID = stockID,
+        requester = qid,
+        buysell = direction=='buy', #True = buy False = sell
+        amount = amount,
+        priceLimit = price_limit,
+        timestamp = nowtime
+    )
+    order.save(mysql)
+
+    return None

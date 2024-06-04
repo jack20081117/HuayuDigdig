@@ -106,10 +106,17 @@ class Stock(Model):
     secondaryOpen=BooleanField()
     avg_dividend=FloatField()
 
-# class Order(Model): #股市委托
-#     __table__ = 'orders'
-#
-#     #TODO
+class Order(Model): #股市委托
+    __table__ = "orders"
+
+    orderID = IntegerField(primaryKey=True)
+    stockID = StringField(columnType='varchar(3)')
+    requester = StringField(columnType='varchar(20)')
+    buysell = BooleanField() #True = buy False = sell
+    amount = IntegerField()
+    priceLimit = FloatField()
+    timestamp = IntegerField()
+
 
 class Debt(Model):
     __table__='debts'
