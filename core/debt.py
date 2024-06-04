@@ -127,6 +127,7 @@ def transferDebt(message_list:list[str],qid:str):
     :return: 还款提示信息
     """
     assert len(message_list) == 3, '转让债权失败:您的转让格式不正确！'
+    nowtime=getnowtime()
     try:
         debtID:int=int(message_list[1])
         new_creditor_id:str=str(message_list[2])
@@ -140,11 +141,11 @@ def transferDebt(message_list:list[str],qid:str):
 
     if new_creditor_id.startswith("q"):
         # 通过QQ号查找对方
-        tqid: str = target[1:]
+        tqid: str = new_creditor_id[1:]
         new_creditor: User = User.find(tqid, mysql)
         assert new_creditor, "转让失败:QQ号为%s的用户未注册！" % tqid
     else:
-        tschoolID: str = target
+        tschoolID: str = new_creditor_id
         # 通过学号查找
         assert User.findAll(mysql, 'schoolID=?', (tschoolID,)), "转让失败:学号为%s的用户未注册！" % tschoolID
         new_creditor: User = User.findAll(mysql, 'schoolID=?', (tschoolID,))[0]
@@ -164,6 +165,7 @@ def forgiveDebt(message_list:list[str],qid:str):
     :return: 提示信息
     """
     assert len(message_list) == 2, '免除债务失败:您的转让格式不正确！'
+    nowtime=getnowtime()
     try:
         debtID:int=int(message_list[1])
     except ValueError:

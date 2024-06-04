@@ -1,5 +1,5 @@
 from tools import drawtable,setTimeTask,getnowtime
-from model import Stock
+from model import User,Stock
 from globalConfig import mysql
 
 def issue(message_list:list[str],qid:str):
@@ -76,7 +76,7 @@ def acquireStock(message_list:list[str],qid:str):
         assert stock, "认购失败:不存在代码为%s的股票！" % stockIdentifier
     else:
         # 通过学号查找
-        assert Stock.findAll(mysql, 'stockName=?', (stockIdentifier,)), "转让失败:学号为%s的用户未注册！" % stockIdentifier
+        assert Stock.findAll(mysql, 'stockName=?', (stockIdentifier,)), "认购失败:不存在代码为%s的股票！" % stockIdentifier
         stock: Stock = Stock.findAll(mysql, 'stockName=?', (stockIdentifier,))[0]
 
     assert not stock.primaryClosed, "认购失败！该股票已结束一级市场认购阶段！"
@@ -85,7 +85,7 @@ def acquireStock(message_list:list[str],qid:str):
 
     acquirer: User = User.find(qid, mysql)
     price = stockNum * stock.price
-    assert acquirer.money >= price, '认购失败！您没有足够的钱！认购%s股%s需要至少%.2f元！' % (stockNum, stock.stockName, price)
+    assert acquirer.money >= price, '认购失败！您的余额不足，认购%s股%s需要至少%.2f元！' % (stockNum, stock.stockName, price)
 
     acquirer.money -= price
     stock.provisionalFunds += price #扣款进入临时资金池
@@ -98,6 +98,7 @@ def acquireStock(message_list:list[str],qid:str):
     stock.openStockNum -= stockNum
     stock.save(mysql)
 
+    ans='认购成功！'
     return ans
 
 

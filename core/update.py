@@ -1,6 +1,6 @@
-from tools import send,sigmoid,getnowtime
+from tools import send,getnowtime
 from model import User,Mine,Sale,Purchase,Auction,Debt,Plan
-from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate
+from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vat_rate
 from tools import sqrtmoid
 
 def init():

@@ -1,5 +1,5 @@
 from datetime import datetime
-from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smart_interval, generateTime, is_prime, getnowtime
+from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smart_interval, generateTime, is_prime, getnowtime, generateTimeStamp
 from model import User, Plan
 from update import updateEfficiency, updatePlan
 from globalConfig import mysql,effisValueDict
@@ -8,14 +8,27 @@ from numpy import log
 
 def expense_calculator(multiplier:float,duplication:int,primary_scale:int,secondary_scale:int,
                        tech:float,efficiency:float,factory_num:int,fuel_factor:float,use_log_divisor=True):
+    """
+    加工耗费计算函数
+    :param multiplier: 随加工种类变化的因子
+    :param duplication: 加工份数
+    :param primary_scale:
+    :param secondary_scale:
+    :param tech: 该工种科技
+    :param efficiency: 该工种效率
+    :param factory_num: 调拨 工厂数
+    :param fuel_factor:
+    :param use_log_divisor:
+    :return: 该加工需要的产能点数、时间与燃油
+    """
 
     work_units_required = multiplier * duplication * primary_scale * log(log(secondary_scale) + 1)
     if use_log_divisor:
         work_units_required /= log(primary_scale)
     time_required = work_units_required / (sigmoid(efficiency) * factory_num)
-    fuel_required = round(work_units_required / (fuel_factor * sqrtmoid(tech) * sigmoid(efficiency)))#所用燃油
+    fuel_required = work_units_required / (fuel_factor * sqrtmoid(tech) * sigmoid(efficiency))#所用燃油
 
-    return work_units_required, time_required, fuel_required
+    return round(work_units_required), round(time_required), round(fuel_required)
 
 
 def decompose(message_list: list[str], qid: str):
@@ -52,10 +65,6 @@ def decompose(message_list: list[str], qid: str):
 
     work_units_required, time_required, fuel_required = \
         expense_calculator(4,duplication,minor_product,ingredient,user.industrial_tech,decomp_eff,factory_num,4)
-
-    #work_units_required = 4 * duplication * minor_product * log(log(ingredient) + 1) / log(minor_product)
-    #time_required = work_units_required / (sigmoid(decomp_eff) * factory_num)
-    #fuel_required = round(work_units_required / (4 * sqrtmoid(user.industrial_tech) * sigmoid(decomp_eff)))#所用燃油
 
     products:dict = {divide:duplication, (ingredient // divide):duplication}#生成产品
 
@@ -295,7 +304,7 @@ def enactPlan(message_list: list[str], qid: str):
         elif generateTime(message_list[2]):
             starttime: int = nowtime + generateTime(message_list[2])
         else:
-            starttime: int = int(datetime.strptime(message_list[2], '%Y-%m-%d,%H:%M:%S').timestamp())
+            starttime: int = generateTimeStamp(message_list[2])
     except ValueError:
         return '设置失败:请按照规定格式进行执行！'
 
