@@ -349,8 +349,9 @@ def enaction(plan: Plan):
         tech = user.industrial_tech
 
     time_required = plan.work_units_required / sigmoid(user.effis[plan.jobtype])
-    fuel_required = round(idle_factory_num * time_required / (2 * sqrtmoid(tech)))
-    ingredients[0] = fuel_required
+    fuel_required = round(required_factory_num * time_required / (4 * sqrtmoid(tech)))
+    if fuel_required>64:
+        ingredients[0] = fuel_required
     success: bool = True
     ans = ""
 
@@ -359,8 +360,10 @@ def enaction(plan: Plan):
             mName = "燃油"
         else:
             mName = "矿物%s" % mId
-        if mineral.get(mId,0) < mNum:
-            ans += "%s不足！您目前有%d，计划%d需要%d单位。\n" % (mName, mineral.get(mId,0), plan.planID, mNum)
+        if mId not in mineral:
+            mineral[mId]=0
+        if mineral[mId] < mNum:
+            ans += "%s不足！您目前有%d，计划%d需要%d单位。\n" % (mName, mineral[mId], plan.planID, mNum)
             success = False
 
     if success:
