@@ -265,7 +265,7 @@ def refine(message_list: list[str], qid: str):
     work_units_required, time_required, fuel_required = \
         expense_calculator(2,duplication,ingredient,ingredient,user.refine_tech,refine_eff,factory_num,4)
 
-    fuel_required -= 1.06 # 消除负收益
+    fuel_required -= 1 # 消除负收益
 
     if ingredient > 64:
         products: dict = {0: duplication * ingredient}
@@ -349,20 +349,21 @@ def enaction(plan: Plan):
         tech = user.industrial_tech
 
     time_required = plan.work_units_required / sigmoid(user.effis[plan.jobtype])
-    fuel_required = round(idle_factory_num * time_required / (2 * sqrtmoid(tech)))
-    ingredients[0] = fuel_required
+    fuel_required = round(required_factory_num * time_required / (4 * sqrtmoid(tech)))
+    if fuel_required>64:
+        ingredients[0] = fuel_required
     success: bool = True
     ans = ""
 
     for mId, mNum in ingredients.items():
         if mId == 0:
-            mName = "燃油",
+            mName = "燃油"
         else:
             mName = "矿物%s" % mId
         if mId not in mineral:
             mineral[mId]=0
-        if not mineral[mId] <= mNum:
-            ans += "%s不足！您目前有%s，计划%s需要%s单位。\n" % (mName, mineral[mId], plan.planID, mNum)
+        if mineral[mId] < mNum:
+            ans += "%s不足！您目前有%d，计划%d需要%d单位。\n" % (mName, mineral[mId], plan.planID, mNum)
             success = False
 
     if success:
@@ -415,7 +416,7 @@ def cancelPlan(message_list: list[str], qid: str):
         updateEfficiency(user, 0)  # 没有完成生产任务带来的超额增加，但是此前在生产中的时间不会导致该项效率下降。
         mineral: dict[int,int] = user.mineral
         ingredients: dict = plan.ingredients
-        for mid, mnum in enumerate(ingredients):
+        for mid, mnum in ingredients.items():
             if mid not in mineral:
                 mineral[mid] = 0
             if mid == 0:
