@@ -89,6 +89,7 @@ class ModelMetaclass(type):
         attrs['__fields__']=fields
         attrs['__create__']='create table if not exists `%s` (`%s` %s primary key,%s)'\
                             %(tableName,primaryKey,mappings[primaryKey].columnType,','.join(list(map(lambda f:'`%s` %s'%(f,mappings[f].columnType),fields))))
+        attrs['__drop__']='drop table if exists %s'%tableName
         attrs['__select__']='select `%s`,%s from `%s`'\
                             %(primaryKey,','.join(escapedFields),tableName)
         attrs['__insert__']='replace into `%s` (`%s`,%s) values (%s)'\
@@ -190,6 +191,14 @@ class Model(dict,metaclass=ModelMetaclass):
         :param mysql: 是否采用mysql
         """
         execute(cls.__create__,mysql)
+
+    @classmethod
+    def delete(cls,mysql=False):
+        """
+        在数据库中删除表
+        :param mysql: 是否采用mysql
+        """
+        execute(cls.__drop__,mysql)
 
     def add(self,mysql=False):
         """

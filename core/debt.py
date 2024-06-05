@@ -3,7 +3,7 @@ from model import User,Debt
 from globalConfig import mysql
 from update import updateDebt
 
-def prelend(message_list:list[str],qid:str):
+def prelendDebt(message_list:list[str],qid:str):
     """
     :param message_list: 放贷 金额 放贷时间 利率 起始时间 终止时间
     :param qid: 放贷者的qq号
@@ -42,7 +42,7 @@ def prelend(message_list:list[str],qid:str):
     ans='放贷成功！'
     return ans
 
-def borrow(message_list:list[str],qid:str):
+def borrowDebt(message_list:list[str],qid:str):
     """
     :param message_list: 借贷 债券编号 金额
     :param qid: 借贷者的qq号
@@ -85,7 +85,7 @@ def borrow(message_list:list[str],qid:str):
     ans='借贷成功！该债务编号为%s，请注意在借贷时限内还款！' % newdebtID
     return ans
 
-def repay(message_list:list[str],qid:str):
+def repayDebt(message_list:list[str],qid:str):
     """
     :param message_list: 还款 债券编号 金额
     :param qid: 还款者的qq号
@@ -122,7 +122,7 @@ def repay(message_list:list[str],qid:str):
 
 def transferDebt(message_list:list[str],qid:str):
     """
-    :param message_list: 转让债权 债券编号 转让对象(学号/q+QQ号）
+    :param message_list: 转让 债券编号 转让对象(学号/q+QQ号）
     :param qid: 还款者的qq号
     :return: 还款提示信息
     """
@@ -160,7 +160,7 @@ def transferDebt(message_list:list[str],qid:str):
 
 def forgiveDebt(message_list:list[str],qid:str):
     """
-    :param message_list: 免除债务 债券编号
+    :param message_list: 免除 债券编号
     :param qid:
     :return: 提示信息
     """

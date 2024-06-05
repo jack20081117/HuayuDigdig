@@ -1,6 +1,6 @@
-from model import *
+from model import AllModels,User,Mine
 from orm import execute
-from globalConfig import dbconfig
+from globalConfig import config,mysql
 from tools import setCrontab,getnowtime
 from taxes import tax_update
 
@@ -31,15 +31,11 @@ def create_treasury():
 
 if_delete_and_create = input("Do you want to DELETE the database and remake them again? This will DELETE ALL YOUR DATA NOW! (yes/no): ")
 if if_delete_and_create == "yes":
-    execute("drop database if exists %s", mysql, (dbconfig["db"], ))
-    User.create(mysql)
+    if mysql:
+        execute("drop database if exists %s", mysql, (config["db"], ))
+    for model in AllModels:
+        model.create(mysql)
     create_treasury()
-    Mine.create(mysql)
-    Sale.create(mysql)
-    Purchase.create(mysql)
-    Auction.create(mysql)
-    Stock.create(mysql)
-    Debt.create(mysql)
     for i in range(1,5):
         _mine=Mine(mineID=i,abundance=0.0)
         _mine.save(mysql)

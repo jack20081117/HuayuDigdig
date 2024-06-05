@@ -1,4 +1,3 @@
-from datetime import datetime
 from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smart_interval, generateTime, is_prime, getnowtime, generateTimeStamp
 from model import User, Plan
 from update import updateEfficiency, updatePlan

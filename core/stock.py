@@ -1,8 +1,8 @@
-from tools import drawtable,setTimeTask,getnowtime
+from tools import drawtable,setTimeTask,getnowtime,send
 from model import User,Stock,Order
 from globalConfig import mysql
 
-def issue(message_list:list[str],qid:str):
+def issueStock(message_list:list[str],qid:str):
     """
     :param message_list: 发行 股票名称 缩写 发行量 价格 自我保留股数
     :param qid: 发行者的qq号
@@ -175,7 +175,7 @@ def stockMarket(message_list:list[str],qid:str):
 
 
 
-def makeRequest(qid:str, stockID:int, direction:str, amount:int, price_limit:float):
+def makeOrder(qid:str, stockID:int, direction:str, amount:int, price_limit:float):
     nowtime = getnowtime()
     newOrderID: int = max([0] + [order.debtID for order in Order.findAll(mysql)]) + 1
     order: Order = Order(

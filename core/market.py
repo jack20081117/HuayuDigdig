@@ -3,7 +3,7 @@ from model import User,Sale,Purchase,Auction
 from globalConfig import mysql,deposit,vat_rate
 from update import updateSale,updatePurchase,updateAuction
 
-def presell(message_list:list[str],qid:str):
+def presellMineral(message_list:list[str],qid:str):
     """
     在市场上预售矿石
     :param message_list: 预售 矿石编号 矿石数量 价格 起始时间 终止时间
@@ -51,7 +51,7 @@ def presell(message_list:list[str],qid:str):
     ans='预售成功！编号:%d'%tradeID
     return ans
 
-def buy(message_list:list[str],qid:str):
+def buyMineral(message_list:list[str],qid:str):
     """
     在市场上购买矿石
     :param message_list: 购买 预售编号
@@ -100,7 +100,7 @@ def buy(message_list:list[str],qid:str):
     send(tqid,'您预售的商品(编号:%d)已被卖出！'%tradeID,False)
     return ans
 
-def prebuy(message_list:list[str],qid:str):
+def prebuyMineral(message_list:list[str],qid:str):
     """
     在市场上预订矿石
     :param message_list: 预订 矿石编号 矿石数量 价格 起始时间 终止时间
@@ -141,7 +141,7 @@ def prebuy(message_list:list[str],qid:str):
     ans='预订成功！编号:%d'%tradeID
     return ans
 
-def sell(message_list:list[str],qid:str):
+def sellMineral(message_list:list[str],qid:str):
     """
     在市场上售卖矿石
     :param message_list: 售卖 预订编号
@@ -199,7 +199,7 @@ def sell(message_list:list[str],qid:str):
     send(tqid,'您预订的商品(编号:%d)已被买入！'%tradeID,False)
     return ans
 
-def preauction(message_list:list[str],qid:str):
+def preauctionMineral(message_list:list[str],qid:str):
     """
     在市场上拍卖矿石
     :param message_list: 拍卖 矿石编号 矿石数量 底价 起始时间 终止时间 是否保密
@@ -249,7 +249,7 @@ def preauction(message_list:list[str],qid:str):
     ans='拍卖成功！编号:%d'%tradeID
     return ans
 
-def bid(message_list:list[str],qid:str):
+def bidMineral(message_list:list[str],qid:str):
     """
     在市场上对矿石进行投标
     :param message_list: 投标 拍卖编号 价格

@@ -4,7 +4,7 @@ from tools import sigmoid
 from model import User,Mine
 from globalConfig import mysql,vat_rate
 
-def extract(qid,mineralID,mineID):
+def extractMineral(qid,mineralID,mineID):
     """获取矿石
     :param qid:开采者的qq号
     :param mineralID:开采得矿石的编号
@@ -51,21 +51,21 @@ def getMineral(message_list:list[str],qid:str):
     mineralID:int=int(message_list[1])
     if mineralID==1:
         mineralID=np.random.randint(2,30000)
-        ans=extract(qid,mineralID,1)
+        ans=extractMineral(qid,mineralID,1)
     elif mineralID==2:
         mineralID=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(30000)*1000))/1000))
-        ans=extract(qid,mineralID,2)
+        ans=extractMineral(qid,mineralID,2)
     elif mineralID==3:
         mineralID=np.random.randint(2,999)
-        ans=extract(qid,mineralID,3)
+        ans=extractMineral(qid,mineralID,3)
     elif mineralID==4:
         mineralID=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(999)*1000))/1000))
-        ans=extract(qid,mineralID,4)
+        ans=extractMineral(qid,mineralID,4)
     else:
         ans='开采失败:不存在此矿井！'
     return ans
 
-def exchange(message_list:list[str],qid:str):
+def exchangeMineral(message_list:list[str],qid:str):
     """
     兑换矿石
     :param message_list: 兑换 矿石编号

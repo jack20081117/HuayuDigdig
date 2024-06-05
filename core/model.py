@@ -96,7 +96,7 @@ class Stock(Model):
     provisionalFunds=FloatField() #一级市场认购进行时临时资金的存放处，如果成功上市将转移给发行人
     issue_qid=StringField(columnType='varchar(20)') #发行人qid
     price=FloatField()
-    self_retain=FloatField() #一级市场发行时自留比例
+    selfRetain=IntegerField() #一级市场发行时自留股数
     histprice=StringField(columnType='varchar(2000)')
     shareholders=StringField(columnType='varchar(2000)')
     bids=StringField(columnType='varchar(500)') # 买入委托列表
@@ -130,16 +130,11 @@ class Debt(Model):
     endtime=IntegerField()
     interest=FloatField()
 
+AllModels:list[Model]=[User,Mine,Sale,Purchase,Auction,Stock,Debt,Order,Plan]
 
 if __name__=='__main__':  #创建新表
-    User.create(mysql)
-    Plan.create(mysql)
-    Mine.create(mysql)
-    Sale.create(mysql)
-    Purchase.create(mysql)
-    Auction.create(mysql)
-    Stock.create(mysql)
-    Debt.create(mysql)
+    for model in AllModels:
+        model.create(mysql)
     for i in range(1,5):
         _mine=Mine(mineID=i,abundance=0.0)
         _mine.add(mysql)
