@@ -1,6 +1,6 @@
 from tools import send,getnowtime
 from model import User,Mine,Sale,Purchase,Auction,Debt,Plan
-from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vat_rate
+from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate
 from tools import sqrtmoid
 
 def init():
@@ -107,12 +107,12 @@ def updateAuction(auction:Auction):
                 tmineral[mineralID]=0
             tmineral[mineralID]+=mineralNum#给予矿石
             tuser.mineral=tmineral
-            tuser.input_tax += bids[0][1] * vat_rate
+            tuser.inputTax += bids[0][1] * vatRate
             tuser.save(mysql)
             send(tqid,'您在拍卖:%s中竞拍成功，矿石已发送到您的账户'%tradeID,False)
 
             user.money+=bids[0][1]
-            user.output_tax += bids[0][1]*vat_rate
+            user.outputTax += bids[0][1]*vatRate
             user.save(mysql)
 
             for otherbid in bids[1:]:#返还剩余玩家押金
@@ -146,8 +146,8 @@ def updateDebt(debt:Debt):
     """
     :param debt: 到达截止时间的债券
     """
-    creditor_id:str=debt.creditor_id
-    debitor_id:str=debt.debitor_id
+    creditorID:str=debt.creditor
+    debitorID:str=debt.debitor
     interest:float=debt.interest
     debtID:int=debt.debtID
     money:int=round(debt.money*(1+interest))
@@ -155,16 +155,16 @@ def updateDebt(debt:Debt):
     if Debt.find(debtID,mysql) is None:#债务已还清
         return None
 
-    creditor:User=User.find(creditor_id)
-    if debitor_id=='nobody':#未被借贷的债券
+    creditor:User=User.find(creditorID)
+    if debitorID=='nobody':#未被借贷的债券
         creditor.money+=debt.money
         creditor.save(mysql)
         debt.remove(mysql)
 
-        send(creditor_id,'您的债券:%s未被借贷，金额已返还到您的账户'%debtID,False)
+        send(creditorID,'您的债券:%s未被借贷，金额已返还到您的账户'%debtID,False)
         return None
 
-    debitor:User=User.find(debitor_id)
+    debitor:User=User.find(debitorID)
 
     if debitor.money>=money:#还清贷款
         creditor.money+=money
@@ -174,8 +174,8 @@ def updateDebt(debt:Debt):
         creditor.save(mysql)
         debitor.save(mysql)
 
-        send(creditor_id,'您的债券:%s已还款完毕，金额已返还到您的账户！'%debtID,False)
-        send(debitor_id,'您的债券%s已强制还款，金额已从您的账户中扣除！'%debtID,False)
+        send(creditorID,'您的债券:%s已还款完毕，金额已返还到您的账户！'%debtID,False)
+        send(debitorID,'您的债券%s已强制还款，金额已从您的账户中扣除！'%debtID,False)
     else:#贷款无法还清
         money-=debitor.money
         creditor.money+=debitor.money
@@ -203,37 +203,37 @@ def updateDebt(debt:Debt):
             creditor.save(mysql)
             debitor.save(mysql)
 
-            send(creditor_id,'您的债券:%s已还款完毕，金额已返还到您的账户！'%debtID,False)
-            send(debitor_id,'您的债券%s已强制还款，金额已从您的账户中扣除！'%debtID,False)
+            send(creditorID,'您的债券:%s已还款完毕，金额已返还到您的账户！'%debtID,False)
+            send(debitorID,'您的债券%s已强制还款，金额已从您的账户中扣除！'%debtID,False)
         else:#TODO:破产清算
             debitor.money=-money
             creditor.save(mysql)
             debitor.save(mysql)
 
-def updateEfficiency(user:User,finished_plan):
+def updateEfficiency(user:User,finishedPlan:int or Plan):
     """
     :param user : 涉及到的用户
-    :param finished_plan: 到达截止时间的生产计划，如无填0
+    :param finishedPlan: 到达截止时间的生产计划，如无填0
     """
     nowtime = getnowtime()
     effis:dict = user.effis
-    enacted_plans_by_type:dict = user.enacted_plan_types
-    last_update_time = user.last_effis_update_time
-    elapsed_time = nowtime - last_update_time
+    enactedPlansByType:dict = user.enactedPlanTypes
+    lastUpdateTime = user.lastEffisUpdateTime
+    elapsedTime = nowtime - lastUpdateTime
     for i in range(effisItemCount):
-        enacted_plans_by_type.setdefault(i,0)
+        enactedPlansByType.setdefault(i,0)
         effis.setdefault(i,0.0)
-        if finished_plan and i == finished_plan.jobtype:
+        if finishedPlan and i == finishedPlan.jobtype:
             if i == 4: # 特判炼油科技
-                tech = user.refine_tech
+                tech = user.refineTech
             else:
-                tech = user.industrial_tech
-            effis[i] += 4 * finished_plan.time_required * sqrtmoid(tech) * effisDailyDecreaseRate/86400
-        elif enacted_plans_by_type[i] == 0:
-            effis[i] -= elapsed_time * effisDailyDecreaseRate/86400
+                tech = user.industrialTech
+            effis[i] += 4 * finishedPlan.timeRequired * sqrtmoid(tech) * effisDailyDecreaseRate/86400
+        elif enactedPlansByType[i] == 0:
+            effis[i] -= elapsedTime * effisDailyDecreaseRate/86400
             effis[i] = max(0,effis[i])
 
-    user.last_effis_update_time = nowtime
+    user.lastEffisUpdateTime = nowtime
     user.effis = effis
     user.save(mysql)
     
@@ -258,8 +258,8 @@ def updatePlan(plan:Plan):
     
     updateEfficiency(user, plan) #效率修正
 
-    user.enacted_plan_types[plan.jobtype] -= 1 # 取消当前门类的生产状态
-    user.busy_factory_num -= plan.factory_num #释放被占用的工厂
+    user.enactedPlanTypes[plan.jobtype] -= 1 # 取消当前门类的生产状态
+    user.busyFactoryNum -= plan.factoryNum #释放被占用的工厂
     
     user.save(mysql)
     plan.remove(mysql)

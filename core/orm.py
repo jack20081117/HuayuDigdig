@@ -83,6 +83,7 @@ class ModelMetaclass(type):
         for k in mappings.keys():
             attrs.pop(k)
         escapedFields=list(map(lambda f:'`%s`'%f,fields))
+        attrs['__slots__']=tuple(mappings.keys())
         attrs['__mappings__']=mappings
         attrs['__table__']=tableName
         attrs['__primaryKey__']=primaryKey
@@ -119,10 +120,13 @@ class Model(dict,metaclass=ModelMetaclass):
         try:
             return self[item]
         except KeyError:
-            raise AttributeError(r"'Model' object has no attribute '%s'"%item)
+            raise AttributeError(r"'%s' object has no attribute '%s'"%(self.__class__.__name__ or 'Model',item))
 
     def __setattr__(self,key,value):
-        self[key]=value
+        if key in self.keys():
+            self[key]=value
+        else:
+            raise AttributeError(r"'%s' object has no attribute '%s'"%(self.__class__.__name__ or 'Model',key))
 
     def getValue(self,key):
         return getattr(self,key,None)

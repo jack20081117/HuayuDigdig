@@ -3,26 +3,26 @@ from model import User,Debt
 from globalConfig import mysql
 from update import updateDebt
 
-def prelendDebt(message_list:list[str],qid:str):
+def prelendDebt(messageList:list[str],qid:str):
     """
-    :param message_list: 放贷 金额 放贷时间 利率 起始时间 终止时间
+    :param messageList: 放贷 金额 放贷时间 利率 起始时间 终止时间
     :param qid: 放贷者的qq号
     :return: 放贷提示信息
     """
-    assert len(message_list)==6,'放贷失败:您的放贷格式不正确！'
+    assert len(messageList)==6,'放贷失败:您的放贷格式不正确！'
     nowtime:int=getnowtime()#现在的时间
     try:
-        money=int(message_list[1])
-        duration=generateTime(message_list[2])
-        interest=float(message_list[3])
-        if message_list[4]=='现在' or message_list[4]=='now':
+        money=int(messageList[1])
+        duration=generateTime(messageList[2])
+        interest=float(messageList[3])
+        if messageList[4]=='现在' or messageList[4]=='now':
             starttime:int=nowtime
         else:
-            starttime:int=generateTimeStamp(message_list[4])
-        if generateTime(message_list[5]):
-            endtime:int=starttime+generateTime(message_list[5])
+            starttime:int=generateTimeStamp(messageList[4])
+        if generateTime(messageList[5]):
+            endtime:int=starttime+generateTime(messageList[5])
         else:
-            endtime:int=generateTimeStamp(message_list[5])
+            endtime:int=generateTimeStamp(messageList[5])
     except ValueError:
         return "放贷失败:您的放贷格式不正确！"
 
@@ -34,7 +34,7 @@ def prelendDebt(message_list:list[str],qid:str):
     creditor.save(mysql)
 
     debtID:int=max([0]+[debt.debtID for debt in Debt.findAll(mysql)])+1
-    debt=Debt(debtID=debtID,creditor_id=qid,debitor_id='nobody',money=money,
+    debt=Debt(debtID=debtID,creditorID=qid,debitorID='nobody',money=money,
               duration=duration,starttime=starttime,endtime=endtime,interest=float(interest))
     debt.add(mysql)
     setTimeTask(updateDebt,endtime,debt)
@@ -42,23 +42,23 @@ def prelendDebt(message_list:list[str],qid:str):
     ans='放贷成功！'
     return ans
 
-def borrowDebt(message_list:list[str],qid:str):
+def borrowDebt(messageList:list[str],qid:str):
     """
-    :param message_list: 借贷 债券编号 金额
+    :param messageList: 借贷 债券编号 金额
     :param qid: 借贷者的qq号
     :return: 借贷提示信息
     """
-    assert len(message_list)==3,"借贷失败:您的借贷格式不正确！"
+    assert len(messageList)==3,"借贷失败:您的借贷格式不正确！"
     nowtime:int=getnowtime()#现在的时间
     try:
-        debtID:int=int(message_list[1])
-        money:int=int(message_list[2])
+        debtID:int=int(messageList[1])
+        money:int=int(messageList[2])
     except ValueError:
         return "借贷失败:您的借贷格式不正确！"
     debt=Debt.find(debtID,mysql)
     assert debt is not None,"借贷失败:不存在此债券！"
-    assert debt.debitor_id=='nobody',"借贷失败:此债券已被贷款！"
-    assert debt.creditor_id!=qid,'借贷失败:您不能向自己贷款！'
+    assert debt.debitor=='nobody',"借贷失败:此债券已被贷款！"
+    assert debt.creditor!=qid,'借贷失败:您不能向自己贷款！'
     assert money>0,"借贷失败:借贷金额必须为正！"
     assert debt.money>=money,"借贷失败:贷款金额过大！"
     assert debt.starttime<nowtime,"借贷失败:此债券尚未开始放贷！"
@@ -66,14 +66,14 @@ def borrowDebt(message_list:list[str],qid:str):
 
     debt.money-=money
     debt.save(mysql)
-    creditor_id=debt.creditor_id
+    creditorID=debt.creditor
     duration=debt.duration
     interest=debt.interest
     if debt.money<=0:
         debt.remove(mysql)
 
     newdebtID:int=max([0]+[debt.debtID for debt in Debt.findAll(mysql)])+1
-    newdebt=Debt(debtID=newdebtID,creditor_id=creditor_id,debitor_id=qid,money=money,
+    newdebt=Debt(debtID=newdebtID,creditor=creditorID,debitor=qid,money=money,
                  duration=duration,starttime=nowtime,endtime=nowtime+duration,interest=interest)
     newdebt.add(mysql)
     setTimeTask(updateDebt,nowtime+duration,newdebt)
@@ -85,23 +85,23 @@ def borrowDebt(message_list:list[str],qid:str):
     ans='借贷成功！该债务编号为%s，请注意在借贷时限内还款！' % newdebtID
     return ans
 
-def repayDebt(message_list:list[str],qid:str):
+def repayDebt(messageList:list[str],qid:str):
     """
-    :param message_list: 还款 债券编号 金额
+    :param messageList: 还款 债券编号 金额
     :param qid: 还款者的qq号
     :return: 还款提示信息
     """
-    assert len(message_list)==3,'还款失败:您的还款格式不正确！'
+    assert len(messageList)==3,'还款失败:您的还款格式不正确！'
     nowtime:int=getnowtime()#现在的时间
     try:
-        debtID:int=int(message_list[1])
-        money:int=int(message_list[2])
+        debtID:int=int(messageList[1])
+        money:int=int(messageList[2])
     except ValueError:
         return '还款失败:您的还款格式不正确！'
     debt=Debt.find(debtID,mysql)
     debitor=User.find(qid,mysql)
     assert debt is not None,"还款失败:不存在此债券！"
-    assert debt.debitor_id==qid,'还款失败:您不是此债券的债务人！'
+    assert debt.debitor==qid,'还款失败:您不是此债券的债务人！'
     assert money>0,'还款失败:还款金额必须为正！'
     assert debitor.money>money,'还款失败:您的余额不足！'
     assert debt.endtime>nowtime,'还款失败:此债券已结束还款！'
@@ -111,7 +111,7 @@ def repayDebt(message_list:list[str],qid:str):
         debitor.save(mysql)
         debt.remove(mysql)
         ans='还款成功！您已还清此贷款！'
-        send(debt.creditor_id,'您的债券:%s已还款完毕，贷款已送到您的账户'%debtID,False)
+        send(debt.creditor,'您的债券:%s已还款完毕，贷款已送到您的账户'%debtID,False)
     else:
         debt.money-=money
         debitor.money-=money
@@ -120,77 +120,77 @@ def repayDebt(message_list:list[str],qid:str):
         ans='还款成功！剩余贷款金额:%d'%debt.money
     return ans
 
-def transferDebt(message_list:list[str],qid:str):
+def transferDebt(messageList:list[str],qid:str):
     """
-    :param message_list: 转让 债券编号 转让对象(学号/q+QQ号）
+    :param messageList: 转让 债券编号 转让对象(学号/q+QQ号）
     :param qid: 还款者的qq号
     :return: 还款提示信息
     """
-    assert len(message_list) == 3, '转让债权失败:您的转让格式不正确！'
+    assert len(messageList) == 3, '转让债权失败:您的转让格式不正确！'
     nowtime=getnowtime()
     try:
-        debtID:int=int(message_list[1])
-        new_creditor_id:str=str(message_list[2])
+        debtID:int=int(messageList[1])
+        newCreditorID:str=str(messageList[2])
     except ValueError:
         return '转让债权失败:您的债券编号不正确！'
 
     debt=Debt.find(debtID,mysql)
     assert debt is not None,"转让债权失败:不存在此债券！"
-    assert debt.creditor_id==qid,'转让债权失败:您不是此债券的债权人！'
+    assert debt.creditor==qid,'转让债权失败:您不是此债券的债权人！'
     assert debt.endtime > nowtime, '转让失败:此债券已结束还款！'
 
-    if new_creditor_id.startswith("q"):
+    if newCreditorID.startswith("q"):
         # 通过QQ号查找对方
-        tqid: str = new_creditor_id[1:]
-        new_creditor: User = User.find(tqid, mysql)
-        assert new_creditor, "转让失败:QQ号为%s的用户未注册！" % tqid
+        tqid: str = newCreditorID[1:]
+        newCreditor: User = User.find(tqid, mysql)
+        assert newCreditor, "转让失败:QQ号为%s的用户未注册！" % tqid
     else:
-        tschoolID: str = new_creditor_id
+        tschoolID: str = newCreditorID
         # 通过学号查找
         assert User.findAll(mysql, 'schoolID=?', (tschoolID,)), "转让失败:学号为%s的用户未注册！" % tschoolID
-        new_creditor: User = User.findAll(mysql, 'schoolID=?', (tschoolID,))[0]
+        newCreditor: User = User.findAll(mysql, 'schoolID=?', (tschoolID,))[0]
 
-    assert new_creditor.qid != debt.debitor_id, "转让失败：不能转让给债务人！"
+    assert newCreditor.qid != debt.debitor, "转让失败：不能转让给债务人！"
 
-    debt.creditor_id = new_creditor.qid
+    debt.creditor = newCreditor.qid
     debt.save(mysql)
-    ans = '编号%s的债券已成功转让给%s，该债券还有%.2f待偿还！' % (debt.debtID, new_creditor_id, debt.money)
+    ans = '编号%s的债券已成功转让给%s，该债券还有%.2f待偿还！' % (debt.debtID, newCreditorID, debt.money)
 
     return ans
 
-def forgiveDebt(message_list:list[str],qid:str):
+def forgiveDebt(messageList:list[str],qid:str):
     """
-    :param message_list: 免除 债券编号
+    :param messageList: 免除 债券编号
     :param qid:
     :return: 提示信息
     """
-    assert len(message_list) == 2, '免除债务失败:您的转让格式不正确！'
+    assert len(messageList) == 2, '免除债务失败:您的转让格式不正确！'
     nowtime=getnowtime()
     try:
-        debtID:int=int(message_list[1])
+        debtID:int=int(messageList[1])
     except ValueError:
         return '免除债务失败:您的债券编号不正确！'
 
     debt = Debt.find(debtID, mysql)
     assert debt is not None,"转让债权失败:不存在此债券！"
-    assert debt.creditor_id==qid,'转让债权失败:您不是此债券的债权人！'
+    assert debt.creditor==qid,'转让债权失败:您不是此债券的债权人！'
     assert debt.endtime > nowtime, '转让失败:此债券已结束还款！'
 
 
-    ans="免除债务成功！债券编号%s已被销毁，债务人%s现在无需偿还剩余的%.2f元！" % (debtID, debt.debitor_id, debt.money)
-    send(debt.debitor_id,"债权人%s已经免除了您编号%s的债务，您现在无需偿还剩下的%.2f元！" % (debt.creditor_id, debtID, debt.money))
+    ans="免除债务成功！债券编号%s已被销毁，债务人%s现在无需偿还剩余的%.2f元！" % (debtID, debt.debitor, debt.money)
+    send(debt.debitor,"债权人%s已经免除了您编号%s的债务，您现在无需偿还剩下的%.2f元！" % (debt.creditor, debtID, debt.money))
     debt.remove(mysql)
 
     return ans
 
 
-def debtMarket(message_list:list[str],qid:str):
+def debtMarket(messageList:list[str],qid:str):
     """
-    :param message_list: 债市
+    :param messageList: 债市
     :param qid:
     :return: 提示信息
     """
-    debts:list[Debt]=Debt.findAll(mysql,where='debitor_id=?',args=('nobody',))
+    debts:list[Debt]=Debt.findAll(mysql,where='debitorID=?',args=('nobody',))
     ans='欢迎来到债市！\n'
     if debts:
         ans+='以下是所有目前可借的贷款:\n'
@@ -205,7 +205,7 @@ def debtMarket(message_list:list[str],qid:str):
                 debttime+='%d分钟'%((debt.duration%3600)//60)
             starttime:str=generateTimeStr(debt.starttime)
             endtime:str=generateTimeStr(debt.endtime)
-            debtData.append([debt.debtID,debt.money,debt.creditor_id,debttime,debt.interest,starttime,endtime])
+            debtData.append([debt.debtID,debt.money,debt.creditor,debttime,debt.interest,starttime,endtime])
         drawtable(debtData,'debt.png')
         ans+='[CQ:image,file=debt.png]'
     else:

@@ -1,29 +1,29 @@
 from tools import drawtable,setTimeTask,send,generateTime,getnowtime,generateTimeStr,generateTimeStamp
 from model import User,Sale,Purchase,Auction
-from globalConfig import mysql,deposit,vat_rate
+from globalConfig import mysql,deposit,vatRate
 from update import updateSale,updatePurchase,updateAuction
 
-def presellMineral(message_list:list[str],qid:str):
+def presellMineral(messageList:list[str],qid:str):
     """
     在市场上预售矿石
-    :param message_list: 预售 矿石编号 矿石数量 价格 起始时间 终止时间
+    :param messageList: 预售 矿石编号 矿石数量 价格 起始时间 终止时间
     :param qid: 预售者的qq号
     :return: 预售提示信息
     """
-    assert len(message_list)==6,'预售失败:请按照规定格式进行预售！'
+    assert len(messageList)==6,'预售失败:请按照规定格式进行预售！'
     nowtime:int=getnowtime()#现在的时间
     try:
-        mineralID:int=int(message_list[1])
-        mineralNum:int=int(message_list[2])
-        price:int=int(message_list[3])
-        if message_list[4]=='now':
+        mineralID:int=int(messageList[1])
+        mineralNum:int=int(messageList[2])
+        price:int=int(messageList[3])
+        if messageList[4]=='now':
             starttime:int=nowtime
         else:
-            starttime:int=generateTimeStamp(message_list[4])
-        if generateTime(message_list[5]):
-            endtime:int=starttime+generateTime(message_list[5])
+            starttime:int=generateTimeStamp(messageList[4])
+        if generateTime(messageList[5]):
+            endtime:int=starttime+generateTime(messageList[5])
         else:
-            endtime:int=generateTimeStamp(message_list[5])
+            endtime:int=generateTimeStamp(messageList[5])
     except ValueError:
         return '预售失败:请按照规定格式进行预售！'
 
@@ -51,16 +51,16 @@ def presellMineral(message_list:list[str],qid:str):
     ans='预售成功！编号:%d'%tradeID
     return ans
 
-def buyMineral(message_list:list[str],qid:str):
+def buyMineral(messageList:list[str],qid:str):
     """
     在市场上购买矿石
-    :param message_list: 购买 预售编号
+    :param messageList: 购买 预售编号
     :param qid: 购买者的qq号
     :return: 购买提示信息
     """
-    assert len(message_list)==2,'购买失败:请按照规定格式进行购买！'
+    assert len(messageList)==2,'购买失败:请按照规定格式进行购买！'
     try:
-        tradeID:int=int(message_list[1])
+        tradeID:int=int(messageList[1])
     except ValueError:
         return '购买失败:请按照规定格式进行购买！'
     sale:Sale=Sale.find(tradeID,mysql)
@@ -81,10 +81,10 @@ def buyMineral(message_list:list[str],qid:str):
     assert user.money>=price,'购买失败:您的余额不足！'
 
     user.money-=price#付钱
-    user.input_tax += price*vat_rate
+    user.inputTax += price*vatRate
     tuser:User=User.find(tqid,mysql)
     tuser.money+=price#得钱
-    tuser.output_tax+=price*vat_rate #增值税销项税额增加
+    tuser.outputTax+=price*vatRate #增值税销项税额增加
 
     mineral=user.mineral
     if mineralID not in mineral:
@@ -100,27 +100,27 @@ def buyMineral(message_list:list[str],qid:str):
     send(tqid,'您预售的商品(编号:%d)已被卖出！'%tradeID,False)
     return ans
 
-def prebuyMineral(message_list:list[str],qid:str):
+def prebuyMineral(messageList:list[str],qid:str):
     """
     在市场上预订矿石
-    :param message_list: 预订 矿石编号 矿石数量 价格 起始时间 终止时间
+    :param messageList: 预订 矿石编号 矿石数量 价格 起始时间 终止时间
     :param qid: 预订者的qq号
     :return: 预订提示信息
     """
-    assert len(message_list)==6,'预订失败:请按照规定格式进行预订！'
+    assert len(messageList)==6,'预订失败:请按照规定格式进行预订！'
     nowtime:int=getnowtime()#现在的时间
     try:
-        mineralID:int=int(message_list[1])
-        mineralNum:int=int(message_list[2])
-        price:int=int(message_list[3])
-        if message_list[4]=='now':
+        mineralID:int=int(messageList[1])
+        mineralNum:int=int(messageList[2])
+        price:int=int(messageList[3])
+        if messageList[4]=='now':
             starttime:int=nowtime
         else:
-            starttime:int=generateTimeStamp(message_list[4])
-        if generateTime(message_list[5]):
-            endtime:int=starttime+generateTime(message_list[5])
+            starttime:int=generateTimeStamp(messageList[4])
+        if generateTime(messageList[5]):
+            endtime:int=starttime+generateTime(messageList[5])
         else:
-            endtime:int=generateTimeStamp(message_list[5])
+            endtime:int=generateTimeStamp(messageList[5])
     except ValueError:
         return '预订失败:请按照规定格式进行预订！'
     user:User=User.find(qid,mysql)
@@ -141,16 +141,16 @@ def prebuyMineral(message_list:list[str],qid:str):
     ans='预订成功！编号:%d'%tradeID
     return ans
 
-def sellMineral(message_list:list[str],qid:str):
+def sellMineral(messageList:list[str],qid:str):
     """
     在市场上售卖矿石
-    :param message_list: 售卖 预订编号
+    :param messageList: 售卖 预订编号
     :param qid: 售卖者的qq号
     :return: 售卖提示信息
     """
-    assert len(message_list)==2,'售卖失败:请按照规定进行售卖！'
+    assert len(messageList)==2,'售卖失败:请按照规定进行售卖！'
     try:
-        tradeID:int=int(message_list[1])
+        tradeID:int=int(messageList[1])
     except ValueError:
         return '购买失败:请按照规定格式进行购买！'
     purchase:Purchase=Purchase.find(tradeID,mysql)
@@ -178,7 +178,7 @@ def sellMineral(message_list:list[str],qid:str):
         mineral.pop(mineralID)
 
     user.money+=price  #得钱
-    user.output_tax+=price*vat_rate #销项税额增加
+    user.outputTax+=price*vatRate #销项税额增加
     user.mineral=mineral
     user.save(mysql)
 
@@ -189,7 +189,7 @@ def sellMineral(message_list:list[str],qid:str):
         tmineral[mineralID]=0
     tmineral[mineralID]+=mineralNum  #增加矿石
     tuser.mineral=tmineral
-    tuser.input_tax += price*vat_rate #购买者进项税额增加
+    tuser.inputTax += price*vatRate #购买者进项税额增加
 
     purchase.remove(mysql)#删除市场上的此条记录
 
@@ -199,28 +199,28 @@ def sellMineral(message_list:list[str],qid:str):
     send(tqid,'您预订的商品(编号:%d)已被买入！'%tradeID,False)
     return ans
 
-def preauctionMineral(message_list:list[str],qid:str):
+def preauctionMineral(messageList:list[str],qid:str):
     """
     在市场上拍卖矿石
-    :param message_list: 拍卖 矿石编号 矿石数量 底价 起始时间 终止时间 是否保密
+    :param messageList: 拍卖 矿石编号 矿石数量 底价 起始时间 终止时间 是否保密
     :param qid: 拍卖者的qq号
     :return: 拍卖提示信息
     """
-    assert len(message_list)==7,'拍卖失败:请按照规定格式进行拍卖！'
+    assert len(messageList)==7,'拍卖失败:请按照规定格式进行拍卖！'
     nowtime:int=getnowtime()#现在的时间
     try:
-        mineralID:int=int(message_list[1])
-        mineralNum:int=int(message_list[2])
-        price:int=int(message_list[3])
-        secret:bool=bool(int(message_list[6]))
-        if message_list[4]=='现在' or message_list[4]=='now':
+        mineralID:int=int(messageList[1])
+        mineralNum:int=int(messageList[2])
+        price:int=int(messageList[3])
+        secret:bool=bool(int(messageList[6]))
+        if messageList[4]=='现在' or messageList[4]=='now':
             starttime:int=nowtime
         else:
-            starttime:int=generateTimeStamp(message_list[4])
-        if generateTime(message_list[5]):
-            endtime:int=starttime+generateTime(message_list[5])
+            starttime:int=generateTimeStamp(messageList[4])
+        if generateTime(messageList[5]):
+            endtime:int=starttime+generateTime(messageList[5])
         else:
-            endtime:int=generateTimeStamp(message_list[5])
+            endtime:int=generateTimeStamp(messageList[5])
     except ValueError:
         return '拍卖失败:请按照规定格式进行拍卖！'
 
@@ -249,18 +249,18 @@ def preauctionMineral(message_list:list[str],qid:str):
     ans='拍卖成功！编号:%d'%tradeID
     return ans
 
-def bidMineral(message_list:list[str],qid:str):
+def bidMineral(messageList:list[str],qid:str):
     """
     在市场上对矿石进行投标
-    :param message_list: 投标 拍卖编号 价格
+    :param messageList: 投标 拍卖编号 价格
     :param qid: 投标者的qq号
     :return: 投标提示信息
     """
-    assert len(message_list)==3,'投标失败:请按照规定格式进行投标！'
+    assert len(messageList)==3,'投标失败:请按照规定格式进行投标！'
     nowtime=getnowtime()#现在的时间
     try:
-        tradeID:int=int(message_list[1])
-        userprice:int=int(message_list[2])
+        tradeID:int=int(messageList[1])
+        userprice:int=int(messageList[2])
     except ValueError:
         return '投标失败:请按照规定格式进行投标！'
     auction:Auction=Auction.find(tradeID,mysql)
@@ -297,10 +297,10 @@ def bidMineral(message_list:list[str],qid:str):
     ans='投标成功！'
     return ans
 
-def mineralMarket(message_list:list[str],qid:str):
+def mineralMarket(messageList:list[str],qid:str):
     """
     查看市场
-    :param message_list: 市场
+    :param messageList: 市场
     :param qid:
     :return: 提示信息
     """

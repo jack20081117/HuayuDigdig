@@ -11,11 +11,11 @@ imgkit_config=imgkit.config(wkhtmltoimage=r'D:/Program Files/wkhtmltopdf/bin/wkh
 with open("./config.json","r",encoding='utf-8') as config:
     config=json.load(config)
 env:str=config["env"]
-vat_rate:float=config["tax"]["vat"]
-player_tax:float=config['tax']['player']
+vatRate:float=config["tax"]["vat"]
+playerTax:float=config['tax']['player']
 deposit:float=config["deposit"]
-group_ids:list=config['group_ids']
-bot_id:str=config['bot_id']
+groupIDs:list=config['group_ids']
+botID:str=config['bot_id']
 mysql:bool=(env=='prod')
 effisItemCount:int=config["effis_item_count"]
 effisDailyDecreaseRate:float=config["effis_daily_decrease_rate"]
@@ -35,7 +35,7 @@ effisStr=['分解效率','合成效率','复制效率','修饰效率','炼油效
 effisNameDict={'分解':0,'合成':1,'复制':2,'修饰':3,'炼油':4,'建工':5,'科研':6,'间谍':7}
 effisValueDict={0:'分解',1:'合成',2:'复制',3:'修饰',4:'炼油',5:'建工',6:'科研',7:'间谍'}
 
-info_msg="查询到QQ号为:%s的用户信息\n"\
+infoMsg="查询到QQ号为:%s的用户信息\n"\
          "学号:%s\n"\
          "当前余额:%s\n"\
          "加工科技点:%s\n"\

@@ -1,4 +1,4 @@
-from globalConfig import group_ids,bot_id
+from globalConfig import groupIDs,botID
 from user import *
 from static import *
 from extract import *
@@ -22,9 +22,9 @@ def registerByDict(registers: dict[str,callable]):
     for funcStr,func in registers.items():
         register(funcStr,func)
 
-def dealWithRequest(funcStr:str,message_list:list[str],qid:str):
+def dealWithRequest(funcStr:str,messageList:list[str],qid:str):
     if funcStr in commands:
-        ans=commands[funcStr](message_list,qid)
+        ans=commands[funcStr](messageList,qid)
     else:
         ans="未知命令:请输入'帮助'以获取帮助信息！"
     return ans
@@ -35,17 +35,17 @@ def handle(res,group):
         message:str=res.get("raw_message")
         qid:str=str(res.get('sender').get('user_id'))  #发消息者的qq号
         gid:str=str(res.get('group_id'))  #群的qq号
-        if gid not in group_ids:
+        if gid not in groupIDs:
             return None
-        if "[CQ:at,qq=%s]"%bot_id not in message:#必须在自己被at的情况下才能作出回复
+        if "[CQ:at,qq=%s]"%botID not in message:#必须在自己被at的情况下才能作出回复
             return None
 
-        message_list:list=message.split(' ')
-        funcStr:str=message_list[1]
-        message_list.pop(0)  #忽略at本身
+        messageList:list=message.split(' ')
+        funcStr:str=messageList[1]
+        messageList.pop(0)  #忽略at本身
 
         try:
-            ans=dealWithRequest(funcStr,message_list,qid)
+            ans=dealWithRequest(funcStr,messageList,qid)
             send(gid,ans,group=True)
         except AssertionError as err:
             send(gid,err,group=True)
@@ -53,47 +53,47 @@ def handle(res,group):
     else:
         message:str=res.get("raw_message")
         qid:str=str(res.get('sender').get('user_id'))
-        message_list:list=message.split(' ')
-        funcStr:str=message_list[0]
+        messageList:list=message.split(' ')
+        funcStr:str=messageList[0]
 
         try:
-            ans=dealWithRequest(funcStr,message_list,qid)
+            ans=dealWithRequest(funcStr,messageList,qid)
             send(qid,ans,group=False)
         except AssertionError as err:
             send(qid,err,group=False)
        
 registerByDict({
-    "time": returnTime,
-    "帮助": getHelp,
-    "注册": signup,
-    "查询": getUserInfo,
-    "开采": getMineral,
-    "兑换": exchangeMineral,
-    "预售": presellMineral,
-    "购买": buyMineral,
-    "预订": prebuyMineral,
-    "售卖": sellMineral,
-    "拍卖": preauctionMineral,
-    "投标": bidMineral,
-    "市场": mineralMarket,
-    "发行": issueStock,
+    "time":returnTime,
+    "帮助":getHelp,
+    "注册":signup,
+    "查询":getUserInfo,
+    "开采":getMineral,
+    "兑换":exchangeMineral,
+    "预售":presellMineral,
+    "购买":buyMineral,
+    "预订":prebuyMineral,
+    "售卖":sellMineral,
+    "拍卖":preauctionMineral,
+    "投标":bidMineral,
+    "市场":mineralMarket,
+    "发行":issueStock,
     "认购":acquireStock,
-    "股市": stockMarket,
-    "支付": pay,
-    "放贷": prelendDebt,
-    "借贷": borrowDebt,
-    "还款": repayDebt,
-    "转让": transferDebt,
-    "免除": forgiveDebt,
-    "债市": debtMarket,
-    "分解": decompose,
-    "合成": synthesize,
-    "修饰": decorate,
-    "复制": duplicate,
-    "炼化": refine,
-    "取消": cancelPlan,
-    "执行": enactPlan,
-    "计划": showPlan,
+    "股市":stockMarket,
+    "支付":pay,
+    "放贷":prelendDebt,
+    "借贷":borrowDebt,
+    "还款":repayDebt,
+    "转让":transferDebt,
+    "免除":forgiveDebt,
+    "债市":debtMarket,
+    "分解":decompose,
+    "合成":synthesize,
+    "修饰":decorate,
+    "复制":duplicate,
+    "炼化":refine,
+    "取消":cancelPlan,
+    "执行":enactPlan,
+    "计划":showPlan,
 })
 
      

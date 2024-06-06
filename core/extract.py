@@ -2,7 +2,7 @@ import numpy as np
 
 from tools import sigmoid
 from model import User,Mine
-from globalConfig import mysql,vat_rate
+from globalConfig import mysql,vatRate
 
 def extractMineral(qid,mineralID,mineID):
     """获取矿石
@@ -15,7 +15,7 @@ def extractMineral(qid,mineralID,mineID):
     abundance:float=mine.abundance #矿井丰度
     user:User=User.find(qid,mysql)
     mineral=user.mineral # 用户拥有的矿石
-    extractTech:float=user.extract_tech # 开采科技
+    extractTech:float=user.extractTech # 开采科技
 
     assert user.digable,'开采失败:您必须等到下一个整点才能再次开采矿井！'
 
@@ -40,15 +40,15 @@ def extractMineral(qid,mineralID,mineID):
         ans='开采成功！您获得了编号为%d的矿石！'%mineralID
     return ans
 
-def getMineral(message_list:list[str],qid:str):
+def getMineral(messageList:list[str],qid:str):
     """
     根据传入的信息开采矿井
-    :param message_list: 开采 矿井编号
+    :param messageList: 开采 矿井编号
     :param qid: 开采者的qq号
     :return: 开采提示信息
     """
-    assert len(message_list)==2,'开采失败:请指定要开采的矿井！'
-    mineralID:int=int(message_list[1])
+    assert len(messageList)==2,'开采失败:请指定要开采的矿井！'
+    mineralID:int=int(messageList[1])
     if mineralID==1:
         mineralID=np.random.randint(2,30000)
         ans=extractMineral(qid,mineralID,1)
@@ -65,15 +65,15 @@ def getMineral(message_list:list[str],qid:str):
         ans='开采失败:不存在此矿井！'
     return ans
 
-def exchangeMineral(message_list:list[str],qid:str):
+def exchangeMineral(messageList:list[str],qid:str):
     """
     兑换矿石
-    :param message_list: 兑换 矿石编号
+    :param messageList: 兑换 矿石编号
     :param qid: 兑换者的qq号
     :return: 兑换提示信息
     """
-    assert len(message_list)==2,'兑换失败:请指定要兑换的矿石！'
-    mineralID:int=int(message_list[1])
+    assert len(messageList)==2,'兑换失败:请指定要兑换的矿石！'
+    mineralID:int=int(messageList[1])
     user:User=User.find(qid,mysql)
     schoolID:str=user.schoolID
     money:int=user.money
@@ -90,7 +90,7 @@ def exchangeMineral(message_list:list[str],qid:str):
 
     user.mineral=mineral
     user.money+=mineralID
-    user.output_tax += mineralID * vat_rate #增值税
+    user.outputTax += mineralID * vatRate #增值税
     user.save(mysql)
 
     ans='兑换成功！'

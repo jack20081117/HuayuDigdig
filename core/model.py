@@ -8,20 +8,20 @@ class User(Model):
     schoolID=StringField(columnType='varchar(5)')
     money=FloatField()
     mineral=StringField(columnType='varchar(2000)')
-    industrial_tech=FloatField()
-    extract_tech=FloatField()
-    refine_tech=FloatField()
+    industrialTech=FloatField()
+    extractTech=FloatField()
+    refineTech=FloatField()
     digable=BooleanField()
-    factory_num=IntegerField()
+    factoryNum=IntegerField()
     effis=StringField(columnType='varchar(200)')
     mines=StringField(columnType='varchar(200)')
     stocks=StringField(columnType='varchar(2000)')
-    enacted_plan_types=StringField(columnType='varchar(200)') #dict for plan types
-    busy_factory_num=IntegerField()
-    last_effis_update_time = IntegerField()
-    input_tax=FloatField() #进项税额（抵扣）
-    output_tax=FloatField() #销项税额
-    paid_taxes=BooleanField()
+    enactedPlanTypes=StringField(columnType='varchar(200)') #dict for plan types
+    busyFactoryNum=IntegerField()
+    lastEffisUpdateTime = IntegerField()
+    inputTax=FloatField() #进项税额（抵扣）
+    outputTax=FloatField() #销项税额
+    paidTaxes=BooleanField()
 
 
 class Plan(Model):
@@ -31,12 +31,12 @@ class Plan(Model):
     qid = StringField(columnType='varchar(20)')
     schoolID = StringField(columnType='varchar(5)')
     jobtype=IntegerField()
-    factory_num=IntegerField()
+    factoryNum=IntegerField()
     ingredients=StringField(columnType='varchar(50)')
     products=StringField(columnType='varchar(50)')
-    work_units_required=IntegerField()
-    time_enacted=IntegerField()
-    time_required=IntegerField()
+    workUnitsRequired=IntegerField()
+    timeEnacted=IntegerField()
+    timeRequired=IntegerField()
     enacted = BooleanField()
 
 
@@ -94,7 +94,7 @@ class Stock(Model):
     stockNum=IntegerField()
     openStockNum=IntegerField() #一级市场认购时仍未被认购的股数
     provisionalFunds=FloatField() #一级市场认购进行时临时资金的存放处，如果成功上市将转移给发行人
-    issue_qid=StringField(columnType='varchar(20)') #发行人qid
+    issuer=StringField(columnType='varchar(20)') #发行人
     price=FloatField()
     openingPrice=FloatField()
     volume=IntegerField()
@@ -106,7 +106,7 @@ class Stock(Model):
     primaryEndTime = IntegerField() #一级市场认购结束时间
     primaryClosed=BooleanField()
     secondaryOpen=BooleanField()
-    avg_dividend=FloatField()
+    avgDividend=FloatField()
 
 class Order(Model): #股市委托
     __table__ = "orders"
@@ -116,7 +116,7 @@ class Order(Model): #股市委托
     requester = StringField(columnType='varchar(20)')
     buysell = BooleanField() #True = buy False = sell
     amount = IntegerField()
-    completed_amount = IntegerField()
+    completedAmount = IntegerField()
     priceLimit = FloatField()
     timestamp = IntegerField()
     funds = FloatField()
@@ -134,8 +134,8 @@ class Debt(Model):
     __table__='debts'
 
     debtID=IntegerField(primaryKey=True)
-    creditor_id=StringField(columnType='varchar(20)')  # 债权人
-    debitor_id=StringField(columnType='varchar(20)')  # 债务人
+    creditor=StringField(columnType='varchar(20)')  # 债权人
+    debitor=StringField(columnType='varchar(20)')  # 债务人
     money=IntegerField()  # 贷款金额
     duration=IntegerField()
     starttime=IntegerField()

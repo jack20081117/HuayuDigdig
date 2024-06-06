@@ -34,7 +34,7 @@ def sqrtmoid(x:float)->float:return 0.25*np.sqrt(x)+0.5
 def generate_random_digits(wei:int):
     return "".join(random.choice(chars) for i in wei)
 
-def smart_interval(seconds:float):
+def smartInterval(seconds:float):
     if seconds < 60:
         return "%.2fs" % seconds
     if seconds < 3600:
@@ -43,7 +43,7 @@ def smart_interval(seconds:float):
         return "%.2fh" % (seconds / 3600)
     return "%.2fd" % (seconds / 86400)
 
-def is_prime(n)->bool:
+def isPrime(n)->bool:
     if n <= 1:
         return False
     if n <= 3:
@@ -128,14 +128,17 @@ def setInterval(func:callable,interval:int,*args,**kwargs):
     scheduler.add_job(func,"interval",args=args,kwargs=kwargs,seconds=interval)
     scheduler.start()
 
-def setCrontab(func:callable,*args,**kwargs):
+def setCrontab(func:callable,day_of_week='mon-sun',hour='0-23',minute='0',second='0',*args,**kwargs):
     """
     定时触发任务
     :param func: 要触发的任务（函数）
+    :param day_of_week:
+    :param hour:
+    :param minute:
     :param args: 任务参数
     """
     scheduler=bgsc()
-    scheduler.add_job(func,'cron',day_of_week='mon-sun',hour='0-23',minute=0,args=args,kwargs=kwargs)
+    scheduler.add_job(func,'cron',day_of_week=day_of_week,hour=hour,minute=minute,second=second,args=args,kwargs=kwargs)
     scheduler.start()
 
 def setTimeTask(func:callable,runtime:int,*args,**kwargs):
