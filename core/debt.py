@@ -34,7 +34,7 @@ def prelendDebt(messageList:list[str],qid:str):
     creditor.save(mysql)
 
     debtID:int=max([0]+[debt.debtID for debt in Debt.findAll(mysql)])+1
-    debt=Debt(debtID=debtID,creditorID=qid,debitorID='nobody',money=money,
+    debt=Debt(debtID=debtID,creditor=qid,debitor='nobody',money=money,
               duration=duration,starttime=starttime,endtime=endtime,interest=float(interest))
     debt.add(mysql)
     setTimeTask(updateDebt,endtime,debt)
