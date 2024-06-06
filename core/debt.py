@@ -190,7 +190,7 @@ def debtMarket(messageList:list[str],qid:str):
     :param qid:
     :return: 提示信息
     """
-    debts:list[Debt]=Debt.findAll(mysql,where='debitorID=?',args=('nobody',))
+    debts:list[Debt]=Debt.findAll(mysql,where='debitor=?',args=('nobody',))
     ans='欢迎来到债市！\n'
     if debts:
         ans+='以下是所有目前可借的贷款:\n'
