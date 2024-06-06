@@ -96,11 +96,13 @@ class Stock(Model):
     provisionalFunds=FloatField() #一级市场认购进行时临时资金的存放处，如果成功上市将转移给发行人
     issue_qid=StringField(columnType='varchar(20)') #发行人qid
     price=FloatField()
+    openingPrice=FloatField()
+    volume=IntegerField()
     selfRetain=IntegerField() #一级市场发行时自留股数
-    histprice=StringField(columnType='varchar(2000)')
+    histprice=StringField(columnType='varchar(100)')
     shareholders=StringField(columnType='varchar(2000)')
-    bids=StringField(columnType='varchar(500)') # 买入委托列表
-    asks=StringField(columnType='varchar(500)') # 卖出委托列表
+    bidders=StringField(columnType='varchar(500)') # 本期买入者不能再进行卖出
+    askers=StringField(columnType='varchar(500)') # 本期卖出者不能再进行买入
     primaryEndTime = IntegerField() #一级市场认购结束时间
     primaryClosed=BooleanField()
     secondaryOpen=BooleanField()
@@ -114,9 +116,19 @@ class Order(Model): #股市委托
     requester = StringField(columnType='varchar(20)')
     buysell = BooleanField() #True = buy False = sell
     amount = IntegerField()
+    completed_amount = IntegerField()
     priceLimit = FloatField()
     timestamp = IntegerField()
+    funds = FloatField()
 
+class StockData(Model): #持久化储存股市信息
+    __table__ = "stockData"
+
+    timestamp = StringField(columnType='varchar(20)',primaryKey=True)
+    prices = StringField(columnType='varchar(500)') #字典，储存每个时间点股价
+    volumes = StringField(columnType='varchar(500)') #字典，储存每个时间点成交量
+    opening = BooleanField()
+    closing = BooleanField()
 
 class Debt(Model):
     __table__='debts'

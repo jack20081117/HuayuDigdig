@@ -20,6 +20,8 @@ mysql:bool=(env=='prod')
 effisItemCount:int=config["effis_item_count"]
 effisDailyDecreaseRate:float=config["effis_daily_decrease_rate"]
 
+stockMarketOpenFlag = False
+
 if mysql:
     with open("./mysql.json","a") as config:
         pass

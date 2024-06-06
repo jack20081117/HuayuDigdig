@@ -64,9 +64,9 @@ def handle(res,group):
        
 registerByDict({
     "time": returnTime,
-    "帮助":getHelp,
+    "帮助": getHelp,
     "注册": signup,
-    "查询":getUserInfo,
+    "查询": getUserInfo,
     "开采": getMineral,
     "兑换": exchangeMineral,
     "预售": presellMineral,
