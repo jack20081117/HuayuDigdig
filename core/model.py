@@ -22,6 +22,7 @@ class User(Model):
     inputTax=FloatField() #进项税额（抵扣）
     outputTax=FloatField() #销项税额
     paidTaxes=BooleanField()
+    techCards=StringField(columnType='varchar(2000)')
 
 
 class Plan(Model):
@@ -33,6 +34,7 @@ class Plan(Model):
     jobtype=IntegerField()
     factoryNum=IntegerField()
     ingredients=StringField(columnType='varchar(50)')
+    techPath=StringField(columnType='varchar(200)')
     products=StringField(columnType='varchar(50)')
     workUnitsRequired=IntegerField()
     timeEnacted=IntegerField()
