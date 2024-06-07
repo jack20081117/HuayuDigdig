@@ -1,7 +1,7 @@
 from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp
 from model import User, Plan
 from update import updateEfficiency, updatePlan
-from globalConfig import mysql,effisValueDict
+from globalConfig import mysql,effisValueDict, fuelFactorDict
 from numpy import log
 
 
@@ -21,14 +21,20 @@ def expense_calculator(multiplier:float,duplication:int,primary_scale:int,second
     :return: 该加工需要的产能点数、时间与燃油
     """
 
+
     workUnitsRequired = multiplier * duplication * primary_scale * log(log(secondary_scale) + 1)
     if useLogDivisor:
         workUnitsRequired /= log(primary_scale)
-    timeRequired = workUnitsRequired / (sigmoid(efficiency) * factoryNum)
+    timeRequired, fuelRequired = time_fuel_calculator(workUnitsRequired, efficiency, tech, factoryNum, fuel_factor)
+
+    return workUnitsRequired, timeRequired, fuelRequired
+
+def time_fuel_calculator(workUnitsRequired, efficiency, tech, factoryNum, fuel_factor):
+    adjustedFactoryNum = (1 - sigmoid(tech + 0.25 * efficiency) ** factoryNum) / (1 - sigmoid(tech + 0.25 * efficiency))
+    timeRequired = workUnitsRequired / (sigmoid(efficiency) * adjustedFactoryNum)
     fuelRequired = workUnitsRequired / (fuel_factor * sqrtmoid(tech) * sigmoid(efficiency))#所用燃油
 
-    return round(workUnitsRequired), round(timeRequired), round(fuelRequired)
-
+    return round(timeRequired), round(fuelRequired)
 
 def decompose(messageList: list[str], qid: str):
     """
@@ -285,6 +291,92 @@ def refine(messageList: list[str], qid: str):
 
     return ans
 
+def research(messageList: List[str], qid: str):
+    """
+    制定科研计划
+    :param messageList: 研究 科技名 试剂1 试剂2 (... 试剂n) 是否接续主线(1/+) 调拨工厂数
+    :param qid: 制定者的qq号
+    :return: 提示信息
+    """
+    assert len(messageList) >= 6, '制定科研计划失败:请按照规定格式进行计划！'
+    user: User = User.find(qid, mysql)
+    ingredientList = []
+
+    try:
+        for i in range(2, len(messageList) - 2):
+            ingredient: int = int(messageList[i])
+            ingredientList.append(ingredient)
+        techName = str(message[1])
+        continuation: int = int(messageList[-2])
+        factoryNum: int = int(messageList[-1])
+    except ValueError:
+        return '制定科研计划失败:请按照规定格式进行计划！'
+
+    techEff = user.effis[6]#用户的科研效率
+
+    assert techName in ['开采','加工','炼油'], '制定科研计划失败:科技名无效！'
+    assert continuation in [1,0], '制定科研计划失败:接续指令无效！'
+    for ingredient in ingredientList:
+        assert ingredient > 1, '制定科研计划失败:试剂无效！'
+    assert factoryNum >= 1, '制定科研计划失败:工厂数无效！'
+    assert factoryNum <= user.factoryNum, '制定科研计划失败:您没有足够工厂！'
+
+    nowtime: int = getnowtime()
+    starttime = nowtime
+
+    techCards = user.techCards[techName]
+
+    ingredients = {}#所需原料
+    ans = ''
+    techPath = ingredientList
+
+    if continuation or len(techCards) == 0:
+        workUnitsRequired = 600 + 300*len(ingredientList)
+        timeRequired, fuelRequired = time_fuel_calculator(workUnitsRequired, techEff, 0, factoryNum, 4)
+        for ingredient in ingredientList:
+            ingredients.setdefault(ingredient, 0)
+            ingredients[ingredient] += 1
+            if techCards:
+                techPath = techCards[0] + ingredientList
+    else:
+        commonSequenceLengths = []
+        for i in range(len(techCards)):
+            commonSequenceLength = 0
+            for j in range(min(len(techCards[i]),len(ingredientList))):
+                if techCards[i][j] == ingredientList[j]:
+                    commonSequenceLength += 1
+                    continue
+                else:
+                    commonSequenceLengths.append(commonSequenceLength)
+                    break
+        bestMatch = np.argmax(np.array(commonSequenceLengths))
+        matchAmount = commonSequenceLengths[bestMatch]
+        ans+='您当前制定的科研计划与您已知的第%s科研路径在前%s级重合，将自动接续该技术路径进行研究！' % (bestMatch, matchAmount)
+        assert matchAmount < len(ingredientList), '您当前输入的序列是您已知的技术路径的子序列，不必重复研发！'
+        divergentPath = ingredientList[matchAmount:]
+        workUnitsRequired = 600 + 300 * len(divergentPath)
+        timeRequired, fuelRequired = time_fuel_calculator(workUnitsRequired, techEff, 0, factoryNum, 4)
+        for ingredient in divergentPath:
+            ingredients.setdefault(ingredient, 0)
+            ingredients[ingredient] += 1
+
+    products:dict = {}#生成产品
+
+    ingredients[0] = fuelRequired
+
+    planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
+    plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=1, factoryNum=factoryNum,
+                      ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
+                      workUnitsRequired=workUnitsRequired, techPath=techPath, enacted=False)
+    plan.add(mysql)
+
+    ans += '编号为%s的合成计划制定成功！按照此计划，%s个工厂将被调用，预计消耗%s单位燃油和%s时间！产物：%s。' % (planID, factoryNum,
+                                                                     fuelRequired, smartInterval(timeRequired),
+                                                                     finalProduct)
+    return ans
+
+
+
 
 def enactPlan(messageList: list[str], qid: str):
     """
@@ -347,10 +439,16 @@ def enaction(plan: Plan):
     else:
         tech = user.industrialTech
 
-    timeRequired = plan.workUnitsRequired / sigmoid(user.effis[plan.jobtype])
-    fuelRequired = round(requiredFactoryNum * timeRequired / (4 * sqrtmoid(tech)))
+    timeRequired, fuelRequired = \
+    time_fuel_calculator(plan.workUnitsRequired,
+                         user.effis[plan.jobtype],
+                         tech,
+                         requiredFactoryNum,
+                         fuelFactorDict[plan.jobtype])
+
     if fuelRequired>64:
         ingredients[0] = fuelRequired
+
     success: bool = True
     ans = ""
 
