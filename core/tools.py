@@ -4,10 +4,12 @@ import numpy as np
 import imgkit
 
 from apscheduler.schedulers.background import BackgroundScheduler as bgsc
-
+from hashlib import md5
 from globalConfig import chars,imgkit_config
 
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
+
+digest = lambda s: md5(s.encode('ascii')).hexdigest()
 
 def fromstr(data):
     if isinstance(data,str):
@@ -56,6 +58,32 @@ def isPrime(n)->bool:
             return False
         i += 6
     return True
+
+
+def tech_validator(tech_type:str, path:List[int], sid:str):
+    method_string = tech_type
+    determinant = 0
+    validated_levels = 0
+    for i in range(len(path)):
+        tech_level = i + 1
+
+        class_buff = '%s+%s' % (sid[:3], path[i])
+        specific_buff = '%s+%s' % (sid, path[i])
+        modifier = (int(digest(specific_buff)[-2:], 16) + int(digest(class_buff)[-2:], 16) - 256) / 2048
+
+        determinant = round(determinant * 0.5 + path[i] * 0.5)
+
+        prob = max(min(0.4 * np.log(determinant) / np.log(256 * tech_level),
+                       (determinant + 16 * tech_level) / (256 * tech_level)) + modifier, 0)
+        method_string = '%s+%s' % (method_string, path[i])
+        indicator = int(digest(method_string)[-3:], 16)
+
+        if not indicator + modifier <= round(4096 * prob):
+            break
+        else:
+            validated_levels += 1
+
+    return validated_levels
 
 def getnowtime():
     return round(datetime.timestamp(datetime.now()))
