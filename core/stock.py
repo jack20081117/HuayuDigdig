@@ -344,7 +344,7 @@ def stockMarketOpen():
             groupMessage += '股票%s（代号：%s）本期开放二级市场交易，参考价为%.2f元一股！' % (stock.stockName, stock.stockID, stock.price)
         stock.save(mysql)
     for groupID in groupIDs:
-        send(groupID,groupMessage or "休市结束，股市开始接受申报！")
+        send(groupID,groupMessage or "休市结束，股市开始接受申报！",group=True)
 
 
 def stockMarketClose():
