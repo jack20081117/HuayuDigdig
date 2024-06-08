@@ -63,6 +63,8 @@ def primaryClosing(stock: Stock):
     selfRetain = stock.selfRetain
     price = stock.price
     soldNum = stockNum - openStockNum - selfRetain
+    # if stock.primaryClosed:
+    #     return None
     if soldNum / (stockNum - selfRetain) * price < 1:  # 调整价格小于每股1元
         send(stock.issuer, "您的股票%s在一级市场按%.2f认购了%s，调整后股价过低，上市失败！募集的资本将被退还给投资者。" % (stock.stockName, soldNum, price))
         shareholders: dict = stock.shareholders
@@ -78,11 +80,11 @@ def primaryClosing(stock: Stock):
         if openStockNum == 0:
             newprice = price
             send(stock.issuer, "您的股票%s在一级市场已按%.2f一股全部认购完毕，上市成功！%.2f元资本已转移给您，股票将在下一次开盘进入二级市场交易！"
-                 % (stock.stockName, stock.provisionalFunds, price))
+                 % (stock.stockName, price, stock.provisionalFunds))
         else:
             newprice = soldNum / (stockNum - selfRetain) * price
             send(stock.issuer, "您的股票%s在一级市场按%.2f认购了%s，调整后股价为%.2f，上市成功！%.2f元资本已转移给您，股票将在下一次开盘进入二级市场交易！"
-                 % (stock.stockName, soldNum, price, newprice, stock.provisionalFunds))
+                 % (stock.stockName, price, soldNum, newprice, stock.provisionalFunds))
             roundedSum = 0
             for holderID, amount in stock.shareholders.items():
                 holder = User.find(holderID, mysql)
@@ -100,16 +102,14 @@ def primaryClosing(stock: Stock):
             holder = User.find(stock.issuer, mysql)
             holder.stock[stock.stockID] = selfRetain
 
-        stock.primaryClosed = True
+        stock.primaryClosed=True
+        stock.secondaryOpen=True
         stock.histprice['adjustedIssuePrice'] = newprice
         issuer: User = User.find(stock.issuer, mysql)
-        stock.provisionalFunds = 0
         issuer.money += stock.provisionalFunds
+        stock.provisionalFunds = 0
         stock.save(mysql)
         issuer.save(mysql)
-
-    return None
-
 
 def acquireStock(messageList: list[str], qid: str):
     """
@@ -128,11 +128,11 @@ def acquireStock(messageList: list[str], qid: str):
     stockIdentifier = str(messageList[1])
 
     if len(stockIdentifier) == 3:
-        # 通过股票缩写查找对方
+        # 通过股票缩写查找
         stock: Stock = Stock.find(stockIdentifier, mysql)
         assert stock, "认购失败:不存在代码为%s的股票！" % stockIdentifier
     else:
-        # 通过学号查找
+        # 通过股票名称查找
         assert Stock.findAll(mysql, 'stockName=?', (stockIdentifier,)), "认购失败:不存在代码为%s的股票！" % stockIdentifier
         stock: Stock = Stock.findAll(mysql, 'stockName=?', (stockIdentifier,))[0]
 
@@ -153,6 +153,8 @@ def acquireStock(messageList: list[str], qid: str):
     stock.shareholders.setdefault(acquirer.qid, 0)
     stock.shareholders[acquirer.qid] += stockNum
     stock.openStockNum -= stockNum
+    if stock.openStockNum<=0:
+        primaryClosing(stock)
     stock.save(mysql)
 
     ans = '认购成功！'
@@ -169,9 +171,10 @@ def stockMarket(messageList: list[str], qid: str):
     ans = '欢迎来到股市！\n'
     if stocks:
         ans += '以下是所有目前发行的股票:\n'
-        stockData = [['股票名称', '股票缩写', '发行量', '当前股价']]
+        stockData = [['股票名称', '股票缩写', '发行量', '可购量','当前股价','股票状态']]
         for stock in stocks:
-            stockData.append([stock.stockName, stock.stockID, stock.stockNum, stock.price])
+            status:str=('开放交易' if stock.secondaryOpen else '认购结束') if stock.primaryClosed else '开放认购'
+            stockData.append([stock.stockName, stock.stockID, stock.stockNum,stock.openStockNum,stock.price,status])
         drawtable(stockData, 'stock.png')
         ans += '[CQ:image,file=stock.png]'
     else:
@@ -298,7 +301,7 @@ def Pairing(bid: Order,ask:Order, amount: int, price: float): #配对撮合，�
 def resolveOrder(stock:Stock, order: Order, price:float): #成交写入User
     requester:User = User.find(order.requester)
     order.completedAmount = 0
-    if order.buy:
+    if order.buysell:
         requester.stocks.setdefault(order.stockID, 0)
         requester.stocks[order.stockID] += order.completedAmount
         stock.shareholders.setdefault(requester.qid, 0)

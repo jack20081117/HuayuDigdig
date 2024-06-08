@@ -50,8 +50,7 @@ def updateSale(sale:Sale):
     mineralID:int=sale.mineralID
     mineralNum:int=sale.mineralNum
     mineral:dict[int,int]=user.mineral
-    if mineralID not in mineral:
-        mineral[mineralID]=0
+    mineral.setdefault(mineralID,0)
     mineral[mineralID]+=mineralNum#将矿石返还给预售者
     user.mineral=mineral
 
@@ -103,8 +102,7 @@ def updateAuction(auction:Auction):
             success=True#投标成功
             tuser.money-=bids[0][1]-round(bids[0][1]*deposit)#扣除剩余金额
             tmineral:dict[int,int]=tuser.mineral
-            if mineralID not in tmineral:
-                tmineral[mineralID]=0
+            tmineral.setdefault(mineralID,0)
             tmineral[mineralID]+=mineralNum#给予矿石
             tuser.mineral=tmineral
             tuser.inputTax += bids[0][1] * vatRate
@@ -132,8 +130,7 @@ def updateAuction(auction:Auction):
             break
     if not bids:
         mineral:dict[int,int]=user.mineral
-        if mineralID not in mineral:
-            mineral[mineralID]=0
+        mineral.setdefault(mineralID,0)
         mineral[mineralID]+=mineralNum  #将矿石返还给拍卖者
         user.mineral=mineral
 
@@ -250,10 +247,9 @@ def updatePlan(plan:Plan):
 
     products:dict=plan.products
     mineral:dict[int,int]=user.mineral
-    for mid, mnum in products.items():
-        if mid not in mineral:
-            mineral[mid] = 0
-        mineral[mid] += mnum  # 将矿石增加给生产者
+    for mineralID, mineralNum in products.items():
+        mineral.setdefault(mineralID,0)
+        mineral[mineralID] += mineralNum  # 将矿石增加给生产者
     user.mineral = mineral #更新矿石字典
     
     updateEfficiency(user, plan) #效率修正

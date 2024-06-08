@@ -2,8 +2,6 @@ from model import AllModels,User,Mine
 from orm import execute
 from globalConfig import config,mysql
 from tools import setCrontab,getnowtime
-from taxes import taxUpdate
-from stock import resolveAuction,stockMarketOpen,stockMarketClose
 
 def create_treasury():
     user = User(
@@ -39,14 +37,6 @@ if if_delete_and_create == "yes":
     for i in range(1,5):
         _mine=Mine(mineID=i,abundance=0.0)
         _mine.add(mysql)
-    setCrontab(taxUpdate,hour='23')
-
-    setCrontab(stockMarketOpen, hour='8,13,18', minute='30') #股市开盘
-    setCrontab(resolveAuction, hour='9,14,19', minute='0', second='0',aggregate=True) #集合竞价结算
-    setCrontab(resolveAuction, hour='9,14,19', minute='4-56/4', second='0', aggregate=False)
-    setCrontab(resolveAuction, hour='10-12,15-17,20-22', minute='0-56/4', second='0',aggregate=False)
-    setCrontab(resolveAuction, hour='13,18,23', minute='0', second='0', aggregate=False,closing=True) # 股市收盘交易
-    setCrontab(stockMarketClose, hour='13,18,23', minute='0', second='1')  # 股市收盘后勤
 
     print('Initialized Successed.')
 

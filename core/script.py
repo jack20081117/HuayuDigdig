@@ -45,7 +45,7 @@ def handle(res,group):
         messageList.pop(0)  #忽略at本身
 
         try:
-            ans=dealWithRequest(funcStr,messageList,qid)
+            ans='[CQ:at,qq=%s]'%qid+dealWithRequest(funcStr,messageList,qid)
             send(gid,ans,group=True)
         except AssertionError as err:
             send(gid,err,group=True)

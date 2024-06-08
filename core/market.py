@@ -28,7 +28,7 @@ def presellMineral(messageList:list[str],qid:str):
         return '预售失败:请按照规定格式进行预售！'
 
     user:User=User.find(qid,mysql)
-    mineral=user.mineral
+    mineral:dict[int,int]=user.mineral
     assert mineralNum>=1,'预售失败:您必须至少预售1个矿石！'
     assert mineralID in mineral,'预售失败:您不具备此矿石！'
     assert mineral[mineralID]>=mineralNum,'预售失败:您的矿石数量不足！'
@@ -86,9 +86,8 @@ def buyMineral(messageList:list[str],qid:str):
     tuser.money+=price#得钱
     tuser.outputTax+=price*vatRate #增值税销项税额增加
 
-    mineral=user.mineral
-    if mineralID not in mineral:
-        mineral[mineralID]=0
+    mineral:dict[int,int]=user.mineral
+    mineral.setdefault(mineralID,0)
     mineral[mineralID]+=mineralNum#增加矿石
     user.mineral=mineral
 
@@ -170,7 +169,7 @@ def sellMineral(messageList:list[str],qid:str):
     assert nowtime>=starttime,'售卖失败:尚未到开始售卖时间！'
     assert nowtime<=endtime,'售卖失败:此商品预订已结束！'
 
-    mineral=user.mineral
+    mineral:dict[int,int]=user.mineral
     assert mineralID in mineral,'售卖失败:您不具备此矿石！'
     assert mineral[mineralID]>=mineralNum,'售卖失败:您的矿石数量不足！'
     mineral[mineralID]-=mineralNum
@@ -184,9 +183,8 @@ def sellMineral(messageList:list[str],qid:str):
 
     tuser:User=User.find(tqid,mysql)
 
-    tmineral=tuser.mineral
-    if mineralID not in tmineral:
-        tmineral[mineralID]=0
+    tmineral:dict[int,int]=tuser.mineral
+    tmineral.setdefault(mineralID,0)
     tmineral[mineralID]+=mineralNum  #增加矿石
     tuser.mineral=tmineral
     tuser.inputTax += price*vatRate #购买者进项税额增加
@@ -225,7 +223,7 @@ def preauctionMineral(messageList:list[str],qid:str):
         return '拍卖失败:请按照规定格式进行拍卖！'
 
     user:User=User.find(qid,mysql)
-    mineral=user.mineral
+    mineral:dict[int,int]=user.mineral
     assert mineralNum>=1,'拍卖失败:您必须至少拍卖1个矿石！'
     assert mineralID in mineral,'拍卖失败:您不具备此矿石！'
     assert mineral[mineralID]>=mineralNum,'拍卖失败:您的矿石数量不足！'

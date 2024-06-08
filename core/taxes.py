@@ -1,6 +1,6 @@
 from model import User
-from globalConfig import vatRate, mysql,groupIDs
-from tools import setCrontab,getnowtime,send
+from globalConfig import mysql,groupIDs
+from tools import getnowtime,send
 
 def payTax(messageList:list[str],qid:str):
     """
@@ -74,8 +74,8 @@ def taxUpdate():
                 user.save(mysql)
                 send(user.qid, '提醒：本期您未报税，且流动资金不充裕，请于下一期内主动结清拖欠的税款，以及加征的10%滞纳金！如果继续逾期您可能面临强制措施！')
     taxedAmount = treasury.money - preTaxAmount
-    for group_id in group_ids:
-        send(group_id,'本期总共征税%.2f元,感谢各位对我游税务工作的支持。' % taxedAmount,group=True)
+    for groupID in groupIDs:
+        send(groupID,'本期总共征税%.2f元,感谢各位对我游税务工作的支持。' % taxedAmount,group=True)
     treasury.save(mysql)
 
 
