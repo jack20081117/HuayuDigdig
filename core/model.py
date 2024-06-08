@@ -144,7 +144,7 @@ class Debt(Model):
     endtime=IntegerField()
     interest=FloatField()
 
-AllModels:list[Model]=[User,Mine,Sale,Purchase,Auction,Stock,Debt,Order,Plan]
+AllModels:list[Model]=[User,Mine,Sale,Purchase,Auction,Stock,Debt,Order,Plan,StockData]
 
 if __name__=='__main__':  #创建新表
     for model in AllModels:

@@ -3,7 +3,7 @@ from model import User, Plan
 from update import updateEfficiency, updatePlan
 from globalConfig import mysql,effisValueDict, fuelFactorDict
 from numpy import log
-
+import numpy as np
 
 def expense_calculator(multiplier:float,duplication:int,primary_scale:int,secondary_scale:int,
                        tech:float,efficiency:float,factoryNum:int,fuel_factor:float,useLogDivisor=True):
@@ -291,7 +291,7 @@ def refine(messageList: list[str], qid: str):
 
     return ans
 
-def research(messageList: List[str], qid: str):
+def research(messageList:list[str], qid: str):
     """
     制定科研计划
     :param messageList: 研究 科技名 试剂1 试剂2 (... 试剂n) 是否接续主线(1/+) 调拨工厂数
@@ -306,7 +306,7 @@ def research(messageList: List[str], qid: str):
         for i in range(2, len(messageList) - 2):
             ingredient: int = int(messageList[i])
             ingredientList.append(ingredient)
-        techName = str(message[1])
+        techName = str(messageList[1])
         continuation: int = int(messageList[-2])
         factoryNum: int = int(messageList[-1])
     except ValueError:
@@ -370,9 +370,9 @@ def research(messageList: List[str], qid: str):
                       workUnitsRequired=workUnitsRequired, techPath=techPath, enacted=False)
     plan.add(mysql)
 
-    ans += '编号为%s的合成计划制定成功！按照此计划，%s个工厂将被调用，预计消耗%s单位燃油和%s时间！产物：%s。' % (planID, factoryNum,
-                                                                     fuelRequired, smartInterval(timeRequired),
-                                                                     finalProduct)
+    # ans += '编号为%s的合成计划制定成功！按照此计划，%s个工厂将被调用，预计消耗%s单位燃油和%s时间！产物：%s。' % (planID, factoryNum,
+    #                                                                  fuelRequired, smartInterval(timeRequired),
+    #                                                                  finalProduct)
     return ans
 
 
