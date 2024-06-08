@@ -333,14 +333,16 @@ def research(messageList: List[str], qid: str):
     ans = ''
     techPath = ingredientList
 
+
     if continuation or len(techCards) == 0:
-        workUnitsRequired = 600 + 300*len(ingredientList)
-        timeRequired, fuelRequired = time_fuel_calculator(workUnitsRequired, techEff, 0, factoryNum, 4)
         for ingredient in ingredientList:
             ingredients.setdefault(ingredient, 0)
             ingredients[ingredient] += 1
-            if techCards:
-                techPath = techCards[0] + ingredientList
+        if techCards:
+            techPath = techCards[0] + ingredientList
+        work_modifier = (np.log(np.array(techPath)).average() / 10 + 1)
+        workUnitsRequired = (1200 + 600 * len(ingredientList)) * work_modifier
+        timeRequired, fuelRequired = time_fuel_calculator(workUnitsRequired, techEff, 0, factoryNum, 4)
     else:
         commonSequenceLengths = []
         for i in range(len(techCards)):
@@ -360,7 +362,8 @@ def research(messageList: List[str], qid: str):
         else:
             ans+='您将制定一个全新的科研计划，与您已知的科研路径无重合之处！'
         divergentPath = ingredientList[matchAmount:]
-        workUnitsRequired = 600 + 300 * len(divergentPath)
+        work_modifier = (np.log(np.array(techPath)).average() / 10 + 1)
+        workUnitsRequired = (1200 + 600 * len(divergentPath)) * work_modifier
         timeRequired, fuelRequired = time_fuel_calculator(workUnitsRequired, techEff, 0, factoryNum, 4)
         for ingredient in divergentPath:
             ingredients.setdefault(ingredient, 0)

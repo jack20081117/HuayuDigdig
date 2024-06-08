@@ -73,8 +73,8 @@ def tech_validator(tech_type:str, path:List[int], sid:str):
 
         determinant = round(determinant * 0.5 + path[i] * 0.5)
 
-        prob = max(min(0.4 * np.log(determinant) / np.log(256 * tech_level),
-                       (determinant + 16 * tech_level) / (256 * tech_level)) + modifier, 0)
+        prob = max(min(0.25 * np.log(determinant) / (4+np.log(tech_level)),
+                       (determinant) / (256 * tech_level)) + modifier, 0)
         method_string = '%s+%s' % (method_string, path[i])
         indicator = int(digest(method_string)[-3:], 16)
 
