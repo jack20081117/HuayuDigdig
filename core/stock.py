@@ -198,28 +198,29 @@ def buyStock(messageList: list[str], qid: str):
     stockIdentifier = str(messageList[1])
 
     if len(stockIdentifier) == 3:
-        # 通过股票缩写查找对方
+        # 通过股票缩写查找
         stock: Stock = Stock.find(stockIdentifier, mysql)
         assert stock, "买入失败:不存在代码为%s的股票！" % stockIdentifier
     else:
-        # 通过学号查找
+        # 通过股票名称查找
         assert Stock.findAll(mysql, 'stockName=?', (stockIdentifier,)), "买入失败:不存在代码为%s的股票！" % stockIdentifier
         stock: Stock = Stock.findAll(mysql, 'stockName=?', (stockIdentifier,))[0]
 
     assert stock.secondaryOpen, "买入失败！该股票还未开始二级市场交易阶段！"
-    assert stockNum <= stock.StockNum, '买入失败！您想要买入的股数超过了该股票总股数！'
+    assert stockNum <= stock.stockNum, '买入失败！您想要买入的股数超过了该股票总股数！'
     assert not qid in stock.askers, '您不能在同一期开盘中既买又卖同一只股票！'
     assert 0.75*stock.price < price < 1.25*stock.price, '买入失败！您的报价超出了合理区间，建议重新考虑！'
 
-    acquirer: User = User.find(qid, mysql)
+    bidder: User = User.find(qid, mysql)
     totalPrice = stockNum * price
-    assert acquirer.money >= totalPrice, '买入失败！您的余额不足，买入%s股%s需要至少%.2f元！' % (stockNum, stock.stockName, totalPrice)
+    assert bidder.money >= totalPrice, '买入失败！您的余额不足，买入%s股%s需要至少%.2f元！' % (stockNum, stock.stockName, totalPrice)
 
-    if not qid in stock.bidders :
+    if qid not in stock.bidders:
         stock.bidders.append(qid)
 
-    acquirer.money -= totalPrice
-    acquirer.save(mysql)
+    bidder.money -= totalPrice
+    bidder.save(mysql)
+    stock.save(mysql)
     ans = makeOrder(qid, stock.stockID, 'buy', stockNum, price)
     return ans
 
@@ -240,11 +241,11 @@ def sellStock(messageList: list[str], qid: str):
     stockIdentifier = str(messageList[1])
 
     if len(stockIdentifier) == 3:
-        # 通过股票缩写查找对方
+        # 通过股票缩写查找
         stock: Stock = Stock.find(stockIdentifier, mysql)
         assert stock, "卖出失败:不存在代码为%s的股票！" % stockIdentifier
     else:
-        # 通过学号查找
+        # 通过股票名称查找
         assert Stock.findAll(mysql, 'stockName=?', (stockIdentifier,)), "卖出失败:不存在代码为%s的股票！" % stockIdentifier
         stock: Stock = Stock.findAll(mysql, 'stockName=?', (stockIdentifier,))[0]
 
@@ -253,22 +254,23 @@ def sellStock(messageList: list[str], qid: str):
     assert not qid in stock.bidders, '您不能在同一期开盘中既买又卖同一只股票！'
     assert 0.75 * stock.price < price < 1.25 * stock.price, '卖出失败！您的报价超出了合理区间，建议重新考虑！'
 
-    acquirer: User = User.find(qid, mysql)
-    acquirer.stocks.setdefault(stock.stockID, 0)
-    assert acquirer.stocks[stock.stockID] >= stockNum, '卖出失败！您只有%s股%s！' % (acquirer.stocks[stock.stockID], stock.stockName)
+    asker: User = User.find(qid, mysql)
+    asker.stocks.setdefault(stock.stockID, 0)
+    assert asker.stocks[stock.stockID] >= stockNum, '卖出失败！您只有%s股%s！' % (asker.stocks[stock.stockID], stock.stockName)
 
-    if not qid in stock.askers:
+    if qid not in stock.askers:
         stock.askers.append(qid)
 
-    acquirer.stocks[stock.stockID] -= stockNum
+    asker.stocks[stock.stockID] -= stockNum
+    asker.save(mysql)
+    stock.save(mysql)
     ans = makeOrder(qid, stock.stockID, 'sell', stockNum, price)
-    acquirer.save(mysql)
     return ans
 
 
 def makeOrder(qid: str, stockID: int, direction: str, amount: int, priceLimit: float):
     nowtime = getnowtime()
-    newOrderID: int = max([0] + [order.debtID for order in Order.findAll(mysql)]) + 1
+    newOrderID: int = max([0] + [order.orderID for order in Order.findAll(mysql)]) + 1
     order: Order = Order(
         orderID=newOrderID,
         stockID=stockID,
@@ -282,7 +284,7 @@ def makeOrder(qid: str, stockID: int, direction: str, amount: int, priceLimit: f
     )
     if direction == 'buy':
         order.funds += amount*priceLimit
-    order.save(mysql)
+    order.add(mysql)
 
     ans = "您的申报创建成功！"
     return ans
@@ -342,7 +344,7 @@ def stockMarketOpen():
             groupMessage += '股票%s（代号：%s）本期开放二级市场交易，参考价为%.2f元一股！' % (stock.stockName, stock.stockID, stock.price)
         stock.save(mysql)
     for groupID in groupIDs:
-        send(groupID,groupMessage or "休市结束，股市开始接受申报！")
+        send(groupID,groupMessage or "休市结束，股市开始接受申报！",group=True)
 
 
 def stockMarketClose():

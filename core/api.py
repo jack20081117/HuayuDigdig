@@ -12,6 +12,7 @@ warnings.filterwarnings('ignore')
 app=Flask(__name__)
 
 init()
+stockMarketOpen()
 
 setCrontab(init)
 setCrontab(taxUpdate,hour='23')

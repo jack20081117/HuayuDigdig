@@ -60,7 +60,7 @@ def isPrime(n)->bool:
     return True
 
 
-def tech_validator(tech_type:str, path:List[int], sid:str):
+def tech_validator(tech_type:str, path:list[int], sid:str):
     method_string = tech_type
     determinant = 0
     validated_levels = 0

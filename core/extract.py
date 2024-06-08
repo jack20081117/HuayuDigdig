@@ -15,7 +15,7 @@ def extractMineral(qid,mineralID,mineID):
     abundance:float=mine.abundance #矿井丰度
     user:User=User.find(qid,mysql)
     mineral:dict[int,int]=user.mineral # 用户拥有的矿石
-    extractTech:float=user.extractTech # 开采科技
+    extractTech:float=user.tech['extract'] # 开采科技
 
     assert user.digable,'开采失败:您必须等到下一个整点才能再次开采矿井！'
 

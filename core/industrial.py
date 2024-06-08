@@ -1,10 +1,9 @@
 from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp
 from model import User, Plan
-from typing import List
 from update import updateEfficiency, updatePlan
 from globalConfig import mysql,effisValueDict, fuelFactorDict
 from numpy import log
-
+import numpy as np
 
 def expense_calculator(multiplier:float,duplication:int,primary_scale:int,secondary_scale:int,
                        tech:float,efficiency:float,factoryNum:int,fuel_factor:float,useLogDivisor=True):
@@ -37,7 +36,7 @@ def time_fuel_calculator(workUnitsRequired, efficiency, tech, factoryNum, fuel_f
 
     return round(timeRequired), round(fuelRequired)
 
-def decompose(messageList: List[str], qid: str):
+def decompose(messageList: list[str], qid: str):
     """
     制定分解计划
     :param messageList: 分解 原矿 目标产物 份数 调拨工厂数
@@ -70,7 +69,7 @@ def decompose(messageList: List[str], qid: str):
     minorProduct = min(divide, ingredient // divide)
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(4,duplication,minorProduct,ingredient,user.industrialTech,decomp_eff,factoryNum,4)
+        expense_calculator(4,duplication,minorProduct,ingredient,user.tech['industrial'],decomp_eff,factoryNum,4)
 
     products:dict = {divide:duplication, (ingredient // divide):duplication}#生成产品
 
@@ -89,7 +88,7 @@ def decompose(messageList: List[str], qid: str):
     return ans
 
 
-def synthesize(messageList: List[str], qid: str):
+def synthesize(messageList: list[str], qid: str):
     """
     制定合成计划
     :param messageList: 合成 原料1 原料2 (... 原料n) 份数 调拨工厂数
@@ -128,7 +127,7 @@ def synthesize(messageList: List[str], qid: str):
         ingredients[ingredient] = duplication
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(4,duplication,finalProduct,finalProduct,user.industrialTech,synth_eff,factoryNum,4)
+        expense_calculator(4,duplication,finalProduct,finalProduct,user.tech['industrial'],synth_eff,factoryNum,4)
 
     products:dict = {finalProduct: duplication}#生成产品
 
@@ -147,7 +146,7 @@ def synthesize(messageList: List[str], qid: str):
     return ans
 
 
-def duplicate(messageList: List[str], qid: str):
+def duplicate(messageList: list[str], qid: str):
     """
     制定复制计划
     :param messageList: 复制 原料 份数 调拨工厂数
@@ -175,7 +174,7 @@ def duplicate(messageList: List[str], qid: str):
 
     workUnitsRequired, timeRequired, fuelRequired = \
         expense_calculator(1,duplication,ingredient+64,ingredient+64,
-                           user.industrialTech,duplicate_eff,factoryNum,1,useLogDivisor=False)
+                           user.tech['industrial'],duplicate_eff,factoryNum,1,useLogDivisor=False)
 
     products: dict = {ingredient: duplication * 2}#生成成品
 
@@ -221,7 +220,7 @@ def decorate(messageList: list[str], qid: str):
     starttime = nowtime
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(1,duplication,ingredient+1,ingredient+1,user.industrialTech,decorate_eff,factoryNum,2)
+        expense_calculator(1,duplication,ingredient+1,ingredient+1,user.tech['industrial'],decorate_eff,factoryNum,2)
 
     products: dict = {ingredient + 1: duplication}#生成产品
 
@@ -269,7 +268,7 @@ def refine(messageList: list[str], qid: str):
     starttime = nowtime
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(2,duplication,ingredient,ingredient,user.refineTech,refine_eff,factoryNum,4)
+        expense_calculator(2,duplication,ingredient,ingredient,user.tech['refine'],refine_eff,factoryNum,4)
 
     fuelRequired -= 1 # 消除负收益
 
@@ -292,7 +291,7 @@ def refine(messageList: list[str], qid: str):
 
     return ans
 
-def research(messageList: List[str], qid: str):
+def research(messageList:list[str], qid: str):
     """
     制定科研计划
     :param messageList: 研究 科技名 试剂1 试剂2 (... 试剂n) 是否接续主线(1/+) 调拨工厂数
@@ -307,7 +306,7 @@ def research(messageList: List[str], qid: str):
         for i in range(2, len(messageList) - 2):
             ingredient: int = int(messageList[i])
             ingredientList.append(ingredient)
-        techName = str(message[1])
+        techName = str(messageList[1])
         continuation: int = int(messageList[-2])
         factoryNum: int = int(messageList[-1])
     except ValueError:
@@ -325,7 +324,7 @@ def research(messageList: List[str], qid: str):
     nowtime: int = getnowtime()
     starttime = nowtime
 
-    techNameDict = {'开采': 'extract', '加工': 'process', '炼油': 'refine'}
+    techNameDict = {'开采': 'extract', '加工': 'industrial', '炼油': 'refine'}
     techName = techNameDict[techName]
     techCards = user.techCards[techName]
 
@@ -358,9 +357,9 @@ def research(messageList: List[str], qid: str):
         matchAmount = commonSequenceLengths[bestMatch]
         assert matchAmount < len(ingredientList), '您当前输入的序列是您已知的技术路径的子序列，不必重复研发！'
         if matchAmount > 0:
-            ans+='您当前制定的科研计划与您已知的第%s科研路径在前%s级重合，将自动接续该技术路径进行研究！' % (bestMatch, matchAmount)
+            ans+='您当前制定的科研计划与您已知的第%s科研路径在前%s级重合，将自动接续该技术路径进行研究！\n' % (bestMatch, matchAmount)
         else:
-            ans+='您将制定一个全新的科研计划，与您已知的科研路径无重合之处！'
+            ans+='您将制定一个全新的科研计划，与您已知的科研路径无重合之处！\n'
         divergentPath = ingredientList[matchAmount:]
         work_modifier = (np.log(np.array(techPath)).average() / 10 + 1)
         workUnitsRequired = (1200 + 600 * len(divergentPath)) * work_modifier
@@ -380,13 +379,11 @@ def research(messageList: List[str], qid: str):
                       techPath=techPath, enacted=False)
     plan.add(mysql)
 
+
     ans += '编号为%s的科研计划制定成功！按照此计划，%s个工厂将被调用，预计消耗%s单位燃油和%s时间！' % (planID, factoryNum,
                                                                      fuelRequired, smartInterval(timeRequired),
                                                                      )
     return ans
-
-
-
 
 def enactPlan(messageList: list[str], qid: str):
     """
@@ -445,9 +442,9 @@ def enaction(plan: Plan):
     ingredients: dict = plan.ingredients
 
     if plan.jobtype == 4:  # 特判炼油科技
-        tech = user.refineTech
+        tech = user.tech['refine']
     else:
-        tech = user.industrialTech
+        tech = user.tech['industrial']
 
     timeRequired, fuelRequired = \
     time_fuel_calculator(plan.workUnitsRequired,

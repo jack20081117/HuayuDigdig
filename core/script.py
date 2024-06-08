@@ -78,6 +78,7 @@ registerByDict({
     "市场":mineralMarket,
     "发行":issueStock,
     "认购":acquireStock,
+    "买入":buyStock,
     "股市":stockMarket,
     "支付":pay,
     "放贷":prelendDebt,
