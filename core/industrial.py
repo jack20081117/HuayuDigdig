@@ -1,5 +1,6 @@
 from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp
 from model import User, Plan
+from typing import List
 from update import updateEfficiency, updatePlan
 from globalConfig import mysql,effisValueDict, fuelFactorDict
 from numpy import log
@@ -36,7 +37,7 @@ def time_fuel_calculator(workUnitsRequired, efficiency, tech, factoryNum, fuel_f
 
     return round(timeRequired), round(fuelRequired)
 
-def decompose(messageList: list[str], qid: str):
+def decompose(messageList: List[str], qid: str):
     """
     制定分解计划
     :param messageList: 分解 原矿 目标产物 份数 调拨工厂数
@@ -88,7 +89,7 @@ def decompose(messageList: list[str], qid: str):
     return ans
 
 
-def synthesize(messageList: list[str], qid: str):
+def synthesize(messageList: List[str], qid: str):
     """
     制定合成计划
     :param messageList: 合成 原料1 原料2 (... 原料n) 份数 调拨工厂数
@@ -146,7 +147,7 @@ def synthesize(messageList: list[str], qid: str):
     return ans
 
 
-def duplicate(messageList: list[str], qid: str):
+def duplicate(messageList: List[str], qid: str):
     """
     制定复制计划
     :param messageList: 复制 原料 份数 调拨工厂数
@@ -324,6 +325,8 @@ def research(messageList: List[str], qid: str):
     nowtime: int = getnowtime()
     starttime = nowtime
 
+    techNameDict = {'开采': 'extract', '加工': 'process', '炼油': 'refine'}
+    techName = techNameDict[techName]
     techCards = user.techCards[techName]
 
     ingredients = {}#所需原料
@@ -351,8 +354,11 @@ def research(messageList: List[str], qid: str):
                     break
         bestMatch = np.argmax(np.array(commonSequenceLengths))
         matchAmount = commonSequenceLengths[bestMatch]
-        ans+='您当前制定的科研计划与您已知的第%s科研路径在前%s级重合，将自动接续该技术路径进行研究！' % (bestMatch, matchAmount)
         assert matchAmount < len(ingredientList), '您当前输入的序列是您已知的技术路径的子序列，不必重复研发！'
+        if matchAmount > 0:
+            ans+='您当前制定的科研计划与您已知的第%s科研路径在前%s级重合，将自动接续该技术路径进行研究！' % (bestMatch, matchAmount)
+        else:
+            ans+='您将制定一个全新的科研计划，与您已知的科研路径无重合之处！'
         divergentPath = ingredientList[matchAmount:]
         workUnitsRequired = 600 + 300 * len(divergentPath)
         timeRequired, fuelRequired = time_fuel_calculator(workUnitsRequired, techEff, 0, factoryNum, 4)
@@ -365,14 +371,15 @@ def research(messageList: List[str], qid: str):
     ingredients[0] = fuelRequired
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
-    plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=1, factoryNum=factoryNum,
+    plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=6, factoryNum=factoryNum,
                       ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
-                      workUnitsRequired=workUnitsRequired, techPath=techPath, enacted=False)
+                      workUnitsRequired=workUnitsRequired, techName=techName,
+                      techPath=techPath, enacted=False)
     plan.add(mysql)
 
-    ans += '编号为%s的合成计划制定成功！按照此计划，%s个工厂将被调用，预计消耗%s单位燃油和%s时间！产物：%s。' % (planID, factoryNum,
+    ans += '编号为%s的科研计划制定成功！按照此计划，%s个工厂将被调用，预计消耗%s单位燃油和%s时间！' % (planID, factoryNum,
                                                                      fuelRequired, smartInterval(timeRequired),
-                                                                     finalProduct)
+                                                                     )
     return ans
 
 

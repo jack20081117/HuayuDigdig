@@ -1,7 +1,7 @@
 from tools import send,getnowtime
 from model import User,Mine,Sale,Purchase,Auction,Debt,Plan
 from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate
-from tools import sqrtmoid
+from tools import sqrtmoid, tech_validator
 
 def init():
     """
@@ -249,19 +249,41 @@ def updatePlan(plan:Plan):
         return None
 
     products:dict=plan.products
-    mineral:dict[int,int]=user.mineral
+    mineral:Dict[int,int]=user.mineral
     for mid, mnum in products.items():
         if mid not in mineral:
             mineral[mid] = 0
         mineral[mid] += mnum  # 将矿石增加给生产者
     user.mineral = mineral #更新矿石字典
-    
-    updateEfficiency(user, plan) #效率修正
 
-    user.enactedPlanTypes[plan.jobtype] -= 1 # 取消当前门类的生产状态
-    user.busyFactoryNum -= plan.factoryNum #释放被占用的工厂
+    updateEfficiency(user, plan)  # 效率修正
+    user.enactedPlanTypes[plan.jobtype] -= 1  # 取消当前门类的生产状态
+    user.busyFactoryNum -= plan.factoryNum  # 释放被占用的工厂
+
+    if plan.jobtype == 6:
+        validated_levels = tech_validator(plan.techName, plan.techPath, user.schoolID)
+        if validated_levels == 0:  #第一级就验证失败
+            send(qid, '您的科研计划:%s已经失败！未能提高科研等级' % planID, False)
+        else: #有成功的部分
+            valid_path = plan.techPath[:validated_levels]
+            if not user.techCards[plan.techName]:  #第一次成功科研，对应科技门类还没有techcard记载
+                user.techCards[plan.techName].append(valid_path)
+            elif valid_path in user.techCards[plan.techName]:
+                send(qid, '您的科研计划:%s成功，但是成功的部分技术路径（%s级）已经为您所知，未能提高科研等级' % (planID, validated_levels), False)
+            else:
+                if validated_levels < len(plan.techPath):
+                    send(qid, '您的科研计划:%s部分成功，前%s级技术路径可用！' % (planID, validated_levels), False)
+                elif validated_levels == len(plan.techPath):
+                    send(qid, '您的科研计划:%s完全成功，前%s级技术路径可用！' % (planID, validated_levels), False)
+
+                if validated_levels > len(user.techCards[plan.techName][0]):
+                    user.techCards[plan.techName].insert(0, valid_path)
+                    user.tech[plan.techName] = 0.25*validated_levels
+                else:
+                    user.techCards[plan.techName].append(valid_path)
+    else:
+        send(qid, '您的生产:%s成功完成,矿石已增加到您的账户！' % planID, False)
     
     user.save(mysql)
     plan.remove(mysql)
 
-    send(qid, '您的生产:%s成功完成,矿石已增加到您的账户！' % planID, False)
