@@ -137,24 +137,24 @@ def transferDebt(messageList:list[str],qid:str):
     debt=Debt.find(debtID,mysql)
     assert debt is not None,"转让债权失败:不存在此债券！"
     assert debt.creditor==qid,'转让债权失败:您不是此债券的债权人！'
-    assert debt.endtime > nowtime, '转让失败:此债券已结束还款！'
+    assert debt.endtime > nowtime, '转让债权失败:此债券已结束还款！'
 
     if newCreditorID.startswith("q"):
         # 通过QQ号查找对方
         tqid: str = newCreditorID[1:]
         newCreditor: User = User.find(tqid, mysql)
-        assert newCreditor, "转让失败:QQ号为%s的用户未注册！" % tqid
+        assert newCreditor, "转让债权失败:QQ号为%s的用户未注册！" % tqid
     else:
         tschoolID: str = newCreditorID
         # 通过学号查找
-        assert User.findAll(mysql, 'schoolID=?', (tschoolID,)), "转让失败:学号为%s的用户未注册！" % tschoolID
+        assert User.findAll(mysql, 'schoolID=?', (tschoolID,)), "转让债权失败:学号为%s的用户未注册！" % tschoolID
         newCreditor: User = User.findAll(mysql, 'schoolID=?', (tschoolID,))[0]
 
-    assert newCreditor.qid != debt.debitor, "转让失败：不能转让给债务人！"
+    assert newCreditor.qid != debt.debitor, "转让债权失败:不能转让给债务人！"
 
     debt.creditor = newCreditor.qid
     debt.save(mysql)
-    ans = '编号%s的债券已成功转让给%s，该债券还有%.2f待偿还！' % (debt.debtID, newCreditorID, debt.money)
+    ans = '转让债权成功！编号%s的债券已成功转让给%s，该债券还有%.2f待偿还！' % (debt.debtID, newCreditorID, debt.money)
 
     return ans
 
@@ -172,9 +172,9 @@ def forgiveDebt(messageList:list[str],qid:str):
         return '免除债务失败:您的债券编号不正确！'
 
     debt = Debt.find(debtID, mysql)
-    assert debt is not None,"转让债权失败:不存在此债券！"
-    assert debt.creditor==qid,'转让债权失败:您不是此债券的债权人！'
-    assert debt.endtime > nowtime, '转让失败:此债券已结束还款！'
+    assert debt is not None,"免除债务失败:不存在此债券！"
+    assert debt.creditor==qid,'免除债务失败:您不是此债券的债权人！'
+    assert debt.endtime > nowtime, '免除债务失败:此债券已结束还款！'
 
 
     ans="免除债务成功！债券编号%s已被销毁，债务人%s现在无需偿还剩余的%.2f元！" % (debtID, debt.debitor, debt.money)
