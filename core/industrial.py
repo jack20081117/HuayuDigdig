@@ -1,6 +1,5 @@
 from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp
 from model import User, Plan
-from typing import List
 from update import updateEfficiency, updatePlan
 from globalConfig import mysql,effisValueDict, fuelFactorDict
 from numpy import log
@@ -37,7 +36,7 @@ def time_fuel_calculator(workUnitsRequired, efficiency, tech, factoryNum, fuel_f
 
     return round(timeRequired), round(fuelRequired)
 
-def decompose(messageList: List[str], qid: str):
+def decompose(messageList: list[str], qid: str):
     """
     制定分解计划
     :param messageList: 分解 原矿 目标产物 份数 调拨工厂数
@@ -70,7 +69,7 @@ def decompose(messageList: List[str], qid: str):
     minorProduct = min(divide, ingredient // divide)
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(4,duplication,minorProduct,ingredient,user.industrialTech,decomp_eff,factoryNum,4)
+        expense_calculator(4,duplication,minorProduct,ingredient,user.tech['industrial'],decomp_eff,factoryNum,4)
 
     products:dict = {divide:duplication, (ingredient // divide):duplication}#生成产品
 
@@ -89,7 +88,7 @@ def decompose(messageList: List[str], qid: str):
     return ans
 
 
-def synthesize(messageList: List[str], qid: str):
+def synthesize(messageList: list[str], qid: str):
     """
     制定合成计划
     :param messageList: 合成 原料1 原料2 (... 原料n) 份数 调拨工厂数
@@ -128,7 +127,7 @@ def synthesize(messageList: List[str], qid: str):
         ingredients[ingredient] = duplication
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(4,duplication,finalProduct,finalProduct,user.industrialTech,synth_eff,factoryNum,4)
+        expense_calculator(4,duplication,finalProduct,finalProduct,user.tech['industrial'],synth_eff,factoryNum,4)
 
     products:dict = {finalProduct: duplication}#生成产品
 
@@ -147,7 +146,7 @@ def synthesize(messageList: List[str], qid: str):
     return ans
 
 
-def duplicate(messageList: List[str], qid: str):
+def duplicate(messageList: list[str], qid: str):
     """
     制定复制计划
     :param messageList: 复制 原料 份数 调拨工厂数
@@ -175,7 +174,7 @@ def duplicate(messageList: List[str], qid: str):
 
     workUnitsRequired, timeRequired, fuelRequired = \
         expense_calculator(1,duplication,ingredient+64,ingredient+64,
-                           user.industrialTech,duplicate_eff,factoryNum,1,useLogDivisor=False)
+                           user.tech['industrial'],duplicate_eff,factoryNum,1,useLogDivisor=False)
 
     products: dict = {ingredient: duplication * 2}#生成成品
 
@@ -221,7 +220,7 @@ def decorate(messageList: list[str], qid: str):
     starttime = nowtime
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(1,duplication,ingredient+1,ingredient+1,user.industrialTech,decorate_eff,factoryNum,2)
+        expense_calculator(1,duplication,ingredient+1,ingredient+1,user.tech['industrial'],decorate_eff,factoryNum,2)
 
     products: dict = {ingredient + 1: duplication}#生成产品
 
@@ -269,7 +268,7 @@ def refine(messageList: list[str], qid: str):
     starttime = nowtime
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(2,duplication,ingredient,ingredient,user.refineTech,refine_eff,factoryNum,4)
+        expense_calculator(2,duplication,ingredient,ingredient,user.tech['refine'],refine_eff,factoryNum,4)
 
     fuelRequired -= 1 # 消除负收益
 
@@ -325,7 +324,7 @@ def research(messageList:list[str], qid: str):
     nowtime: int = getnowtime()
     starttime = nowtime
 
-    techNameDict = {'开采': 'extract', '加工': 'process', '炼油': 'refine'}
+    techNameDict = {'开采': 'extract', '加工': 'industrial', '炼油': 'refine'}
     techName = techNameDict[techName]
     techCards = user.techCards[techName]
 
@@ -440,9 +439,9 @@ def enaction(plan: Plan):
     ingredients: dict = plan.ingredients
 
     if plan.jobtype == 4:  # 特判炼油科技
-        tech = user.refineTech
+        tech = user.tech['refine']
     else:
-        tech = user.industrialTech
+        tech = user.tech['industrial']
 
     timeRequired, fuelRequired = \
     time_fuel_calculator(plan.workUnitsRequired,
