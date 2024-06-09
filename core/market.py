@@ -298,7 +298,7 @@ def bidMineral(messageList:list[str],qid:str):
 def mineralMarket(messageList:list[str],qid:str):
     """
     查看市场
-    :param messageList: 市场
+    :param messageList: 矿市
     :param qid:
     :return: 提示信息
     """
