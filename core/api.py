@@ -5,6 +5,7 @@ from taxes import taxUpdate
 from stock import resolveAuction,stockMarketOpen,stockMarketClose
 from tools import setCrontab
 from globalConfig import mysql
+import globalConfig
 import warnings
 import signal
 warnings.filterwarnings('ignore')
@@ -12,7 +13,7 @@ warnings.filterwarnings('ignore')
 app=Flask(__name__)
 
 init()
-stockMarketOpen()
+globalConfig.stockMarketOpenFlag=True
 
 setCrontab(init)
 setCrontab(taxUpdate,hour='23')
@@ -22,7 +23,7 @@ setCrontab(resolveAuction, hour='9,14,19', minute='0', second='0',aggregate=True
 setCrontab(resolveAuction, hour='9,14,19', minute='4-56/4', second='0', aggregate=False)
 setCrontab(resolveAuction, hour='10-12,15-17,20-22', minute='0-56/4', second='0',aggregate=False)
 setCrontab(resolveAuction, hour='13,18,23', minute='0', second='0', aggregate=False,closing=True) # 股市收盘交易
-setCrontab(stockMarketClose, hour='13,18,23', minute='0', second='1')  # 股市收盘后勤
+setCrontab(stockMarketClose, hour='13,18,23', minute='0', second='0')  # 股市收盘后勤
 
 @app.route('/',methods=['POST'])
 def post():

@@ -48,9 +48,9 @@ def getUserInfo(messageList:list[str],qid:str):
     schoolID:str=user.schoolID
     money:int=user.money
     mineral:str=user.mineral
-    industrialTech:float=user.industrialTech
-    extractTech:float=user.extractTech
-    refineTech:float=user.refineTech
+    industrialTech:float=user.tech['industrial']
+    extractTech:float=user.tech['extract']
+    refineTech:float=user.tech['refine']
     digable:bool=user.digable
     mineral:dict[int,int]=user.mineral
     factoryNum:int=user.factoryNum

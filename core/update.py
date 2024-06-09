@@ -222,9 +222,9 @@ def updateEfficiency(user:User,finishedPlan:int or Plan):
         effis.setdefault(i,0.0)
         if finishedPlan and i == finishedPlan.jobtype:
             if i == 4: # 特判炼油科技
-                tech = user.refineTech
+                tech = user.tech['refine']
             else:
-                tech = user.industrialTech
+                tech = user.tech['industrial']
             effis[i] += 4 * finishedPlan.timeRequired * sqrtmoid(tech) * effisDailyDecreaseRate/86400
         elif enactedPlansByType[i] == 0:
             effis[i] -= elapsedTime * effisDailyDecreaseRate/86400

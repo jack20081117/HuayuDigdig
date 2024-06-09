@@ -294,7 +294,7 @@ def refine(messageList: list[str], qid: str):
 def research(messageList:list[str], qid: str):
     """
     制定科研计划
-    :param messageList: 研究 科技名 试剂1 试剂2 (... 试剂n) 是否接续主线(1/+) 调拨工厂数
+    :param messageList: 研究 科技名 试剂1 试剂2 (... 试剂n) 是否接续主线(1/0) 调拨工厂数
     :param qid: 制定者的qq号
     :return: 提示信息
     """
@@ -313,8 +313,9 @@ def research(messageList:list[str], qid: str):
         return '制定科研计划失败:请按照规定格式进行计划！'
 
     techEff = user.effis[6]#用户的科研效率
+    techNameDict = {'开采': 'extract', '加工': 'industrial', '炼油': 'refine'}
 
-    assert techName in ['开采','加工','炼油'], '制定科研计划失败:科技名无效！'
+    assert techName in techNameDict, '制定科研计划失败:科技名无效！'
     assert continuation in [1,0], '制定科研计划失败:接续指令无效！'
     for ingredient in ingredientList:
         assert ingredient > 1, '制定科研计划失败:试剂无效！'
@@ -324,7 +325,6 @@ def research(messageList:list[str], qid: str):
     nowtime: int = getnowtime()
     starttime = nowtime
 
-    techNameDict = {'开采': 'extract', '加工': 'industrial', '炼油': 'refine'}
     techName = techNameDict[techName]
     techCards = user.techCards[techName]
 

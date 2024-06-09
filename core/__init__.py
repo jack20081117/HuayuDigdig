@@ -26,8 +26,8 @@ def create_treasury():
     )  # 注册国库
     user.add(mysql)
 
-if_delete_and_create = input("Do you want to DELETE the database and remake them again? This will DELETE ALL YOUR DATA NOW! (yes/no): ")
-if if_delete_and_create == "yes":
+if_delete_and_create = input("Do you want to DELETE the database and remake them? This will DELETE ALL YOUR DATA NOW! (y/n): ")
+if if_delete_and_create == "y":
     if mysql:
         execute("drop database if exists %s", mysql, (config["db"], ))
     for model in AllModels:
@@ -38,7 +38,7 @@ if if_delete_and_create == "yes":
         _mine=Mine(mineID=i,abundance=0.0)
         _mine.add(mysql)
 
-    print('Initialized Successed.')
+    print('Succesfully initialized.')
 
 else:
-    print("Initialized Failed.")
+    print("Failed to initialize.")
