@@ -1,6 +1,6 @@
 from flask import Flask,request
 from script import handle
-from update import init
+from update import init,updateAbundance
 from taxes import taxUpdate
 from stock import resolveAuction,stockMarketOpen,stockMarketClose
 from tools import setCrontab
@@ -15,9 +15,8 @@ app=Flask(__name__)
 init()
 globalConfig.stockMarketOpenFlag=True
 
-setCrontab(init)
 setCrontab(taxUpdate,hour='23')
-
+setCrontab(updateAbundance,hour='0-23',minute='0,30')
 setCrontab(stockMarketOpen, hour='8,13,18', minute='30') #股市开盘
 setCrontab(resolveAuction, hour='9,14,19', minute='0', second='0',aggregate=True) #集合竞价结算
 setCrontab(resolveAuction, hour='9,14,19', minute='4-56/4', second='0', aggregate=False)

@@ -5,21 +5,6 @@ from tools import sqrtmoid, tech_validator
 
 def init():
     """
-    在矿井刷新时进行初始化
-    """
-    for user in User.findAll(mysql):
-        user.digable=1
-        user.save(mysql)
-    for mine in Mine.findAll(mysql):
-        mine.abundance=0.0
-        mine.save(mysql)
-    for debt in Debt.findAll(mysql):
-        debt.money=round(debt.money*(1+debt.interest))
-        debt.save(mysql)
-    update()
-
-def update():
-    """
     防止由于程序中止而未能成功进行事务更新
     """
     nowtime=getnowtime()
@@ -27,6 +12,12 @@ def update():
     endedPurchases:list[Purchase]=Purchase.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预订
     endedAuctions:list[Auction]=Auction.findAll(mysql,'endtime<?',(nowtime,)) #已经结束的拍卖
     endedDebts:list[Debt]=Debt.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的债券
+
+    for user in User.findAll(mysql):
+        updateDigable(user)
+    for debt in Debt.findAll(mysql):
+        debt.money=round(debt.money*(1+debt.interest))
+        debt.save(mysql)
 
     for sale in endedSales:
         updateSale(sale)
@@ -36,6 +27,19 @@ def update():
         updateAuction(auction)
     for debt in endedDebts:
         updateDebt(debt)
+
+def updateDigable(user:User):
+    user.digable=1
+    user.save(mysql)
+
+def updateAbundance():
+    for mine in Mine.findAll(mysql):
+        if mine.abundance==0.0:
+            continue
+        mine.abundance=round((1.5+mine.abundance)/2,2)
+        if mine.abundance>1:
+            mine.abundance=0.0
+        mine.save(mysql)
 
 def updateSale(sale:Sale):
     """

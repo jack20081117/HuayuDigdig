@@ -1,6 +1,7 @@
 import numpy as np
 
-from tools import sigmoid
+from tools import sqrtmoid,getnowtime,generateTimeStr,setTimeTask
+from update import updateDigable
 from model import User,Mine
 from globalConfig import mysql,vatRate
 
@@ -17,17 +18,19 @@ def extractMineral(qid,mineralID,mineID):
     mineral:dict[int,int]=user.mineral # 用户拥有的矿石
     extractTech:float=user.tech['extract'] # 开采科技
 
-    assert user.digable,'开采失败:您必须等到下一个整点才能再次开采矿井！'
+    assert user.digable,'开采失败:您必须等到%s才能再次开采矿井！'%generateTimeStr(user.forbidtime)
 
     # 决定概率
     if abundance==0.0:#若矿井未被开采过，则首次成功率为100%
         prob=1.0
     else:
-        prob=round(abundance*sigmoid(extractTech),2)
+        prob=round(abundance*sqrtmoid(extractTech),2)
 
     if np.random.random()>prob:#开采失败
         user.digable=0#在下一次刷新前不可开采
+        user.forbidtime=round(getnowtime()+900/sqrtmoid(extractTech))
         user.save(mysql)
+        setTimeTask(updateDigable,user.forbidtime,user)
         ans='开采失败:您的运气不佳，未能开采成功！'
     else:
         mineral.setdefault(mineralID,0)#防止用户不具备此矿石报错

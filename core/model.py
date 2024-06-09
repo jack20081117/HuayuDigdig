@@ -8,11 +8,9 @@ class User(Model):
     schoolID=StringField(columnType='varchar(5)')
     money=FloatField()
     mineral=StringField(columnType='varchar(2000)')
-    #industrialTech=FloatField()
-    #extractTech=FloatField()
-    #refineTech=FloatField()
     tech=StringField(columnType='varchar(200)') #Dict str:float
     digable=BooleanField()
+    forbidtime=IntegerField()
     factoryNum=IntegerField()
     effis=StringField(columnType='varchar(200)')
     mines=StringField(columnType='varchar(200)')
