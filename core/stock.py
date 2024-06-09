@@ -1,4 +1,5 @@
 import numpy as np
+from typing import TypedDict
 
 from tools import drawtable, setTimeTask, getnowtime, send, generateTimeStr
 from model import User, Stock, Order, StockData
@@ -290,15 +291,13 @@ def makeOrder(qid: str, stockID: int, direction: str, amount: int, priceLimit: f
     return ans
 
 
-def Pairing(bid: Order,ask:Order, amount: int, price: float): #配对撮合，更新已成交的股数
+def pairing(bid: Order,ask:Order, amount: int, price: float): #配对撮合，更新已成交的股数
     bid.amount -= amount
     bid.completedAmount += amount
     bid.funds -= amount*price
 
     ask.amount -= amount
     ask.completedAmount += amount
-
-    return None
 
 def resolveOrder(stock:Stock, order: Order, price:float): #成交写入User
     requester:User = User.find(order.requester)
@@ -308,25 +307,25 @@ def resolveOrder(stock:Stock, order: Order, price:float): #成交写入User
         requester.stocks[order.stockID] += order.completedAmount
         stock.shareholders.setdefault(requester.qid, 0)
         stock.shareholders[requester.qid] += order.completedAmount
-        message = "您的股市购入申请%s成功以%.2f一股的价格成交%s股！" %(order.orderID,price,order.completedAmount)
+        message = "您的股市购入申请%s成功以%.2f一股的价格成交%s股！\n" %(order.orderID,price,order.completedAmount)
         if order.amount == 0:
             message += "您的股市购入申请%s已经完全完成！未用的%.2f元资金已经返还到您的账户！" %(order.orderID,order.funds)
             requester.money += order.funds
-            order.delete(mysql)
+            order.remove(mysql)
         else:
             order.save(mysql)
-        send(requester, message)
     else:
         requester.money += order.completedAmount*price
         #shareholders更新具有滞后性，在提出申请时，User里的股数已经扣除（失败返还），但是在卖出成功之前，Stock中的字典不会改变
         stock.shareholders[requester.qid] -= order.completedAmount
-        message = "您的股市卖出申请%s成功以%.2f一股的价格成交%s股！" % (order.orderID, price, order.completedAmount)
+        message = "您的股市卖出申请%s成功以%.2f一股的价格成交%s股！\n" % (order.orderID, price, order.completedAmount)
         if order.amount == 0:
             message += "您的股市卖出申请%s已经完全完成！" % order.orderID
-            order.delete(mysql)
+            order.remove(mysql)
         else:
             order.save(mysql)
-        send(requester, message)
+
+    send(order.requester, message)
     requester.save(mysql)
 
     return stock # 为了避免瞬时频繁更新stock，它将被传递直到Brokerage完成
@@ -348,7 +347,11 @@ def stockMarketOpen():
 
 
 def stockMarketClose():
-    globalConfig.stockMarketOpenFlag = False
+    """
+    关闭股市
+    :return:
+    """
+    globalConfig.stockMarketOpenFlag = False#股市休市
     for stock in Stock.findAll(mysql):
         stockID = stock.stockID
         stock.askers = []  #清空买卖记录
@@ -365,8 +368,7 @@ def stockMarketClose():
             requester.stocks[order.stockID] += order.amount
             send(qid, "您编号为%s的卖出申报有%s股未能成交，已经退还给您。" % (order.orderID, order.amount))
         requester.save(mysql)
-        order.delete(mysql)
-    return None
+        order.remove(mysql)
 
 
 def resolveAuction(aggregate=True, closing=False):
@@ -393,9 +395,9 @@ def resolveAuction(aggregate=True, closing=False):
             dataEntry.save(mysql)
             continue
         if aggregate:
-            stock = brokerage(stockID, orders, stock.price, stock.price,aggregate)
+            stock = brokerage(stockID, orders, stock.price, stock.price, aggregate)
         else:
-            stock = brokerage(stockID, orders, stock.price, stock.openingPrice,aggregate)
+            stock = brokerage(stockID, orders, stock.price, stock.openingPrice, aggregate)
 
         dataEntry.prices[stock.stockID] = stock.price
         dataEntry.volumes[stock.stockID] = stock.volume
@@ -404,29 +406,53 @@ def resolveAuction(aggregate=True, closing=False):
 
     return None
 
-
+class Aligned(TypedDict):
+    buy:list[list[Order]]
+    sell:list[list[Order]]
+    price:list[float]
+    cumulativeBids:list[int]
+    cumulativeAsks:list[int]
+    exchanged:list
+    tiebreaker:list
 
 def exchangeStock(orders: list[Order], currentPrice:float, openingPrice:float, threshold=0.1, threshold2=0.2):
-    orders.sort(key=lambda order: order.price, reverse=True)
-    aligned: dict[str, int or float or list[Order]] = {'buy': [], 'sell': [], 'price': [], 'cumulativeBids': [],
-               'cumulativeAsks': [], 'exchanged': [], 'tiebreaker': []}
-    lastTier = 0
-    tierNum = 0
+    """
+
+    :param orders:
+    :param currentPrice:当前股价
+    :param openingPrice:开盘价
+    :param threshold:
+    :param threshold2:
+    :return:
+    """
+
+    orders.sort(key=lambda order: order.price, reverse=True)#对所有申报按价格从高到低排序
+    aligned: Aligned = {
+        'buy': [],
+        'sell': [],
+        'price': [],
+        'cumulativeBids': [],
+        'cumulativeAsks': [],
+        'exchanged': [],
+        'tiebreaker': []
+    }
+    lastTier = 0#存储最后一次更新的报价
+    tierNum = 0#报价的种数
     for order in orders:
         adjustedPrice = order.price
-        if order.price > currentPrice * (1 + threshold) or order.price > openingPrice * (1 + threshold2) \
-                and order.buy:
+        #涨跌幅限制
+        if (order.price > currentPrice * (1 + threshold) or order.price > openingPrice * (1 + threshold2)) and order.buy:#买入股票且给出的最高价过高
             adjustedPrice = min(currentPrice * (1 + threshold), openingPrice * (1 + threshold2))
-        if order.price < currentPrice * (1 - threshold) or order.price < openingPrice * (1 - threshold2) \
-                and not order.buy:
-            adjustedPrice = max(currentPrice* (1 - threshold), openingPrice * (1 - threshold2))  #涨跌幅限制
+        if (order.price < currentPrice * (1 - threshold) or order.price < openingPrice * (1 - threshold2)) and not order.buy:#抛出股票且给出的最低价过低
+            adjustedPrice = max(currentPrice* (1 - threshold), openingPrice * (1 - threshold2))
+
         if adjustedPrice != lastTier:
-            aligned['buy'][-1].sort(key=lambda order: order.orderID)
-            aligned['sell'][-1].sort(key=lambda order: order.orderID)
+            aligned['buy'][-1].sort(key=lambda order: order.orderID)#对当前的买入股票申报进行排序
+            aligned['sell'][-1].sort(key=lambda order: order.orderID)#对当前的抛出股票申报进行排序
 
             aligned['price'].append(adjustedPrice)
-            lastTier = adjustedPrice
-            tierNum += 1
+            lastTier = adjustedPrice#更新报价
+            tierNum += 1#增加报价种数
 
             aligned['buy'].append([])
             aligned['sell'].append([])
@@ -437,22 +463,22 @@ def exchangeStock(orders: list[Order], currentPrice:float, openingPrice:float, t
         else:
             aligned['sell'][-1].append(order)
 
-    aligned['cumulativeBids'] = [0 for _ in range(tierNum)]
-    aligned['cumulativeAsks'] = [0 for _ in range(tierNum)]
-    aligned['tiebreaker'] = [0 for _ in range(tierNum)]
+    aligned['cumulativeBids'] = [0 for _ in range(tierNum)]#每一成交价上的累积需求
+    aligned['cumulativeAsks'] = [0 for _ in range(tierNum)]#每一成交价上的累积供给
+    aligned['tiebreaker'] = [0 for _ in range(tierNum)]#tiebreaker的最小项代表成交价所在项
 
     # print(aligned)
     # 计算每一成交价上的累积需求和累积供给
-    for i in range(tierNum):
+    for i in range(tierNum):#tierNum从小到大，price从高到低
         for order in aligned['buy'][i]:
-            aligned['cumulativeBids'][i] += order.amount
-        aligned['cumulativeBids'][i] += aligned['cumulativeBids'][i - 1]
+            aligned['cumulativeBids'][i] += order.amount#当前成交价上的需求
+        aligned['cumulativeBids'][i] += aligned['cumulativeBids'][i - 1]#出价比成交价更高的买者也可以买入
         for order in aligned['sell'][-i - 1]:
-            aligned['cumulativeAsks'][-i - 1] += order.amount
-        aligned['cumulativeAsks'][-i - 1] += aligned['cumulativeAsks'][-i]
+            aligned['cumulativeAsks'][-i - 1] += order.amount#当前成交价上的供给
+        aligned['cumulativeAsks'][-i - 1] += aligned['cumulativeAsks'][-i]#出价比成交价更低的抛者也可以抛出
 
     # 计算在每一成交价上能实现的成交量
-    maxExchanged = 0
+    maxExchanged = 0#所有成交价上的最大成交量
     for i in range(tierNum):
         # print(aligned['cumulativeBids'][i], aligned['price'][i], aligned['cumulativeAsks'][i], '\n')
         exchanged = min(aligned['cumulativeBids'][i], aligned['cumulativeAsks'][i])
@@ -462,6 +488,14 @@ def exchangeStock(orders: list[Order], currentPrice:float, openingPrice:float, t
     return aligned, tierNum, maxExchanged
 
 def brokerage(stockID:int, orders:list, currentPrice:float, openingPrice:float,aggregate:bool):
+    """
+    :param stockID:
+    :param orders:
+    :param currentPrice: 当前股价
+    :param openingPrice: 开盘价
+    :param aggregate: 是否采用集合竞价
+    :return:
+    """
 
     aligned, tierNum, maxExchanged = exchangeStock(orders, currentPrice, openingPrice)
 
@@ -473,26 +507,25 @@ def brokerage(stockID:int, orders:list, currentPrice:float, openingPrice:float,a
     # 连续竞价中，以具有较新申报的成交价为成交价。
     if aggregate:
         for i in range(tierNum):
-            if aligned['exchanged'][i] == maxExchanged:
-                aligned['tiebreaker'][i] = -1/(1+abs(currentPrice-aligned['price'][i]))
-        dealPrice = aligned['price'][np.argmin(np.array(aligned['tiebreaker']))]
+            if aligned['exchanged'][i] == maxExchanged:#该成交价可实现最大成交量
+                aligned['tiebreaker'][i] = -1/(1+abs(currentPrice-aligned['price'][i]))#价格越接近上一期收盘价，tiebreaker越小
     else:
         for i in range(tierNum):
-            if aligned['exchanged'][i] == maxExchanged:
-                if len(aligned['buy'][i]) == 0:
+            if aligned['exchanged'][i] == maxExchanged:#该成交价可实现最大成交量
+                if not aligned['buy'][i]:
                     youngestStamp = aligned['sell'][i][-1].timestamp
-                elif len(aligned['sell'][i]) == 0:
+                elif not aligned['sell'][i]:
                     youngestStamp = aligned['buy'][i][-1].timestamp
                 else:
                     youngestStamp = max(aligned['buy'][i][-1].timestamp, aligned['sell'][i][-1].timestamp)
                 aligned['tiebreaker'][i] = youngestStamp
 
-        dealPrice:float = aligned['price'][np.argmax(np.array(aligned['tiebreaker']))]
+    dealPrice:float = aligned['price'][np.argmax(np.array(aligned['tiebreaker']))]#最终成交价
 
     # print(aligned['exchanged'], np.argmin(np.array(aligned['tiebreaker'])), dealPrice)
 
-    completedBids = []
-    completedAsks = []
+    completedBids:list[Order] = []#所有能够成交的买入申报
+    completedAsks:list[Order] = []#所有能够成交的抛出申报
     for i in range(tierNum):
         if aligned['price'][i] >= dealPrice:
             completedBids += aligned['buy'][i]
@@ -501,20 +534,20 @@ def brokerage(stockID:int, orders:list, currentPrice:float, openingPrice:float,a
 
     # 成交规则：高于成交价的买入全部成交，低于成交价的卖出全部成交，等于成交价的申报中，至少一侧全部成交。
     stock:Stock = Stock.find(stockID,mysql)
-    totalDoneAmount:int = 0
-    while len(completedBids) != 0 and len(completedAsks) != 0:
-        doneAmount = min(completedBids[0].amount, completedAsks[0].amount)
-        totalDoneAmount += doneAmount
+    totalDoneAmount:int = 0#总成交量
+    while completedBids and completedAsks:
+        doneAmount = min(completedBids[0].amount, completedAsks[0].amount)#目前的最高价买入申报与目前的最低价卖出申报所能达到的最大成交量
+        totalDoneAmount += doneAmount#更新总成交量
         #print(completedBids[0], completedAsks[0], doneAmount)
 
-        Pairing(completedBids[0],completedAsks[0],doneAmount,dealPrice)
+        pairing(completedBids[0],completedAsks[0],doneAmount,dealPrice)
 
-        if completedBids[0].amount == 0:
+        if completedBids[0].amount == 0:#该买入申报已全部成交
             stock = resolveOrder(stock,completedBids[0], dealPrice)
-            completedBids = completedBids[1:]
-        if completedAsks[0].amount == 0:
+            completedBids.pop(0)#清空该项
+        if completedAsks[0].amount == 0:#该抛出申报已全部成交
             stock = resolveOrder(stock,completedAsks[0], dealPrice)
-            completedAsks = completedAsks[1:]
+            completedAsks.pop(0)#清空该项
 
     if completedAsks:
         for remaining in completedAsks:
@@ -523,9 +556,9 @@ def brokerage(stockID:int, orders:list, currentPrice:float, openingPrice:float,a
         for remaining in completedBids:
             stock = resolveOrder(stock,remaining,dealPrice)
 
-    stock.price = dealPrice
+    stock.price = dealPrice#更新股价为成交价
     stock.volume = totalDoneAmount
-    if aggregate:
+    if aggregate:#若为集合竞价，下一次开盘价为前一次成交价
         stock.openingPrice = stock.price
 
     # print(totalDoneAmount)
