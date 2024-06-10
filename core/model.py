@@ -158,4 +158,4 @@ class Debt(Model):
     endtime=IntegerField()
     interest=FloatField()
 
-AllModels:list[Model]=[User,Mine,Sale,Purchase,Auction,Stock,Debt,Order,Plan,StockData]
+AllModels:list[Model]=[User,Mine,Sale,Purchase,Auction,Stock,Debt,Order,Plan,StockData,Misc]
