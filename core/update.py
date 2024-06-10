@@ -250,7 +250,7 @@ def updatePlan(plan:Plan):
         return None
 
     products:dict=plan.products
-    mineral:Dict[int,int]=user.mineral
+    mineral:dict[int,int]=user.mineral
     for mineralID, mineralNum in products.items():
         mineral.setdefault(mineralID,0)
         mineral[mineralID] += mineralNum  # 将矿石增加给生产者
@@ -260,8 +260,9 @@ def updatePlan(plan:Plan):
     user.enactedPlanTypes[plan.jobtype] -= 1  # 取消当前门类的生产状态
     user.busyFactoryNum -= plan.factoryNum  # 释放被占用的工厂
 
+    ans = ''
     if plan.jobtype == 5:
-        send(qid, '您的工厂建设计划%s已完成！您的工厂数量已增加1' % planID, False)
+        ans = '您的工厂建设计划%s已完成！您的工厂数量已增加1'
         user.misc[1] -= 1
         if user.misc[1] == 0:
             user.misc.pop(1)
@@ -270,18 +271,18 @@ def updatePlan(plan:Plan):
     if plan.jobtype == 6:
         validated_levels = tech_validator(plan.techName, plan.techPath, user.schoolID)
         if validated_levels == 0:  #第一级就验证失败
-            send(qid, '您的科研计划:%s已经失败！未能提高科研等级' % planID, False)
+            ans='您的科研计划:%s已经失败！未能提高科研等级' % planID
         else: #有成功的部分
             valid_path = plan.techPath[:validated_levels]
             if not user.techCards[plan.techName]:  #第一次成功科研，对应科技门类还没有techcard记载
                 user.techCards[plan.techName].append(valid_path)
             elif valid_path in user.techCards[plan.techName]:
-                send(qid, '您的科研计划:%s成功，但是成功的部分技术路径（%s级）已经为您所知，未能提高科研等级' % (planID, validated_levels), False)
+                ans='您的科研计划:%s成功，但是成功的部分技术路径（%s级）已经为您所知，未能提高科研等级！' % (planID, validated_levels)
             else:
                 if validated_levels < len(plan.techPath):
-                    send(qid, '您的科研计划:%s部分成功，前%s级技术路径可用！' % (planID, validated_levels), False)
+                    ans='您的科研计划:%s部分成功，前%s级技术路径可用！' % (planID, validated_levels)
                 elif validated_levels == len(plan.techPath):
-                    send(qid, '您的科研计划:%s完全成功，前%s级技术路径可用！' % (planID, validated_levels), False)
+                    ans='您的科研计划:%s完全成功，前%s级技术路径可用！' % (planID, validated_levels)
 
                 if validated_levels > len(user.techCards[plan.techName][0]):
                     user.techCards[plan.techName].insert(0, valid_path)
@@ -289,7 +290,9 @@ def updatePlan(plan:Plan):
                 else:
                     user.techCards[plan.techName].append(valid_path)
     else:
-        send(qid, '您的生产:%s成功完成,矿石已增加到您的账户！' % planID, False)
+        ans='您的生产:%s成功完成,矿石已增加到您的账户！' % planID
+
+    send(qid, ans, False)
     
     user.save(mysql)
     plan.remove(mysql)

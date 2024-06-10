@@ -4,6 +4,9 @@ from globalConfig import config,mysql
 from tools import setCrontab,getnowtime,mineExpectation
 
 def createTreasury():
+    """
+    注册国库
+    """
     user = User(
         qid='treasury',
         schoolID='gov01',
@@ -23,10 +26,13 @@ def createTreasury():
         inputTax=0.0,  # 进项税额（抵扣）
         outputTax=0.0,  # 销项税额
         paidTaxes=True
-    )  # 注册国库
+    )
     user.add(mysql)
 
 def createInitialMines():
+    """
+    注册公共矿井
+    """
     Mine(
         mineID=1,
         abundance=0.0,
@@ -97,7 +103,7 @@ if if_delete_and_create == "y":
     createInitialMines()
     createSystemMisc()
 
-    print('Succesfully initialized.')
+    print('Successfully initialized.')
 
 else:
     print("Failed to initialize.")
