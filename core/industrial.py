@@ -1,7 +1,7 @@
 from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp
 from model import User, Plan
 from update import updateEfficiency, updatePlan
-from globalConfig import mysql,effisValueDict, fuelFactorDict
+from globalConfig import mysql,effisValueDict, fuelFactorDict, permitBase, permitGradient
 from numpy import log
 import numpy as np
 
@@ -270,13 +270,19 @@ def refine(messageList: list[str], qid: str):
         expenseCalculator(2,duplication,ingredient,ingredient,user.tech['refine'],refine_eff,factoryNum,fuelFactorDict[4])
 
     fuelRequired -= 1 # 消除负收益是否采用对数平均
+    products: dict = {0: duplication * ingredient}
+    ingredients: dict = {0: fuelRequired, ingredient: duplication}
 
-    if ingredient > 64:
-        products: dict = {0: duplication * ingredient}
-        ingredients: dict = {0: fuelRequired, ingredient: duplication}
-    else:#对较小的质数，可以使用炼化出的燃油重炼化，防止炼化燃油无法进行
-        products: dict = {0: duplication * (ingredient - fuelRequired)}
-        ingredients: dict = {0: 0, ingredient: duplication}
+    ans = ''
+    if ingredient <= 128:
+        ans+= '由于您的矿石较小，您不必预先准备燃油来执行该计划！\n'
+
+    #if ingredient > 64:
+    #    products: dict = {0: duplication * ingredient}
+    #    ingredients: dict = {0: fuelRequired, ingredient: duplication}
+    #else:#对较小的质数，可以使用炼化出的燃油重炼化，防止炼化燃油无法进行
+    #    products: dict = {0: duplication * (ingredient - fuelRequired)}
+    #    ingredients: dict = {0: 0, ingredient: duplication}
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=4, factoryNum=factoryNum,
@@ -284,11 +290,51 @@ def refine(messageList: list[str], qid: str):
                       workUnitsRequired=workUnitsRequired, enacted=False)
     plan.add(mysql)
 
-    ans = '编号为%s的炼化计划制定成功！按照此计划，%s个工厂将被调用，预估消耗%s单位燃油和%s时间！' % (planID, factoryNum,
+    ans += '编号为%s的炼化计划制定成功！按照此计划，%s个工厂将被调用，预估消耗%s单位燃油和%s时间！' % (planID, factoryNum,
                                                                fuelRequired, smartInterval(timeRequired),
                                                                )
 
     return ans
+
+# def build(messageList: list[str], qid: str):
+#     """
+#     制定工厂建造计划
+#     :param messageList: 建造工厂 建材 调拨工厂数
+#     :param qid: 制定者的qq号
+#     :return: 提示信息
+#     """
+#
+#     assert len(messageList) == 3, '制定建造计划失败:请按照规定格式进行计划！'
+#     user: User = User.find(qid, mysql)
+#     try:
+#         material:int = int(messageList[1])
+#         factoryNum: int = int(messageList[-1])
+#     except ValueError:
+#         return '制定建造计划失败:请按照规定格式进行计划！'
+#
+#     assert factoryNum >= 1, '制定建造计划失败:工厂数无效！'
+#     assert factoryNum <= user.factoryNum, '制定建造计划失败:您没有足够工厂！'
+#     assert material in [2,4,6,8,10,12], '制定建造计划失败：您无法使用这种建材！'
+#
+#     buildeff = user.effis[5]
+#
+#     materialDict = {2:20, 4:10, 6:8, 8:7, 10:6, 12:6}
+#     workUnitsRequired = 50000
+#     timeRequired, fuelRequired = timeFuelCalculator(50000,buildeff,0,factoryNum,1)
+#     ingredients = {0:fuelRequired, material:materialDict[material]}
+#
+#     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
+#     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=5, factoryNum=factoryNum,
+#                       ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
+#                       workUnitsRequired=workUnitsRequired, enacted=False)
+#     plan.add(mysql)
+#
+#     ans = '编号为%s的建造计划制定成功！按照此计划，%s个工厂将被调用，预估消耗%s单位燃油和%s时间！' % (planID, factoryNum,
+#                                                                fuelRequired, smartInterval(timeRequired),
+#                                                                )
+#
+#     return ans
+
 
 def research(messageList:list[str], qid: str):
     """
@@ -384,6 +430,7 @@ def research(messageList:list[str], qid: str):
                                                                      )
     return ans
 
+
 def enactPlan(messageList: list[str], qid: str):
     """
     激活计划，开始执行生产
@@ -432,7 +479,7 @@ def enaction(plan: Plan):
     updateEfficiency(user, 0)
 
     mineral: dict = user.mineral
-
+    products: dict = plan.products
     ingredients: dict = plan.ingredients
 
     if plan.jobtype == 4:  # 特判炼油科技
@@ -451,6 +498,11 @@ def enaction(plan: Plan):
 
     if fuelRequired>64:
         ingredients[0] = fuelRequired
+    if plan.jobtype == 4:
+        if products[0] < 128:
+            used_oil = ingredients[0] - 1
+            ingredients[0] = 0
+            products[0] -= used_oil
 
     success: bool = True
     ans = ""

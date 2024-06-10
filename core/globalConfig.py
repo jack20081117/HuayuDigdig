@@ -19,6 +19,8 @@ botID:str=config['bot_id']
 mysql:bool=(env=='prod')
 effisItemCount:int=config["effis_item_count"]
 effisDailyDecreaseRate:float=config["effis_daily_decrease_rate"]
+permitBase:float=config["permit_cost"]
+permitGradient:float=config["permit_gradient"]
 
 stockMarketOpenFlag = False
 
