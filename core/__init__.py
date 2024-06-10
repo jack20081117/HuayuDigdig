@@ -20,6 +20,7 @@ def createTreasury():
         effis={},
         mines=[],
         stocks=[],
+        misc={},
         enactedPlanTypes={},
         busyFactoryNum=0,
         lastEffisUpdateTime=getnowtime(),
@@ -41,6 +42,7 @@ def createInitialMines():
         logUniform=False,
         expectation = mineExpectation(2,30000),
         private=False,
+        open=True,
         owner='treasury',
         entranceFee=0.0,
     ).add(mysql)
@@ -52,6 +54,7 @@ def createInitialMines():
         logUniform=True,
         expectation=mineExpectation(2, 30000, logUniform=True),
         private=False,
+        open=True,
         owner='treasury',
         entranceFee=0.0,
     ).add(mysql)
@@ -63,6 +66,7 @@ def createInitialMines():
         logUniform=False,
         expectation=mineExpectation(2, 999),
         private=False,
+        open=True,
         owner='treasury',
         entranceFee=0.0,
     ).add(mysql)
@@ -74,6 +78,7 @@ def createInitialMines():
         logUniform=True,
         expectation=mineExpectation(2, 999,logUniform=True),
         private=False,
+        open=True,
         owner='treasury',
         entranceFee=0.0,
     ).add(mysql)
@@ -89,7 +94,7 @@ def createSystemMisc():
     Misc(
         miscID=2,
         name='Factory Building Permit Under Use',
-        description='Entitles the owner to build a new facility.'
+        description='Entitles the owner to build a new facility. Is already attributed.'
     ).add(mysql)
 
 if_delete_and_create = input("Do you want to DELETE the database and remake them? This will DELETE ALL YOUR DATA NOW! (y/n): ")

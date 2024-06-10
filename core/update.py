@@ -267,8 +267,7 @@ def updatePlan(plan:Plan):
         if user.misc[1] == 0:
             user.misc.pop(1)
         user.factoryNum += 1
-
-    if plan.jobtype == 6:
+    elif plan.jobtype == 6:
         validated_levels = tech_validator(plan.techName, plan.techPath, user.schoolID)
         if validated_levels == 0:  #第一级就验证失败
             ans='您的科研计划:%s已经失败！未能提高科研等级' % planID
@@ -289,6 +288,47 @@ def updatePlan(plan:Plan):
                     user.tech[plan.techName] = 0.25*validated_levels
                 else:
                     user.techCards[plan.techName].append(valid_path)
+    elif plan.jobtype == 7:
+        scale = ((plan.workUnitsRequired - 10000)/300)**2
+        indicator = np.random.random()
+        if indicator > user.tech['extract']:
+            ans='您的勘探:%s失败！' % planID
+        elif indicator < user.tech['extract']*0.75: # 对数型矿井
+            upper = mineralSample(int(0.9*scale),int(1.25*scale),logUniform=False)
+            lower = mineralSample(2,int(0.5*upper),logUniform=True)
+            mineID: int = max([0] + [mine.mineID for mine in Mine.findAll(mysql)]) + 1
+            Mine(
+                mineID=mineID,
+                abundance=0.0,
+                lower=lower,
+                upper=upper,
+                logUniform=True,
+                expectation=mineExpectation(lower, upper, logUniform=True),
+                private=True,
+                open=False,
+                owner=user.qid,
+                entranceFee=0.0,
+            ).add(mysql)
+            user.mines.append(mineID)
+            ans = '您的勘探:%s成功！矿井%s号已建立，为对数均匀分布类型，最小值%s，最大值%s。' % planID, mineID, lower, upper
+        else:
+            upper = mineralSample(int(0.75*scale),int(1.1*scale),logUniform=False)
+            lower = mineralSample(2, int(0.5 * upper), logUniform=True)
+            mineID: int = max([0] + [mine.mineID for mine in Mine.findAll(mysql)]) + 1
+            Mine(
+                mineID=mineID,
+                abundance=0.0,
+                lower=lower,
+                upper=upper,
+                logUniform=False,
+                expectation=mineExpectation(lower, upper, logUniform=False),
+                private=True,
+                open=False,
+                owner=user.qid,
+                entranceFee=0.0,
+            ).add(mysql)
+            user.mines.append(mineID)
+            ans = '您的勘探:%s成功！矿井%s号已建立，为均匀分布类型，最小值%s，最大值%s。' % planID, mineID, lower, upper
     else:
         ans='您的生产:%s成功完成,矿石已增加到您的账户！' % planID
 

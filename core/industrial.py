@@ -291,49 +291,47 @@ def refine(messageList: list[str], qid: str):
     plan.add(mysql)
 
     ans += '编号为%s的炼化计划制定成功！按照此计划，%s个工厂将被调用，预估消耗%s单位燃油和%s时间！' % (planID, factoryNum,
-                                                               fuelRequired, smartInterval(timeRequired),
-                                                               )
-
+                                                               fuelRequired, smartInterval(timeRequired))
     return ans
 
-# def build(messageList: list[str], qid: str):
-#     """
-#     制定工厂建造计划
-#     :param messageList: 建造工厂 建材 调拨工厂数
-#     :param qid: 制定者的qq号
-#     :return: 提示信息
-#     """
-#
-#     assert len(messageList) == 3, '制定建造计划失败:请按照规定格式进行计划！'
-#     user: User = User.find(qid, mysql)
-#     try:
-#         material:int = int(messageList[1])
-#         factoryNum: int = int(messageList[-1])
-#     except ValueError:
-#         return '制定建造计划失败:请按照规定格式进行计划！'
-#
-#     assert factoryNum >= 1, '制定建造计划失败:工厂数无效！'
-#     assert factoryNum <= user.factoryNum, '制定建造计划失败:您没有足够工厂！'
-#     assert material in [2,4,6,8,10,12], '制定建造计划失败：您无法使用这种建材！'
-#
-#     buildeff = user.effis[5]
-#
-#     materialDict = {2:20, 4:10, 6:8, 8:7, 10:6, 12:6}
-#     workUnitsRequired = 50000
-#     timeRequired, fuelRequired = timeFuelCalculator(50000,buildeff,0,factoryNum,1)
-#     ingredients = {0:fuelRequired, material:materialDict[material]}
-#
-#     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
-#     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=5, factoryNum=factoryNum,
-#                       ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
-#                       workUnitsRequired=workUnitsRequired, enacted=False)
-#     plan.add(mysql)
-#
-#     ans = '编号为%s的建造计划制定成功！按照此计划，%s个工厂将被调用，预估消耗%s单位燃油和%s时间！' % (planID, factoryNum,
-#                                                                fuelRequired, smartInterval(timeRequired),
-#                                                                )
-#
-#     return ans
+def build(messageList: list[str], qid: str):
+     """
+     制定工厂建造计划
+     :param messageList: 建造工厂 建材 调拨工厂数
+     :param qid: 制定者的qq号
+     :return: 提示信息
+     """
+
+     assert len(messageList) == 3, '制定建造计划失败:请按照规定格式进行计划！'
+     user: User = User.find(qid, mysql)
+     try:
+         material:int = int(messageList[1])
+         factoryNum: int = int(messageList[-1])
+     except ValueError:
+         return '制定建造计划失败:请按照规定格式进行计划！'
+
+     assert factoryNum >= 1, '制定建造计划失败:工厂数无效！'
+     assert factoryNum <= user.factoryNum, '制定建造计划失败:您没有足够工厂！'
+     assert material in [2,4,6,8,10,12], '制定建造计划失败：您无法使用这种建材！'
+
+     buildeff = user.effis[5]
+
+     materialDict = {2:20, 4:10, 6:8, 8:7, 10:6, 12:6}
+     workUnitsRequired = 50000
+     timeRequired, fuelRequired = timeFuelCalculator(50000,buildeff,0,factoryNum,2)
+     ingredients = {0:fuelRequired, material:materialDict[material]}
+
+     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
+     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=5, factoryNum=factoryNum,
+                       ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
+                       workUnitsRequired=workUnitsRequired, enacted=False)
+     plan.add(mysql)
+
+     ans = '编号为%s的建造计划制定成功！按照此计划，%s个工厂将被调用，预估消耗%s单位燃油和%s时间！' % (planID, factoryNum,
+                                                                fuelRequired, smartInterval(timeRequired),
+                                                                )
+
+     return ans
 
 
 def research(messageList:list[str], qid: str):
@@ -430,6 +428,41 @@ def research(messageList:list[str], qid: str):
                                                                      )
     return ans
 
+def discover(messageList: list[str], qid: str):
+    """
+    制定勘探计划
+    :param messageList: 勘探 预期规模 调拨工厂数
+    :param qid: 制定者的qq号
+    :return: 提示信息
+    """
+    assert len(messageList) == 3, '制定勘探计划失败:请按照规定格式进行计划！'
+    user: User = User.find(qid, mysql)
+    try:
+        scale: int = int(messageList[1])
+        factoryNum: int = int(messageList[-1])
+    except ValueError:
+        return '制定勘探计划失败:请按照规定格式进行计划！'
+    assert factoryNum >= 1, '制定勘探计划失败:工厂数无效！'
+    assert factoryNum <= user.factoryNum, '制定勘探计划失败:您没有足够工厂！'
+    assert 100<scale<100000, "制定勘探计划失败：预期规模太大或者太小！"
+
+    discoveff = user.effis[7]
+
+    workUnitsRequired = 10000 + np.sqrt(scale)*300
+    timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, discoveff, 0, factoryNum, 4)
+    ingredients = {0: fuelRequired}
+
+    planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
+    plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=7, factoryNum=factoryNum,
+                      ingredients=ingredients, products={}, timeEnacted=starttime, timeRequired=timeRequired,
+                      workUnitsRequired=workUnitsRequired, enacted=False)
+    plan.add(mysql)
+
+    ans = '编号为%s的勘探计划制定成功！按照此计划，%s个工厂将被调用，预估消耗%s单位燃油和%s时间！' % (planID, factoryNum,
+                                                               fuelRequired, smartInterval(timeRequired),
+                                                               )
+
+    return ans
 
 def enactPlan(messageList: list[str], qid: str):
     """

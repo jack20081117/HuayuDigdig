@@ -19,6 +19,13 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
 
     assert user.digable,'开采失败:您必须等到%s才能再次开采矿井！'%generateTimeStr(user.forbidtime)
 
+    if mine.private and qid != mine.owner:
+        owner = User.find(mine.owner, mysql)
+        assert mine.fee <= user.money, '开采失败！您没有足够的钱支付该私有矿井的%s元入场费。' % mine.fee
+        user.money -= mine.fee
+        owner.money += mine.fee
+        owner.save(mysql)
+
     # 决定概率
     if abundance==0.0:#若矿井未被开采过，则首次成功率为100%
         prob=1.0
@@ -29,10 +36,11 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
 
     if np.random.random()>prob:#开采失败
         user.save(mysql)
-        user.forbidtime = round(getnowtime() + 90 * np.log(mineralID) / sqrtmoid(extractTech))
+        forbidInterval = 90 * np.log(mineralID) / sqrtmoid(extractTech)
         ans='开采失败:您的运气不佳，未能开采成功！'
     else:
-        user.forbidtime = round(getnowtime() + 60 * np.log(mineralID) / sqrtmoid(extractTech))
+        forbidInterval = 60 * np.log(mineralID) / sqrtmoid(extractTech)
+
         mineral.setdefault(mineralID,0)#防止用户不具备此矿石报错
         mineral[mineralID]+=1 #加一个矿石
         mine.abundance=prob#若开采成功，则后一次的丰度是前一次的成功概率
@@ -46,6 +54,9 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
         user.mineral = mineral
         user.save(mysql)
         mine.save(mysql)
+    if mine.private:
+        forbidInterval /= 1.5
+    forbidtime = round(getnowtime() + forbidInterval)
     setTimeTask(updateDigable, user.forbidtime, user)
     return ans
 
@@ -59,7 +70,8 @@ def getMineral(messageList:list[str],qid:str):
     assert len(messageList)==2,'开采失败:请指定要开采的矿井！'
     mineID:int=int(messageList[1])
     mine: Mine = Mine.find(mineID, mysql)
-    assert Mine, '开采失败:不存在此矿井！'
+    assert mine, '开采失败:不存在此矿井！'
+    assert mine.open or qid==mine.owner, '该矿井目前并未开放！'
     mineralID = mineralSample(mine.lower,mine.upper,logUniform=mine.logUniform)
     ans = extractMineral(qid,mineralID,mine)
     return ans
@@ -94,3 +106,27 @@ def exchangeMineral(messageList:list[str],qid:str):
 
     ans='兑换成功！'
     return ans
+
+def openMine(messageList:list[str],qid:str):
+    """
+    根据传入的信息开放私有矿井
+    :param messageList: 开放 矿井编号 收费
+    :param qid: qq号
+    :return: 提示信息
+    """
+    assert len(messageList) == 3, '开放失败:请按照格式输入！'
+    try:
+        mineID: int = int(messageList[1])
+        fee: float = float(messageList[2])
+    except ValueError:
+        return '开放失败:请按照规定格式进行开放！'
+
+    user = User.find(qid, mysql)
+    assert mineID in user.mines, '您不拥有该矿井！'
+
+    mine.open = True
+    mine.fee = fee
+
+    mine.save(mysql)
+
+    return '开放成功！'

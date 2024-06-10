@@ -59,6 +59,7 @@ class Mine(Model):
     abundance=FloatField()
     expectation=FloatField()
     private=BooleanField()
+    open=BooleanField()
     owner=StringField(columnType='varchar(20)')
     entranceFee=FloatField()
 
