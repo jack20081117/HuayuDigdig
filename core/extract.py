@@ -1,18 +1,17 @@
 import numpy as np
 
-from tools import sqrtmoid,getnowtime,generateTimeStr,setTimeTask
+from tools import sigmoid,sqrtmoid,getnowtime,generateTimeStr,setTimeTask, mineralSample
 from update import updateDigable
 from model import User,Mine
 from globalConfig import mysql,vatRate
 
-def extractMineral(qid,mineralID,mineID):
+def extractMineral(qid:str,mineralID:int,mine:Mine):
     """获取矿石
     :param qid:开采者的qq号
     :param mineralID:开采得矿石的编号
     :param mineID:矿井编号
     :return:开采信息
     """
-    mine:Mine=Mine.find(mineID,mysql)
     abundance:float=mine.abundance #矿井丰度
     user:User=User.find(qid,mysql)
     mineral:dict[int,int]=user.mineral # 用户拥有的矿石
@@ -26,20 +25,28 @@ def extractMineral(qid,mineralID,mineID):
     else:
         prob=round(abundance*sqrtmoid(extractTech),2)
 
+    user.digable = 0  # 在下一次刷新前不可开采
+
     if np.random.random()>prob:#开采失败
-        user.digable=0#在下一次刷新前不可开采
-        user.forbidtime=round(getnowtime()+900/sqrtmoid(extractTech))
         user.save(mysql)
-        setTimeTask(updateDigable,user.forbidtime,user)
+        user.forbidtime = round(getnowtime() + 90 * np.log(mineralID) / sqrtmoid(extractTech))
         ans='开采失败:您的运气不佳，未能开采成功！'
     else:
+        user.forbidtime = round(getnowtime() + 60 * np.log(mineralID) / sqrtmoid(extractTech))
         mineral.setdefault(mineralID,0)#防止用户不具备此矿石报错
         mineral[mineralID]+=1 #加一个矿石
-        user.mineral=mineral
-        user.save(mysql)
         mine.abundance=prob#若开采成功，则后一次的丰度是前一次的成功概率
-        mine.save(mysql)
         ans='开采成功！您获得了编号为%d的矿石！'%mineralID
+        if np.random.random()<= sigmoid(extractTech)/4:
+            percentage = np.random.random()/5+0.1
+            oil = round(mineralID * percentage+1)
+            ans+='此次开采连带发现%d单位天然燃油！' % oil
+            mineral.setdefault(0, 0)
+            mineral[0] += oil
+        user.mineral = mineral
+        user.save(mysql)
+        mine.save(mysql)
+    setTimeTask(updateDigable, user.forbidtime, user)
     return ans
 
 def getMineral(messageList:list[str],qid:str):
@@ -50,21 +57,11 @@ def getMineral(messageList:list[str],qid:str):
     :return: 开采提示信息
     """
     assert len(messageList)==2,'开采失败:请指定要开采的矿井！'
-    mineralID:int=int(messageList[1])
-    if mineralID==1:
-        mineralID=np.random.randint(2,30000)
-        ans=extractMineral(qid,mineralID,1)
-    elif mineralID==2:
-        mineralID=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(30000)*1000))/1000))
-        ans=extractMineral(qid,mineralID,2)
-    elif mineralID==3:
-        mineralID=np.random.randint(2,999)
-        ans=extractMineral(qid,mineralID,3)
-    elif mineralID==4:
-        mineralID=int(np.exp(np.random.randint(int(np.log(2)*1000),int(np.log(999)*1000))/1000))
-        ans=extractMineral(qid,mineralID,4)
-    else:
-        ans='开采失败:不存在此矿井！'
+    mineID:int=int(messageList[1])
+    mine: Mine = Mine.find(mineID, mysql)
+    assert Mine, '开采失败:不存在此矿井！'
+    mineralID = mineralSample(mine.lower,mine.upper,logUniform=mine.logUniform)
+    ans = extractMineral(qid,mineralID,mine)
     return ans
 
 def exchangeMineral(messageList:list[str],qid:str):

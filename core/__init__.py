@@ -1,9 +1,9 @@
 from model import AllModels,User,Mine
 from orm import execute
 from globalConfig import config,mysql
-from tools import setCrontab,getnowtime
+from tools import setCrontab,getnowtime,mineExpectation
 
-def create_treasury():
+def createTreasury():
     user = User(
         qid='treasury',
         schoolID='gov01',
@@ -26,6 +26,54 @@ def create_treasury():
     )  # 注册国库
     user.add(mysql)
 
+def createInitialMines():
+    Mine(
+        mineID=1,
+        abundance=0.0,
+        lower=2,
+        upper=30000,
+        logUniform=False,
+        expectation = mineExpectation(2,30000),
+        private=False,
+        owner='treasury',
+        entranceFee=0.0,
+    ).add(mysql)
+    Mine(
+        mineID=2,
+        abundance=0.0,
+        lower=2,
+        upper=30000,
+        logUniform=True,
+        expectation=mineExpectation(2, 30000, logUniform=True),
+        private=False,
+        owner='treasury',
+        entranceFee=0.0,
+    ).add(mysql)
+    Mine(
+        mineID=3,
+        abundance=0.0,
+        lower=2,
+        upper=999,
+        logUniform=False,
+        expectation=mineExpectation(2, 999),
+        private=False,
+        owner='treasury',
+        entranceFee=0.0,
+    ).add(mysql)
+    Mine(
+        mineID=4,
+        abundance=0.0,
+        lower=2,
+        upper=999,
+        logUniform=True,
+        expectation=mineExpectation(2, 999,logUniform=True),
+        private=False,
+        owner='treasury',
+        entranceFee=0.0,
+    ).add(mysql)
+
+    return None
+
 if_delete_and_create = input("Do you want to DELETE the database and remake them? This will DELETE ALL YOUR DATA NOW! (y/n): ")
 if if_delete_and_create == "y":
     if mysql:
@@ -33,10 +81,8 @@ if if_delete_and_create == "y":
     for model in AllModels:
         model.delete(mysql)
         model.create(mysql)
-    create_treasury()
-    for i in range(1,5):
-        _mine=Mine(mineID=i,abundance=0.0)
-        _mine.add(mysql)
+    createTreasury()
+    createInitialMines()
 
     print('Succesfully initialized.')
 

@@ -85,6 +85,18 @@ def tech_validator(tech_type:str, path:list[int], sid:str):
 
     return validated_levels
 
+def mineExpectation(lower:int,upper:int,logUniform=False)->float:
+    if logUniform:
+        return (upper-lower)/np.log(upper/lower)
+    else:
+        return (lower+upper)/2
+
+def mineralSample(lower,upper,logUniform=False)->int:
+    if logUniform:
+        return int(np.exp(np.random.randint(int(np.log(lower)*1000),int(np.log(upper)*1000))/1000))
+    else:
+        return np.random.randint(lower,upper)
+
 def getnowtime():
     return round(datetime.timestamp(datetime.now()))
 

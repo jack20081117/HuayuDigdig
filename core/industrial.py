@@ -31,8 +31,8 @@ def expense_calculator(multiplier:float,duplication:int,primary_scale:int,second
 
 def time_fuel_calculator(workUnitsRequired, efficiency, tech, factoryNum, fuel_factor):
     adjustedFactoryNum = (1 - sigmoid(tech + 0.25 * efficiency) ** factoryNum) / (1 - sigmoid(tech + 0.25 * efficiency))
-    timeRequired = workUnitsRequired / (sigmoid(efficiency) * adjustedFactoryNum)
-    fuelRequired = workUnitsRequired / (fuel_factor * sqrtmoid(tech) * sigmoid(efficiency))#所用燃油
+    timeRequired = workUnitsRequired / (sigmoid(efficiency+0.25*tech) * adjustedFactoryNum)
+    fuelRequired = workUnitsRequired / (sigmoid(efficiency) * fuel_factor * sqrtmoid(tech))#所用燃油
 
     return round(timeRequired), round(fuelRequired)
 
@@ -173,7 +173,7 @@ def duplicate(messageList: list[str], qid: str):
     starttime = nowtime
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(1,duplication,ingredient+64,ingredient+64,
+        expense_calculator(1,duplication,ingredient+32,ingredient+32,
                            user.tech['industrial'],duplicate_eff,factoryNum,1,useLogDivisor=False)
 
     products: dict = {ingredient: duplication * 2}#生成成品
@@ -268,7 +268,7 @@ def refine(messageList: list[str], qid: str):
     starttime = nowtime
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(2,duplication,ingredient,ingredient,user.tech['refine'],refine_eff,factoryNum,4)
+        expense_calculator(2,duplication,ingredient,ingredient,user.tech['refine'],refine_eff,factoryNum,8)
 
     fuelRequired -= 1 # 消除负收益
 

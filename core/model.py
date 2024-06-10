@@ -46,7 +46,14 @@ class Mine(Model):
     __table__='mines'
 
     mineID=IntegerField(primaryKey=True)
+    lower=IntegerField()
+    upper=IntegerField()
+    logUniform=BooleanField()
     abundance=FloatField()
+    expectation=FloatField()
+    private=BooleanField()
+    owner=StringField(columnType='varchar(20)')
+    entranceFee=FloatField()
 
 
 class Sale(Model):

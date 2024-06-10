@@ -36,7 +36,7 @@ def updateAbundance():
     for mine in Mine.findAll(mysql):
         if mine.abundance==0.0:
             continue
-        mine.abundance=round((1.5+mine.abundance)/2,2)
+        mine.abundance=round((1.25+mine.abundance)/2,2)
         if mine.abundance>1:
             mine.abundance=0.0
         mine.save(mysql)
