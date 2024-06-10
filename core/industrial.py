@@ -334,6 +334,7 @@ def build(messageList: list[str], qid: str):
      return ans
 
 
+
 def research(messageList:list[str], qid: str):
     """
     制定科研计划
@@ -557,7 +558,7 @@ def enaction(plan: Plan):
 
     if plan.jobtype == 5:
         if 1 in user.misc:
-            ans += '由于您有未使用的工厂建设许可证，此次不需要重新置办！'
+            ans += '由于您有未使用的工厂建设许可证，此次不需要重新置办！\n'
             user.misc[1] -= 1
             if user.misc[1] == 0:
                 user.misc.pop(1)
@@ -565,7 +566,7 @@ def enaction(plan: Plan):
         else:
             permitCost = permitBase + (user.factoryNum-1)*permitGradient
             if permitCost > user.money:
-                ans += '金钱不足！建设新工厂需要许可证，由于您已经有%s座工厂，新许可证的费用为%s元，您目前有%.2f元'% (user.factoryNum, permitCost, user.money)
+                ans += '余额不足！建设新工厂需要许可证，由于您已经有%s座工厂，新许可证的费用为%s元，您目前有%.2f元！\n'% (user.factoryNum, permitCost, user.money)
                 success = False
             else:
                 treasury: User = User.find('treasury', mysql)
@@ -574,7 +575,7 @@ def enaction(plan: Plan):
                 treasury.save(mysql)
                 user.misc.setdefault(2,0)
                 user.misc[2] += 1
-                ans += '由于您已经有%s座工厂，新许可证的费用为%s元！' % (user.factoryNum, permitCost)
+                ans += '由于您已经有%s座工厂，新许可证的费用为%s元！\n' % (user.factoryNum, permitCost)
 
     if success:
         ans += "计划%s成功开工！按照当前效率条件，需消耗%s时间，%s单位燃油。" % (plan.planID,
