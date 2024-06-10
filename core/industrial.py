@@ -5,31 +5,30 @@ from globalConfig import mysql,effisValueDict, fuelFactorDict
 from numpy import log
 import numpy as np
 
-def expense_calculator(multiplier:float,duplication:int,primary_scale:int,secondary_scale:int,
-                       tech:float,efficiency:float,factoryNum:int,fuel_factor:float,useLogDivisor=True):
+def expenseCalculator(multiplier:float,duplication:int,primaryScale:int,secondaryScale:int,
+                       tech:float,efficiency:float,factoryNum:int,fuelFactor:float,useLogDivisor=True):
     """
     加工耗费计算函数
     :param multiplier: 随加工种类变化的因子
     :param duplication: 加工份数
-    :param primary_scale:
-    :param secondary_scale:
+    :param primaryScale:
+    :param secondaryScale:
     :param tech: 该工种科技
     :param efficiency: 该工种效率
     :param factoryNum: 调拨 工厂数
-    :param fuel_factor:
+    :param fuelFactor:
     :param useLogDivisor:
     :return: 该加工需要的产能点数、时间与燃油
     """
 
-
-    workUnitsRequired = multiplier * duplication * primary_scale * log(log(secondary_scale) + 1)
+    workUnitsRequired = multiplier * duplication * primaryScale * log(log(secondaryScale) + 1)
     if useLogDivisor:
-        workUnitsRequired /= log(primary_scale)
-    timeRequired, fuelRequired = time_fuel_calculator(workUnitsRequired, efficiency, tech, factoryNum, fuel_factor)
+        workUnitsRequired /= log(primaryScale)
+    timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuelFactor)
 
     return workUnitsRequired, timeRequired, fuelRequired
 
-def time_fuel_calculator(workUnitsRequired, efficiency, tech, factoryNum, fuel_factor):
+def timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuel_factor):
     adjustedFactoryNum = (1 - sigmoid(tech + 0.25 * efficiency) ** factoryNum) / (1 - sigmoid(tech + 0.25 * efficiency))
     timeRequired = workUnitsRequired / (sigmoid(efficiency+0.25*tech) * adjustedFactoryNum)
     fuelRequired = workUnitsRequired / (sigmoid(efficiency) * fuel_factor * sqrtmoid(tech))#所用燃油
@@ -69,7 +68,7 @@ def decompose(messageList: list[str], qid: str):
     minorProduct = min(divide, ingredient // divide)
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(4,duplication,minorProduct,ingredient,user.tech['industrial'],decomp_eff,factoryNum,4)
+        expenseCalculator(4,duplication,minorProduct,ingredient,user.tech['industrial'],decomp_eff,factoryNum,fuelFactorDict[0])
 
     products:dict = {divide:duplication, (ingredient // divide):duplication}#生成产品
 
@@ -127,7 +126,7 @@ def synthesize(messageList: list[str], qid: str):
         ingredients[ingredient] = duplication
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(4,duplication,finalProduct,finalProduct,user.tech['industrial'],synth_eff,factoryNum,4)
+        expenseCalculator(4,duplication,finalProduct,finalProduct,user.tech['industrial'],synth_eff,factoryNum,fuelFactorDict[1])
 
     products:dict = {finalProduct: duplication}#生成产品
 
@@ -173,8 +172,8 @@ def duplicate(messageList: list[str], qid: str):
     starttime = nowtime
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(1,duplication,ingredient+32,ingredient+32,
-                           user.tech['industrial'],duplicate_eff,factoryNum,1,useLogDivisor=False)
+        expenseCalculator(1,duplication,ingredient+32,ingredient+32,
+                           user.tech['industrial'],duplicate_eff,factoryNum,fuelFactorDict[2],useLogDivisor=False)
 
     products: dict = {ingredient: duplication * 2}#生成成品
 
@@ -220,7 +219,7 @@ def decorate(messageList: list[str], qid: str):
     starttime = nowtime
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(1,duplication,ingredient+1,ingredient+1,user.tech['industrial'],decorate_eff,factoryNum,2)
+        expenseCalculator(1,duplication,ingredient+1,ingredient+1,user.tech['industrial'],decorate_eff,factoryNum,fuelFactorDict[3])
 
     products: dict = {ingredient + 1: duplication}#生成产品
 
@@ -268,9 +267,9 @@ def refine(messageList: list[str], qid: str):
     starttime = nowtime
 
     workUnitsRequired, timeRequired, fuelRequired = \
-        expense_calculator(2,duplication,ingredient,ingredient,user.tech['refine'],refine_eff,factoryNum,8)
+        expenseCalculator(2,duplication,ingredient,ingredient,user.tech['refine'],refine_eff,factoryNum,fuelFactorDict[4])
 
-    fuelRequired -= 1 # 消除负收益
+    fuelRequired -= 1 # 消除负收益是否采用对数平均
 
     if ingredient > 64:
         products: dict = {0: duplication * ingredient}
@@ -341,7 +340,7 @@ def research(messageList:list[str], qid: str):
             techPath = techCards[0] + ingredientList
         work_modifier = (np.log(np.array(techPath)).average() / 10 + 1)
         workUnitsRequired = (1200 + 600 * len(ingredientList)) * work_modifier
-        timeRequired, fuelRequired = time_fuel_calculator(workUnitsRequired, techEff, 0, factoryNum, 4)
+        timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, techEff, 0, factoryNum, 4)
     else:
         commonSequenceLengths = []
         for i in range(len(techCards)):
@@ -363,7 +362,7 @@ def research(messageList:list[str], qid: str):
         divergentPath = ingredientList[matchAmount:]
         work_modifier = (np.log(np.array(techPath)).average() / 10 + 1)
         workUnitsRequired = (1200 + 600 * len(divergentPath)) * work_modifier
-        timeRequired, fuelRequired = time_fuel_calculator(workUnitsRequired, techEff, 0, factoryNum, 4)
+        timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, techEff, 0, factoryNum, 4)
         for ingredient in divergentPath:
             ingredients.setdefault(ingredient, 0)
             ingredients[ingredient] += 1
@@ -418,16 +417,11 @@ def enactPlan(messageList: list[str], qid: str):
     if idleFactoryNum < plan.factoryNum and starttime != nowtime:
         ans += '提醒：您现在工厂数量不足，请确保计划执行时您有足够空闲工厂。\n'
 
-    setTimeTask(enaction_wrapper, starttime, plan)
+    setTimeTask(enaction, starttime, plan)
 
     ans += '设置成功！该计划将在指定时间开始执行。编号:%d' % planID
 
     return ans
-
-
-def enaction_wrapper(plan: Plan):
-    send(plan.qid, enaction(plan), False)
-
 
 def enaction(plan: Plan):
     qid = plan.qid
@@ -447,11 +441,13 @@ def enaction(plan: Plan):
         tech = user.tech['industrial']
 
     timeRequired, fuelRequired = \
-    time_fuel_calculator(plan.workUnitsRequired,
+    timeFuelCalculator(plan.workUnitsRequired,
                          user.effis[plan.jobtype],
                          tech,
                          requiredFactoryNum,
                          fuelFactorDict[plan.jobtype])
+
+    fuelRequired-=1
 
     if fuelRequired>64:
         ingredients[0] = fuelRequired
@@ -479,9 +475,8 @@ def enaction(plan: Plan):
 
         user.mineral = mineral
         user.busyFactoryNum += requiredFactoryNum
-        enactedPlanTypes = user.enactedPlanTypes
-        enactedPlanTypes.setdefault(plan.jobtype, 0)
-        enactedPlanTypes[plan.jobtype] += 1
+        user.enactedPlanTypes.setdefault(plan.jobtype, 0)
+        user.enactedPlanTypes[plan.jobtype] += 1
         user.save(mysql)
 
         nowtime = getnowtime()
@@ -491,8 +486,8 @@ def enaction(plan: Plan):
         plan.save(mysql)
 
         setTimeTask(updatePlan, nowtime + round(timeRequired), plan)
-    return ans
 
+    send(qid,ans,False)
 
 def cancelPlan(messageList: list[str], qid: str):
     """

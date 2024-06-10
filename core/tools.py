@@ -74,7 +74,7 @@ def tech_validator(tech_type:str, path:list[int], sid:str):
         determinant = round(determinant * 0.5 + path[i] * 0.5)
 
         prob = max(min(0.25 * np.log(determinant) / (4+np.log(tech_level)),
-                       (determinant) / (256 * tech_level)) + modifier, 0)
+                       determinant / (256 * tech_level)) + modifier, 0)
         method_string = '%s+%s' % (method_string, path[i])
         indicator = int(digest(method_string)[-3:], 16)
 
@@ -86,18 +86,35 @@ def tech_validator(tech_type:str, path:list[int], sid:str):
     return validated_levels
 
 def mineExpectation(lower:int,upper:int,logUniform=False)->float:
+    """
+    矿井开采出矿石的期望值
+    :param lower: 矿井矿石取值范围下界
+    :param upper: 矿井矿石取值范围上界
+    :param logUniform: 是否采用对数平均
+    :return: 开采出矿石的期望值
+    """
     if logUniform:
         return (upper-lower)/np.log(upper/lower)
     else:
         return (lower+upper)/2
 
 def mineralSample(lower,upper,logUniform=False)->int:
+    """
+    开采矿井
+    :param lower: 矿井矿石取值范围下界
+    :param upper: 矿井矿石取值范围上界
+    :param logUniform: 是否采用对数平均
+    :return: 开采出的矿石
+    """
     if logUniform:
         return int(np.exp(np.random.randint(int(np.log(lower)*1000),int(np.log(upper)*1000))/1000))
     else:
         return np.random.randint(lower,upper)
 
 def getnowtime():
+    """
+    生成当前时间timestamp
+    """
     return round(datetime.timestamp(datetime.now()))
 
 def generateTime(timestr:str)->int:
@@ -175,6 +192,7 @@ def setCrontab(func:callable,day_of_week='mon-sun',hour='0-23',minute='0',second
     :param day_of_week:
     :param hour:
     :param minute:
+    :param second:
     :param args: 任务参数
     """
     scheduler=bgsc()

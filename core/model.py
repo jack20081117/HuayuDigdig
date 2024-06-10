@@ -152,10 +152,3 @@ class Debt(Model):
     interest=FloatField()
 
 AllModels:list[Model]=[User,Mine,Sale,Purchase,Auction,Stock,Debt,Order,Plan,StockData]
-
-if __name__=='__main__':  #创建新表
-    for model in AllModels:
-        model.create(mysql)
-    for i in range(1,5):
-        _mine=Mine(mineID=i,abundance=0.0)
-        _mine.add(mysql)
