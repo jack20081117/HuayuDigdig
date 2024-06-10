@@ -260,6 +260,13 @@ def updatePlan(plan:Plan):
     user.enactedPlanTypes[plan.jobtype] -= 1  # 取消当前门类的生产状态
     user.busyFactoryNum -= plan.factoryNum  # 释放被占用的工厂
 
+    if plan.jobtype == 5:
+        send(qid, '您的工厂建设计划%s已完成！您的工厂数量已增加1' % planID, False)
+        user.misc[1] -= 1
+        if user.misc[1] == 0:
+            user.misc.pop(1)
+        user.factoryNum += 1
+
     if plan.jobtype == 6:
         validated_levels = tech_validator(plan.techName, plan.techPath, user.schoolID)
         if validated_levels == 0:  #第一级就验证失败

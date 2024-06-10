@@ -1,4 +1,4 @@
-from model import AllModels,User,Mine
+from model import AllModels,User,Mine,Misc
 from orm import execute
 from globalConfig import config,mysql
 from tools import setCrontab,getnowtime,mineExpectation
@@ -74,6 +74,18 @@ def createInitialMines():
 
     return None
 
+def createSystemMisc():
+    Misc(
+        miscID=1,
+        name='Factory Building Permit',
+        description='Entitles the owner to build a new facility.'
+    ).add(mysql)
+    Misc(
+        miscID=2,
+        name='Factory Building Permit Under Use',
+        description='Entitles the owner to build a new facility.'
+    ).add(mysql)
+
 if_delete_and_create = input("Do you want to DELETE the database and remake them? This will DELETE ALL YOUR DATA NOW! (y/n): ")
 if if_delete_and_create == "y":
     if mysql:
@@ -83,6 +95,7 @@ if if_delete_and_create == "y":
         model.create(mysql)
     createTreasury()
     createInitialMines()
+    createSystemMisc()
 
     print('Succesfully initialized.')
 

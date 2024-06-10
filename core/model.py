@@ -15,6 +15,7 @@ class User(Model):
     effis=StringField(columnType='varchar(200)')
     mines=StringField(columnType='varchar(200)')
     stocks=StringField(columnType='varchar(2000)')
+    misc=StringField(columnType='varchar(2000)')
     enactedPlanTypes=StringField(columnType='varchar(200)') #dict for plan types
     busyFactoryNum=IntegerField()
     lastEffisUpdateTime = IntegerField()
@@ -41,6 +42,12 @@ class Plan(Model):
     timeRequired=IntegerField()
     enacted = BooleanField()
 
+class Misc(Model):
+    __table__ = 'miscellaneous'
+
+    miscID=IntegerField(primaryKey=True)
+    name=StringField(columnType='varchar(50)')
+    description=StringField(columnType='varchar(2000)')
 
 class Mine(Model):
     __table__='mines'

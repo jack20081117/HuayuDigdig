@@ -28,6 +28,7 @@ def signup(messageList:list[str],qid:str):
         effis=effis,
         mines=[],
         stocks={},
+        misc={},
         enactedPlanTypes={},
         busyFactoryNum=0,
         lastEffisUpdateTime=nowtime,

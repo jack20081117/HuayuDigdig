@@ -517,6 +517,31 @@ def enaction(plan: Plan):
             ans += "%s不足！您目前有%d，计划%d需要%d单位。\n" % (mName, mineral[mId], plan.planID, mNum)
             success = False
 
+    if not success:
+        return ans
+
+
+    if plan.jobtype == 5:
+        if 1 in user.misc:
+            ans += '由于您有未使用的工厂建设许可证，此次不需要重新置办！'
+            user.misc[1] -= 1
+            if user.misc[1] == 0:
+                user.misc.pop(1)
+            user.misc[2] += 1
+        else:
+            permitCost = permitBase + (user.factoryNum-1)*permitGradient
+            if permitCost > user.money:
+                ans += '金钱不足！建设新工厂需要许可证，由于您已经有%s座工厂，新许可证的费用为%s元，您目前有%.2f元'% (user.factoryNum, permitCost, user.money)
+                success = False
+            else:
+                treasury: User = User.find('treasury', mysql)
+                user.money -= permitCost
+                treasury.money += permitCost
+                treasury.save(mysql)
+                user.misc.setdefault(2,0)
+                user.misc[2] += 1
+                ans += '由于您已经有%s座工厂，新许可证的费用为%s元！' % (user.factoryNum, permitCost)
+
     if success:
         ans += "计划%s成功开工！按照当前效率条件，需消耗%s时间，%s单位燃油。" % (plan.planID,
                                                       smartInterval(timeRequired), round(fuelRequired))
@@ -538,6 +563,7 @@ def enaction(plan: Plan):
         plan.save(mysql)
 
         setTimeTask(updatePlan, nowtime + round(timeRequired), plan)
+
     return ans
 
 
@@ -574,6 +600,10 @@ def cancelPlan(messageList: list[str], qid: str):
                 mineral[mid] += mnum * (nowtime - plan.timeEnacted) / plan.timeRequired  # 燃油按剩余时间比例返还
             else:
                 mineral[mid] += mnum
+        if plan.jobtype == 5: #建工任务特判建筑许可证
+            user.misc[2] -= 1
+            user.misc.setdefault(1,0)
+            user.misc[1] += 1
 
         enactedPlanTypes = user.enactedPlanTypes  # 取消当前门类的生产状态
         enactedPlanTypes[plan.jobtype] -= 1
