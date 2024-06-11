@@ -364,36 +364,40 @@ def research(messageList:list[str], qid: str):
 
     nowtime: int = getnowtime()
 
-    techName = techNameDict[techName]
+    techName = techNameDict[techName]  #将中文输入的techname转换成系统命名
     techCards = user.techCards[techName]
+    # techCard是一个字典，分别储存了用户对每一类科技的探索。每一个value都是一个二维list，代表着一行行可行的科技路径
+    # 玩家的最终科技水平是由user.techCards[techName][0]的长度决定的，这个科技线被称为主线
 
     ingredients = {}#所需原料
     ans = ''
     techPath = ingredientList
 
 
-    if continuation or len(techCards) == 0:
+    if continuation or len(techCards) == 0: #如果第一次研发，或是接续研发
         for ingredient in ingredientList:
             ingredients.setdefault(ingredient, 0)
             ingredients[ingredient] += 1
         if techCards:
             techPath = techCards[0] + ingredientList
         work_modifier = (np.log(np.array(techPath)).average() / 10 + 1)
+        # 原料的对数的平均数会影响研发时间。如果使用昂贵材料，那么成功概率会增加，但是时间也会略微延长。
         workUnitsRequired = (1200 + 600 * len(ingredientList)) * work_modifier
+        # 接序研究的时间主要考虑接续长度
         timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, techEff, 0, factoryNum, 4)
-    else:
-        commonSequenceLengths = []
+    else: #如果是fork或者另起炉灶
+        commonSequenceLengths = [] #自动匹配相似度最高的路径节约时间成本
         for i in range(len(techCards)):
             commonSequenceLength = 0
             for j in range(min(len(techCards[i]),len(ingredientList))):
-                if techCards[i][j] == ingredientList[j]:
+                if techCards[i][j] == ingredientList[j]: #匹配相似度
                     commonSequenceLength += 1
                     continue
                 else:
-                    commonSequenceLengths.append(commonSequenceLength)
+                    commonSequenceLengths.append(commonSequenceLength) #记载相似度
                     break
-        bestMatch = np.argmax(np.array(commonSequenceLengths))
-        matchAmount = commonSequenceLengths[bestMatch]
+        bestMatch = np.argmax(np.array(commonSequenceLengths)) #最相关已知科技路径
+        matchAmount = commonSequenceLengths[bestMatch] #相关度
         assert matchAmount < len(ingredientList), '您当前输入的序列是您已知的技术路径的子序列，不必重复研发！'
         if matchAmount > 0:
             ans+='您当前制定的科研计划与您已知的第%s科研路径在前%s级重合，将自动接续该技术路径进行研究！\n' % (bestMatch, matchAmount)

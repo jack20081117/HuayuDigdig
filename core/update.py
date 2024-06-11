@@ -271,26 +271,26 @@ def updatePlan(plan:Plan):
             user.misc.pop(1)
         user.factoryNum += 1
     elif plan.jobtype == 6:
-        validated_levels = tech_validator(plan.techName, plan.techPath, user.schoolID)
+        validated_levels = tech_validator(plan.techName, plan.techPath, user.schoolID) #验证机返回给定技术路径前几级取得了成功
         if validated_levels == 0:  #第一级就验证失败
             ans='您的科研计划:%s已经失败！未能提高科研等级' % planID
         else: #有成功的部分
             valid_path = plan.techPath[:validated_levels]
             if not user.techCards[plan.techName]:  #第一次成功科研，对应科技门类还没有techcard记载
-                user.techCards[plan.techName].append(valid_path)
-            elif valid_path in user.techCards[plan.techName]:
+                user.techCards[plan.techName].append(valid_path) #直接设为主线
+            elif valid_path in user.techCards[plan.techName]: # 没找到新东西
                 ans='您的科研计划:%s成功，但是成功的部分技术路径（%s级）已经为您所知，未能提高科研等级！' % (planID, validated_levels)
-            else:
-                if validated_levels < len(plan.techPath):
+            else: #有新成功的部分且不是第一次成功科研
+                if validated_levels < len(plan.techPath): #部分成功
                     ans='您的科研计划:%s部分成功，前%s级技术路径可用！' % (planID, validated_levels)
-                elif validated_levels == len(plan.techPath):
+                elif validated_levels == len(plan.techPath): #完全成功
                     ans='您的科研计划:%s完全成功，前%s级技术路径可用！' % (planID, validated_levels)
 
-                if validated_levels > len(user.techCards[plan.techName][0]):
-                    user.techCards[plan.techName].insert(0, valid_path)
-                    user.tech[plan.techName] = 0.25*validated_levels
+                if validated_levels > len(user.techCards[plan.techName][0]): # 新发现的科技路径比主线更强
+                    user.techCards[plan.techName].insert(0, valid_path) #替换主线
+                    user.tech[plan.techName] = 0.25*validated_levels #更新科技读数
                 else:
-                    user.techCards[plan.techName].append(valid_path)
+                    user.techCards[plan.techName].append(valid_path) #增加一条后备线以供研究
     elif plan.jobtype == 7:
         scale = ((plan.workUnitsRequired - 10000)/300)**2
         indicator = np.random.random()
