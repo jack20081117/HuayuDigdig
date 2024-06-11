@@ -9,7 +9,7 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
     """获取矿石
     :param qid:开采者的qq号
     :param mineralID:开采得矿石的编号
-    :param mineID:矿井编号
+    :param mine:矿井
     :return:开采信息
     """
     abundance:float=mine.abundance #矿井丰度
@@ -35,7 +35,6 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
     user.digable = 0  # 在下一次刷新前不可开采
 
     if np.random.random()>prob:#开采失败
-        user.save(mysql)
         forbidInterval = 90 * np.log(mineralID) / sqrtmoid(extractTech)
         ans='开采失败:您的运气不佳，未能开采成功！'
     else:
@@ -52,11 +51,14 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
             mineral.setdefault(0, 0)
             mineral[0] += oil
         user.mineral = mineral
-        user.save(mysql)
         mine.save(mysql)
     if mine.private:
         forbidInterval /= 1.5
+
     forbidtime = round(getnowtime() + forbidInterval)
+    user.forbidtime=forbidtime
+    user.save(mysql)
+
     setTimeTask(updateDigable, user.forbidtime, user)
     return ans
 
@@ -123,6 +125,8 @@ def openMine(messageList:list[str],qid:str):
 
     user = User.find(qid, mysql)
     assert mineID in user.mines, '您不拥有该矿井！'
+
+    mine=Mine.find(mineID,mysql)
 
     mine.open = True
     mine.fee = fee

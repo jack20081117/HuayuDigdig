@@ -1,7 +1,9 @@
+import numpy as np
+
 from tools import send,getnowtime
 from model import User,Mine,Sale,Purchase,Auction,Debt,Plan
 from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate
-from tools import sqrtmoid, tech_validator
+from tools import sqrtmoid, tech_validator,mineralSample,mineExpectation
 
 def init():
     """
@@ -231,6 +233,7 @@ def updateEfficiency(user:User,finishedPlan:int or Plan):
                 tech = user.tech['industrial']
             effis[i] += 4 * finishedPlan.timeRequired * sqrtmoid(tech) * effisDailyDecreaseRate/86400
         elif enactedPlansByType[i] == 0:
+            print(effis[i],elapsedTime * effisDailyDecreaseRate/86400)
             effis[i] -= elapsedTime * effisDailyDecreaseRate/86400
             effis[i] = max(0,effis[i])
 

@@ -63,7 +63,6 @@ def decompose(messageList: list[str], qid: str):
     assert not ingredient%divide,'制定生产计划失败:路径无效！'
 
     nowtime: int = getnowtime()
-    starttime = nowtime
 
     minorProduct = min(divide, ingredient // divide)
 
@@ -76,7 +75,7 @@ def decompose(messageList: list[str], qid: str):
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=0, factoryNum=factoryNum,
-                      ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
+                      ingredients=ingredients, products=products, timeEnacted=nowtime, timeRequired=timeRequired,
                       workUnitsRequired=workUnitsRequired, enacted=False)
     plan.add(mysql)
 
@@ -116,7 +115,6 @@ def synthesize(messageList: list[str], qid: str):
     assert factoryNum <= user.factoryNum, '制定生产计划失败:您没有足够工厂！'
 
     nowtime: int = getnowtime()
-    starttime = nowtime
 
     ingredients = {}#所需原料
     finalProduct = 1
@@ -134,7 +132,7 @@ def synthesize(messageList: list[str], qid: str):
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=1, factoryNum=factoryNum,
-                      ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
+                      ingredients=ingredients, products=products, timeEnacted=nowtime, timeRequired=timeRequired,
                       workUnitsRequired=workUnitsRequired, enacted=False)
     plan.add(mysql)
 
@@ -169,7 +167,6 @@ def duplicate(messageList: list[str], qid: str):
     assert factoryNum <= user.factoryNum, '制定生产计划失败:您没有足够工厂！'
 
     nowtime: int = getnowtime()
-    starttime = nowtime
 
     workUnitsRequired, timeRequired, fuelRequired = \
         expenseCalculator(1,duplication,ingredient+32,ingredient+32,
@@ -181,7 +178,7 @@ def duplicate(messageList: list[str], qid: str):
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=2, factoryNum=factoryNum,
-                      ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
+                      ingredients=ingredients, products=products, timeEnacted=nowtime, timeRequired=timeRequired,
                       workUnitsRequired=workUnitsRequired, enacted=False)
     plan.add(mysql)
 
@@ -216,7 +213,6 @@ def decorate(messageList: list[str], qid: str):
     assert factoryNum <= user.factoryNum, '制定生产计划失败:您没有足够工厂！'
 
     nowtime: int = getnowtime()
-    starttime = nowtime
 
     workUnitsRequired, timeRequired, fuelRequired = \
         expenseCalculator(1,duplication,ingredient+1,ingredient+1,user.tech['industrial'],decorate_eff,factoryNum,fuelFactorDict[3])
@@ -227,7 +223,7 @@ def decorate(messageList: list[str], qid: str):
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=3, factoryNum=factoryNum,
-                      ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
+                      ingredients=ingredients, products=products, timeEnacted=nowtime, timeRequired=timeRequired,
                       workUnitsRequired=workUnitsRequired, enacted=False)
     plan.add(mysql)
 
@@ -264,8 +260,6 @@ def refine(messageList: list[str], qid: str):
     assert factoryNum <= user.factoryNum, '制定生产计划失败:您没有足够工厂！'
 
     nowtime: int = getnowtime()
-    starttime = nowtime
-
     workUnitsRequired, timeRequired, fuelRequired = \
         expenseCalculator(2,duplication,ingredient,ingredient,user.tech['refine'],refine_eff,factoryNum,fuelFactorDict[4])
 
@@ -286,7 +280,7 @@ def refine(messageList: list[str], qid: str):
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=4, factoryNum=factoryNum,
-                      ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
+                      ingredients=ingredients, products=products, timeEnacted=nowtime, timeRequired=timeRequired,
                       workUnitsRequired=workUnitsRequired, enacted=False)
     plan.add(mysql)
 
@@ -314,6 +308,8 @@ def build(messageList: list[str], qid: str):
      assert factoryNum <= user.factoryNum, '制定建造计划失败:您没有足够工厂！'
      assert material in [2,4,6,8,10,12], '制定建造计划失败：您无法使用这种建材！'
 
+     nowtime:int=getnowtime()
+
      buildeff = user.effis[5]
 
      materialDict = {2:20, 4:10, 6:8, 8:7, 10:6, 12:6}
@@ -323,7 +319,7 @@ def build(messageList: list[str], qid: str):
 
      planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
      plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=5, factoryNum=factoryNum,
-                       ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
+                       ingredients=ingredients, products={}, timeEnacted=nowtime, timeRequired=timeRequired,
                        workUnitsRequired=workUnitsRequired, enacted=False)
      plan.add(mysql)
 
@@ -367,7 +363,6 @@ def research(messageList:list[str], qid: str):
     assert factoryNum <= user.factoryNum, '制定科研计划失败:您没有足够工厂！'
 
     nowtime: int = getnowtime()
-    starttime = nowtime
 
     techName = techNameDict[techName]
     techCards = user.techCards[techName]
@@ -418,7 +413,7 @@ def research(messageList:list[str], qid: str):
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=6, factoryNum=factoryNum,
-                      ingredients=ingredients, products=products, timeEnacted=starttime, timeRequired=timeRequired,
+                      ingredients=ingredients, products=products, timeEnacted=nowtime, timeRequired=timeRequired,
                       workUnitsRequired=workUnitsRequired, techName=techName,
                       techPath=techPath, enacted=False)
     plan.add(mysql)
@@ -447,6 +442,8 @@ def discover(messageList: list[str], qid: str):
     assert factoryNum <= user.factoryNum, '制定勘探计划失败:您没有足够工厂！'
     assert 100<scale<100000, "制定勘探计划失败：预期规模太大或者太小！"
 
+    nowtime:int=getnowtime()
+
     discoveff = user.effis[7]
 
     workUnitsRequired = 10000 + np.sqrt(scale)*300
@@ -455,7 +452,7 @@ def discover(messageList: list[str], qid: str):
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
     plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=7, factoryNum=factoryNum,
-                      ingredients=ingredients, products={}, timeEnacted=starttime, timeRequired=timeRequired,
+                      ingredients=ingredients, products={}, timeEnacted=nowtime, timeRequired=timeRequired,
                       workUnitsRequired=workUnitsRequired, enacted=False)
     plan.add(mysql)
 
