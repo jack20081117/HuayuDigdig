@@ -1,6 +1,7 @@
 from model import User
 from globalConfig import mysql,groupIDs
 from tools import getnowtime,send
+from numpy import random
 
 def payTax(messageList:list[str],qid:str):
     """
@@ -78,6 +79,57 @@ def taxUpdate():
         send(groupID,'本期总共征税%.2f元,感谢各位对我游税务工作的支持。' % taxedAmount,group=True)
     treasury.save(mysql)
 
+def lottery(messageList:list[str],qid:str):
+    """
+    抽奖
+    :param messageList: 抽奖 (次数 默认一次)
+    :param qid: 抽奖人的qq号
+    :return: 抽奖提示信息
+    """
+    assert 1<=len(messageList)<=2, "您抽奖的格式不正确！"
+    if len(messageList) == 1:
+        duplication = 1
+    else:
+        try:
+            duplication: int = int(messageList[1])
+        except ValueError:
+            return '抽奖失败:您的抽奖次数不正确！'
+    assert duplication <= 20,"大赌伤身，一次最多抽20发！"
+    user = User.find(qid, mysql)
+    treasury = User.find('treasury', mysql)
+    assert user.money >= 10, "您没有足够的钱抽奖一次！"
+    ans = ''
+    for i in range(duplication):
+        if user.money < 10:
+            ans += '您的余额不足继续抽奖！'
+            break
+        user.money -= 10
+        treasury.money += 10
+        indicator = random.random()
+        if indicator <= 0.00001:
+            ans += '恭喜！中了特等奖，奖金50000！（概率0.00001）\n'
+            user.money += 50000
+            treasury.money -= 50000
+        elif indicator <= 0.00011:
+            ans += '恭喜！中了一等奖，奖金10000！（概率0.0001）\n'
+            user.money += 10000
+            treasury.money -= 10000
+        elif indicator <= 0.00511:
+            ans += '恭喜！中了二等奖，奖金200！（概率0.005）\n'
+            user.money += 200
+            treasury.money -= 200
+        elif indicator <= 0.05511:
+            ans += '恭喜！中了三等奖，奖金50！（概率0.05）\n'
+            user.money += 50
+            treasury.money -= 50
+        elif indicator <= 0.25511:
+            ans += '恭喜！中了四等奖，奖金20！（概率0.2）\n'
+            user.money += 20
+            treasury.money -= 20
+        else:
+            ans += '很遗憾，这次没有中奖！\n'
+
+    return ans
 
 # 强制征税（需与破产清算机制合并考虑）
 #def forcedTax(taxpayer:User):

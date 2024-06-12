@@ -146,6 +146,7 @@ registerByDict({
     "转让矿井":transferMine,
     "强制执行":distraint,
     "国库":treasuryAction,
+    "抽奖":lottery,
 })
 
      

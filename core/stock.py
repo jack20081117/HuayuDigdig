@@ -299,9 +299,10 @@ def pairing(bid: Order,ask:Order, amount: int, price: float): #配对撮合，�
     ask.amount -= amount
     ask.completedAmount += amount
 
-def resolveOrder(stock:Stock, order: Order, price:float): #成交写入User
+def resolveOrder(stock:Stock, order: Order, price:float)->tuple[Stock,float]: #成交写入User
     requester:User = User.find(order.requester)
     order.completedAmount = 0
+    stockTax = 0
     if order.buysell:
         requester.stocks.setdefault(order.stockID, 0)
         requester.stocks[order.stockID] += order.completedAmount
@@ -315,10 +316,13 @@ def resolveOrder(stock:Stock, order: Order, price:float): #成交写入User
         else:
             order.save(mysql)
     else:
-        requester.money += order.completedAmount*price
+        money = order.completedAmount*price
+        stockTax = 0.005 * money
+        requester.money += money - stockTax
         #shareholders更新具有滞后性，在提出申请时，User里的股数已经扣除（失败返还），但是在卖出成功之前，Stock中的字典不会改变
+        treasury.save(mysql)
         stock.shareholders[requester.qid] -= order.completedAmount
-        message = "您的股市卖出申请%s成功以%.2f一股的价格成交%s股！\n" % (order.orderID, price, order.completedAmount)
+        message = "您的股市卖出申请%s成功以%.2f一股的价格成交%s股！征收了您%.2f元股票交易税！\n" % (order.orderID, price, order.completedAmount, stockTax)
         if order.amount == 0:
             message += "您的股市卖出申请%s已经完全完成！" % order.orderID
             order.remove(mysql)
@@ -328,7 +332,7 @@ def resolveOrder(stock:Stock, order: Order, price:float): #成交写入User
     send(order.requester, message)
     requester.save(mysql)
 
-    return stock # 为了避免瞬时频繁更新stock，它将被传递直到Brokerage完成
+    return stock, stockTax # 为了避免瞬时频繁更新stock，它将被传递直到Brokerage完成
 
 
 def stockMarketOpen():
@@ -535,7 +539,10 @@ def brokerage(stockID:int, orders:list, currentPrice:float, openingPrice:float,a
     # 成交规则：高于成交价的买入全部成交，低于成交价的卖出全部成交，等于成交价的申报中，至少一侧全部成交。
     stock:Stock = Stock.find(stockID,mysql)
     totalDoneAmount:int = 0#总成交量
+    stockTaxCollected = 0.0 #征收的股票交易税
+    treasury = User.find('treasury',mysql)
     while completedBids and completedAsks:
+        stockTax = 0
         doneAmount = min(completedBids[0].amount, completedAsks[0].amount)#目前的最高价买入申报与目前的最低价卖出申报所能达到的最大成交量
         totalDoneAmount += doneAmount#更新总成交量
         #print(completedBids[0], completedAsks[0], doneAmount)
@@ -543,18 +550,24 @@ def brokerage(stockID:int, orders:list, currentPrice:float, openingPrice:float,a
         pairing(completedBids[0],completedAsks[0],doneAmount,dealPrice)
 
         if completedBids[0].amount == 0:#该买入申报已全部成交
-            stock = resolveOrder(stock,completedBids[0], dealPrice)
+            stock, stockTax = resolveOrder(stock,completedBids[0], dealPrice)
             completedBids.pop(0)#清空该项
         if completedAsks[0].amount == 0:#该抛出申报已全部成交
-            stock = resolveOrder(stock,completedAsks[0], dealPrice)
+            stock, stockTax = resolveOrder(stock,completedAsks[0], dealPrice)
             completedAsks.pop(0)#清空该项
+        stockTaxCollected += stockTax
 
     if completedAsks:
         for remaining in completedAsks:
-            stock = resolveOrder(stock,remaining,dealPrice)
+            stock, stockTax = resolveOrder(stock,remaining,dealPrice)
+            stockTaxCollected += stockTax
     if completedBids:
         for remaining in completedBids:
-            stock = resolveOrder(stock,remaining,dealPrice)
+            stock, stockTax = resolveOrder(stock,remaining,dealPrice)
+            stockTaxCollected += stockTax
+
+    treasury.money += stockTaxCollected
+    treasury.save(mysql)
 
     stock.price = dealPrice#更新股价为成交价
     stock.volume = totalDoneAmount
