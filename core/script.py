@@ -1,4 +1,4 @@
-from globalConfig import groupIDs,botID
+from globalConfig import groupIDs,botID,adminIDs
 from user import *
 from static import *
 from extract import *
@@ -86,7 +86,7 @@ registerByDict({
     "放贷":prelendDebt,
     "借贷":borrowDebt,
     "还款":repayDebt,
-    "转让":transferDebt,
+    "转让债务":transferDebt,
     "免除":forgiveDebt,
     "债市":debtMarket,
     "分解":decompose,
@@ -100,6 +100,8 @@ registerByDict({
     "取消":cancelPlan,
     "执行":enactPlan,
     "计划":showPlan,
+    "转让工厂":transferFactory,
+    "转让矿井":transferMine,
 })
 
      

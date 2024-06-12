@@ -15,6 +15,7 @@ vatRate:float=config["tax"]["vat"]
 playerTax:float=config['tax']['player']
 deposit:float=config["deposit"]
 groupIDs:list=config['group_ids']
+adminIDs:list=config['admin_ids']
 botID:str=config['bot_id']
 mysql:bool=(env=='prod')
 effisItemCount:int=config["effis_item_count"]

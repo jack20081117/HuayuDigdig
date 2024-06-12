@@ -680,3 +680,42 @@ def showPlan(messageList:list[str],qid:str):
     drawtable(planData,'plan.png')
     ans='[CQ:image,file=plan.png]'
     return ans
+
+def transferFactory(messageList:list[str],qid:str):
+    """
+    :param messageList: 转让工厂 数量 转让对象(学号/q+QQ号）
+    :param qid: 转让者的qq号
+    :return: 转让提示信息
+    """
+    assert len(messageList) == 3, '转让工厂失败:您的转让格式不正确！'
+    nowtime=getnowtime()
+    try:
+        transferNum:int=int(messageList[1])
+        newOwnerID:str=str(messageList[2])
+    except ValueError:
+        return '转让工厂失败:您的输入格式不正确！'
+
+    user=User.find(qid,mysql)
+    assert transferNum < user.factoryNum,'转让工厂失败:您不能转让自带的一个工厂！'
+    assert transferNum <= user.factoryNum - user.busyFactoryNum, '转让工厂失败:您不能转让正在工作中的工厂！'
+
+    if newOwnerID.startswith("q"):
+        # 通过QQ号查找对方
+        tqid: str = newOwnerID[1:]
+        newOwner: User = User.find(tqid, mysql)
+        assert newOwner, "转让工厂失败:QQ号为%s的用户未注册！" % tqid
+    else:
+        tschoolID: str = newOwnerID
+        # 通过学号查找
+        assert User.findAll(mysql, 'schoolID=?', (tschoolID,)), "转让工厂失败:学号为%s的用户未注册！" % tschoolID
+        newOwner: User = User.findAll(mysql, 'schoolID=?', (tschoolID,))[0]
+
+    #assert newCreditor.qid != debt.debitor, "转让债权失败:不能转让给债务人！"
+    newOwner.factoryNum += transferNum
+    user.factoryNum -= transferNum
+
+    user.save(mysql)
+    newOwner.save(mysql)
+    ans = '转让工厂成功！%s个工厂已成功转让给%s，您还有%s个工厂' % (transferNum, newOwnerID, user.factoryNum)
+
+    return ans

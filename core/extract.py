@@ -134,3 +134,45 @@ def openMine(messageList:list[str],qid:str):
     mine.save(mysql)
 
     return '开放成功！'
+
+def transferMine(messageList:list[str],qid:str):
+    """
+    :param messageList: 转让矿井 矿井编号 转让对象(学号/q+QQ号）
+    :param qid: 转让者的qq号
+    :return: 转让提示信息
+    """
+    assert len(messageList) == 3, '转让矿井失败:您的转让格式不正确！'
+    try:
+        transferID:int=int(messageList[1])
+        newOwnerID:str=str(messageList[2])
+    except ValueError:
+        return '转让工厂失败:您的输入格式不正确！'
+
+    user=User.find(qid,mysql)
+
+    mine=Mine.find(transferID,mysql)
+    assert mine is not None,"转让矿井失败:不存在此矿井！"
+    assert mine.owner==qid,'转让矿井失败:您不是此矿井的主人！'
+
+    if newOwnerID.startswith("q"):
+        # 通过QQ号查找对方
+        tqid: str = newOwnerID[1:]
+        newOwner: User = User.find(tqid, mysql)
+        assert newOwner, "转让矿井失败:QQ号为%s的用户未注册！" % tqid
+    else:
+        tschoolID: str = newOwnerID
+        # 通过学号查找
+        assert User.findAll(mysql, 'schoolID=?', (tschoolID,)), "转让矿井失败:学号为%s的用户未注册！" % tschoolID
+        newOwner: User = User.findAll(mysql, 'schoolID=?', (tschoolID,))[0]
+
+    if newOwner.qid == 'treasury':
+        mine.private = False
+
+    mine.owner = newOwner.qid
+    user.mines.pop(user.mines.index(transferID))
+    newOwner.mines.append(transferID)
+    user.save(mysql)
+    newOwner.save(mysql)
+    ans = '转让矿井成功！矿井编号%s已成功转让给%s' % (transferID, newOwnerID)
+
+    return ans

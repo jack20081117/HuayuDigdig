@@ -122,7 +122,7 @@ def repayDebt(messageList:list[str],qid:str):
 
 def transferDebt(messageList:list[str],qid:str):
     """
-    :param messageList: 转让 债券编号 转让对象(学号/q+QQ号）
+    :param messageList: 转让债务 债券编号 转让对象(学号/q+QQ号）
     :param qid: 还款者的qq号
     :return: 还款提示信息
     """
