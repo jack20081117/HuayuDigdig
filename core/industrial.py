@@ -264,6 +264,9 @@ def refine(messageList: list[str], qid: str):
         expenseCalculator(2,duplication,ingredient,ingredient,user.tech['refine'],refine_eff,factoryNum,fuelFactorDict[4])
 
     fuelRequired -= 1 # 消除负收益是否采用对数平均
+
+    if ingredient in [3, 7, 31, 127, 8191]: #梅森素数获得双倍燃油
+        ingredient *= 2
     products: dict = {0: duplication * ingredient}
     ingredients: dict = {0: fuelRequired, ingredient: duplication}
 

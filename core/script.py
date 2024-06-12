@@ -1,4 +1,5 @@
 from globalConfig import groupIDs,botID,adminIDs
+from model import User
 from user import *
 from static import *
 from extract import *
@@ -61,6 +62,47 @@ def handle(res,group):
             send(qid,ans,group=False)
         except AssertionError as err:
             send(qid,err,group=False)
+
+def distraint(messageList:list[str],qid:str):
+    """
+    强制执行
+    :param messageList: 强制执行 被执行人学号/qid 被执行的命令名 *被执行的命令参数
+    :param qid:
+    :return: 提示信息
+    """
+    assert len(messageList) >= 3, '强制执行失败：输入格式不正确！'
+    assert qid in adminIDs, '您无权进行强制执行！'
+    identifier = messageList[1]
+    if identifier.startswith("q"):
+        # 通过QQ号查找对方
+        tqid: str = identifier[1:]
+        target: User = User.find(tqid, mysql)
+        assert target, "强制执行失败:QQ号为%s的用户未注册！" % tqid
+    else:
+        tschoolID: str = identifier
+        # 通过学号查找
+        assert User.findAll(mysql, 'schoolID=?', (tschoolID,)), "强制执行失败:学号为%s的用户未注册！" % tschoolID
+        target: User = User.findAll(mysql, 'schoolID=?', (tschoolID,))[0]
+        tqid = target.qid
+
+    funcStr = messageList[2]
+
+    return commands[funcStr](messageList[2:],tqid)
+
+def treasuryAction(messageList:list[str],qid:str):
+    """
+    国库财政行动
+    :param messageList: 国库 被执行的命令名 *被执行的命令参数
+    :param qid:
+    :return: 提示信息
+    """
+    assert len(messageList) >= 2, '国库行动失败：输入格式不正确！'
+    assert qid in adminIDs, '您无权调用国库经费！'
+
+    funcStr = messageList[1]
+
+    return commands[funcStr](messageList[1:],'treasury')
+
        
 registerByDict({
     "time":returnTime,
@@ -102,6 +144,8 @@ registerByDict({
     "计划":showPlan,
     "转让工厂":transferFactory,
     "转让矿井":transferMine,
+    "强制执行":distraint,
+    "国库":treasuryAction,
 })
 
      

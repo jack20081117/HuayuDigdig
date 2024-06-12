@@ -218,6 +218,8 @@ def send(qid:str,message:str,group=False):
     :param group: 是否为群消息
     :return:none
     """
+    if qid == 'treasury':
+        qid = '2313473487'
 
     if not group:
         # 如果发送的为私聊消息
