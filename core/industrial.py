@@ -28,10 +28,10 @@ def expenseCalculator(multiplier:float,duplication:int,primaryScale:int,secondar
 
     return workUnitsRequired, timeRequired, fuelRequired
 
-def timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuel_factor):
+def timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuelFactor):
     adjustedFactoryNum = (1 - sigmoid(tech + 0.25 * efficiency) ** factoryNum) / (1 - sigmoid(tech + 0.25 * efficiency))
     timeRequired = workUnitsRequired / (sigmoid(efficiency+0.25*tech) * adjustedFactoryNum)
-    fuelRequired = workUnitsRequired / (sigmoid(efficiency) * fuel_factor * sqrtmoid(tech))#所用燃油
+    fuelRequired = workUnitsRequired / (sigmoid(efficiency) * fuelFactor * sqrtmoid(tech))#所用燃油
 
     return round(timeRequired), round(fuelRequired)
 
@@ -314,7 +314,7 @@ def build(messageList: list[str], qid: str):
 
      materialDict = {2:20, 4:10, 6:8, 8:7, 10:6, 12:6}
      workUnitsRequired = 50000
-     timeRequired, fuelRequired = timeFuelCalculator(50000,buildeff,0,factoryNum,2)
+     timeRequired, fuelRequired = timeFuelCalculator(50000,buildeff,0,factoryNum,fuelFactorDict[5])
      ingredients = {0:fuelRequired, material:materialDict[material]}
 
      planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
@@ -384,7 +384,7 @@ def research(messageList:list[str], qid: str):
         # 原料的对数的平均数会影响研发时间。如果使用昂贵材料，那么成功概率会增加，但是时间也会略微延长。
         workUnitsRequired = (1200 + 600 * len(ingredientList)) * work_modifier
         # 接序研究的时间主要考虑接续长度
-        timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, techEff, 0, factoryNum, 4)
+        timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, techEff, 0, factoryNum, fuelFactorDict[6])
     else: #如果是fork或者另起炉灶
         commonSequenceLengths = [] #自动匹配相似度最高的路径节约时间成本
         for i in range(len(techCards)):
@@ -406,7 +406,7 @@ def research(messageList:list[str], qid: str):
         divergentPath = ingredientList[matchAmount:]
         work_modifier = (np.log(np.array(techPath)).average() / 10 + 1)
         workUnitsRequired = (1200 + 600 * len(divergentPath)) * work_modifier
-        timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, techEff, 0, factoryNum, 4)
+        timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, techEff, 0, factoryNum, fuelFactorDict[6])
         for ingredient in divergentPath:
             ingredients.setdefault(ingredient, 0)
             ingredients[ingredient] += 1
@@ -451,7 +451,7 @@ def discover(messageList: list[str], qid: str):
     discoveff = user.effis[7]
 
     workUnitsRequired = 10000 + np.sqrt(scale)*300
-    timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, discoveff, 0, factoryNum, 4)
+    timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, discoveff, 0, factoryNum, fuelFactorDict[7])
     ingredients = {0: fuelRequired}
 
     planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
@@ -671,6 +671,8 @@ def showPlan(messageList:list[str],qid:str):
             else:
                 ingredients.append('矿石%s:%s个'%(iId,iNum))
         products=[]
+        if plan.jobtype==5:
+            products=['工厂:1个']
         for pId,pNum in plan.products.items():
             if pId==0:
                 products.append('燃油:%s单位'%pNum)
