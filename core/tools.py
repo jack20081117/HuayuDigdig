@@ -152,11 +152,17 @@ def mineralSample(lower,upper,logUniform=False)->int:
     else:
         return np.random.randint(lower,upper)
 
-def getnowtime():
+def getnowtime()->int:
     """
     生成当前时间timestamp
     """
     return round(datetime.timestamp(datetime.now()))
+
+def getnowdate()->int:
+    """
+    生成当前日期timestamp
+    """
+    return getnowtime()//86400*86400
 
 def generateTime(timestr:str)->int:
     """

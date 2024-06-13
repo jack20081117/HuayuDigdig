@@ -1,5 +1,5 @@
 from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp
-from model import User, Plan
+from model import User, Plan,Statistics
 from update import updateEfficiency, updatePlan
 from globalConfig import mysql,effisValueDict, fuelFactorDict, permitBase, permitGradient
 from numpy import log
@@ -511,6 +511,7 @@ def enactPlan(messageList: list[str], qid: str):
 def enaction(plan: Plan):
     qid = plan.qid
     user: User = User.find(qid, mysql)
+    nowtime:int=getnowtime()
     requiredFactoryNum = plan.factoryNum
     idleFactoryNum = user.factoryNum - user.busyFactoryNum
     assert requiredFactoryNum <= idleFactoryNum, "计划执行失败：工厂不足！"
@@ -559,7 +560,8 @@ def enaction(plan: Plan):
     if not success:
         return ans
 
-
+    if plan.jobtype==4:
+        Statistics(timestamp=nowtime,money=0,fuel=products[0]).add(mysql)
     if plan.jobtype == 5:
         if 1 in user.misc:
             ans += '由于您有未使用的工厂建设许可证，此次不需要重新置办！\n'

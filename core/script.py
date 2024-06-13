@@ -7,6 +7,7 @@ from market import *
 from stock import *
 from debt import *
 from industrial import *
+from taxes import *
 
 commands:dict={}
 
@@ -109,6 +110,7 @@ registerByDict({
     "帮助":getHelp,
     "注册":signup,
     "查询":getUserInfo,
+    "统计局":getStats,
     "开采":getMineral,
     "开放":openMine,
     "兑换":exchangeMineral,

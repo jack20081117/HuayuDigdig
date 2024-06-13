@@ -81,53 +81,61 @@ def taxUpdate():
 
 def lottery(messageList:list[str],qid:str):
     """
-    抽奖
-    :param messageList: 抽奖 (次数 默认一次)
+    抽奖(每次耗费10元）
+    特等奖中奖概率0.00001 奖金50000元
+    一等奖中奖概率0.0001 奖金10000元
+    二等奖中奖概率0.005 奖金200元
+    三等奖中奖概率0.05 奖金50元
+    四等奖中奖概率0.2 奖金20元
+    期望值：0.5+1+1+2.5+4=9元
+    :param messageList: 抽奖 倍率(默认为1) 次数(默认为1)
     :param qid: 抽奖人的qq号
     :return: 抽奖提示信息
     """
-    assert 1<=len(messageList)<=2, "您抽奖的格式不正确！"
-    if len(messageList) == 1:
-        duplication = 1
-    else:
-        try:
-            duplication: int = int(messageList[1])
-        except ValueError:
-            return '抽奖失败:您的抽奖次数不正确！'
+    assert 1<=len(messageList)<=3, "您抽奖的格式不正确！"
+    try:
+        multiplier:int=1 if len(messageList)==1 else int(messageList[1])
+        duplication:int=1 if len(messageList)<=2 else int(messageList[2])
+    except ValueError:
+        return '抽奖失败:您的抽奖次数不正确！'
+    assert multiplier>0,"还在玩负数倍率的bug，真是不可饶恕！"
     assert duplication <= 20,"大赌伤身，一次最多抽20发！"
     user = User.find(qid, mysql)
     treasury = User.find('treasury', mysql)
     assert user.money >= 10, "您没有足够的钱抽奖一次！"
     ans = ''
     for i in range(duplication):
-        if user.money < 10:
+        if user.money <= 10*multiplier:
             ans += '您的余额不足继续抽奖！'
             break
-        user.money -= 10
+        user.money -= 10*multiplier
         treasury.money += 10
         indicator = random.random()
         if indicator <= 0.00001:
             ans += '恭喜！中了特等奖，奖金50000！（概率0.00001）\n'
-            user.money += 50000
-            treasury.money -= 50000
+            user.money += 50000*multiplier
+            treasury.money -= 50000*multiplier
         elif indicator <= 0.00011:
             ans += '恭喜！中了一等奖，奖金10000！（概率0.0001）\n'
-            user.money += 10000
-            treasury.money -= 10000
+            user.money += 10000*multiplier
+            treasury.money -= 10000*multiplier
         elif indicator <= 0.00511:
             ans += '恭喜！中了二等奖，奖金200！（概率0.005）\n'
-            user.money += 200
-            treasury.money -= 200
+            user.money += 200*multiplier
+            treasury.money -= 200*multiplier
         elif indicator <= 0.05511:
             ans += '恭喜！中了三等奖，奖金50！（概率0.05）\n'
-            user.money += 50
-            treasury.money -= 50
+            user.money += 50*multiplier
+            treasury.money -= 50*multiplier
         elif indicator <= 0.25511:
             ans += '恭喜！中了四等奖，奖金20！（概率0.2）\n'
-            user.money += 20
-            treasury.money -= 20
+            user.money += 20*multiplier
+            treasury.money -= 20*multiplier
         else:
             ans += '很遗憾，这次没有中奖！\n'
+
+    user.save(mysql)
+    treasury.save(mysql)
 
     return ans
 

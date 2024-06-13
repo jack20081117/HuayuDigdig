@@ -2,7 +2,7 @@ import numpy as np
 
 from tools import sigmoid,sqrtmoid,getnowtime,generateTimeStr,setTimeTask, mineralSample,exchangeable
 from update import updateDigable
-from model import User,Mine
+from model import User,Mine,Statistics
 from globalConfig import mysql,vatRate
 
 def extractMineral(qid:str,mineralID:int,mine:Mine):
@@ -12,6 +12,7 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
     :param mine:矿井
     :return:开采信息
     """
+    nowtime:int=getnowtime()
     abundance:float=mine.abundance #矿井丰度
     user:User=User.find(qid,mysql)
     mineral:dict[int,int]=user.mineral # 用户拥有的矿石
@@ -48,6 +49,7 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
             percentage = np.random.random()/4+0.25
             oil = round(mineralID/np.log(mineralID) * percentage+1)
             ans+='此次开采连带发现%d单位天然燃油！' % oil
+            Statistics(timestamp=nowtime,money=0,fuel=oil).add(mysql)
             mineral.setdefault(0, 0)
             mineral[0] += oil
         user.mineral = mineral
@@ -86,7 +88,11 @@ def exchangeMineral(messageList:list[str],qid:str):
     :return: 兑换提示信息
     """
     assert len(messageList)==2,'兑换失败:请指定要兑换的矿石！'
-    mineralID:int=int(messageList[1])
+    nowtime:int=getnowtime()
+    try:
+        mineralID:int=int(messageList[1])
+    except ValueError:
+        return '兑换失败:您的兑换格式不正确！'
     user:User=User.find(qid,mysql)
     schoolID:str=user.schoolID
     mineral=user.mineral
@@ -101,6 +107,8 @@ def exchangeMineral(messageList:list[str],qid:str):
     user.money+=mineralID
     user.outputTax += mineralID * vatRate #增值税
     user.save(mysql)
+
+    Statistics(timestamp=nowtime,money=mineralID,fuel=0).add(mysql)
 
     ans='兑换成功！'
     return ans

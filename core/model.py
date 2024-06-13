@@ -147,6 +147,12 @@ class StockData(Model): #持久化储存股市信息
     opening = BooleanField()
     closing = BooleanField()
 
+class Statistics(Model):#国家统计局
+    __table__="statistics"
+    timestamp=IntegerField(primaryKey=True)
+    money=IntegerField()
+    fuel=IntegerField()
+
 class Debt(Model):
     __table__='debts'
 
@@ -159,4 +165,4 @@ class Debt(Model):
     endtime=IntegerField()
     interest=FloatField()
 
-AllModels:list[Model]=[User,Mine,Sale,Purchase,Auction,Stock,Debt,Order,Plan,StockData,Misc]
+AllModels:list[Model]=[User,Mine,Sale,Purchase,Auction,Stock,Debt,Order,Plan,StockData,Misc,Statistics]

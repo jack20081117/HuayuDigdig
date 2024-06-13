@@ -132,14 +132,11 @@ def factorsLookup(messageList:list[str],qid:str):
     for i in indicatorList:
         primeFactors, Factors = factors(i)
         ans += '%s:' % i
-        for p in primeFactors:
-            ans += '%s ' % p
+        ans+=' '.join('%s'%p for p in sorted(primeFactors))
         ans += '\n'
         allFactorList += Factors
     ans+= '所有可供您兑换的矿石编号如下：\n'
-    for factor in set(allFactorList):
-        if factor!=1:
-            ans += '%s,' % factor
+    ans+=','.join(['%s'%factor for factor in sorted(set(allFactorList)) if factor!=1])
 
     return ans
 
