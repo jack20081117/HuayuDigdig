@@ -1,6 +1,6 @@
 import re
 from globalConfig import mysql,effisStr,infoMsg,playerTax,effisItemCount
-from tools import getnowtime,sigmoid
+from tools import getnowtime,sigmoid, indicators, factors
 from model import User
 
 def signup(messageList:list[str],qid:str):
@@ -10,7 +10,9 @@ def signup(messageList:list[str],qid:str):
     :param qid: 注册者的qq号
     :return: 注册提示信息
     """
-    assert len(messageList)==2 and re.match(r'\d{5}',messageList[1]) and len(messageList[1])==5,'注册失败:请注意您的输入格式！'
+    assert len(messageList)==2 \
+           and re.match(r'((1[0-9]|2[0-9]|30)\d{3,4}|(19|20)\d{2}(0[1-9]|1[0-2])\d{2})',messageList[1]) \
+           and len(messageList[1]) in [5,6,8],'注册失败:请注意您的输入格式！'
     schoolID:str=messageList[1]
     nowtime = getnowtime()
     assert not User.find(qid,mysql) and not User.findAll(mysql,'schoolID=?',(schoolID,)),'注册失败:您已经注册过，无法重复注册！'
@@ -116,3 +118,27 @@ def pay(messageList:list[str],qid:str):
     tuser.save(mysql)
 
     return "支付成功！"
+
+def factorsLookup(messageList:list[str],qid:str):
+    """
+    :param messageList: 因子查询
+    :param qid: 支付者的qq号
+    :return: 支付提示信息
+    """
+    user: User = User.find(qid, mysql)
+    indicatorList = indicators(user.schoolID)
+    ans = '您的天赋代码的%s个判定段和其质因子如下：\n' % len(indicatorList)
+    allFactorList = []
+    for i in indicatorList:
+        primeFactors, Factors = factors(i)
+        ans += '%s:' % i
+        for p in primeFactors:
+            ans += '%s ' % p
+        ans += '\n'
+        allFactorList += Factors
+    ans+= '所有可供您兑换的矿石编号如下：\n'
+    for factor in set(allFactorList):
+        if factor!=1:
+            ans += '%s,' % factor
+
+    return ans

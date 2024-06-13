@@ -5,7 +5,7 @@ class User(Model):
     __table__='users'
 
     qid=StringField(columnType='varchar(20)',primaryKey=True)
-    schoolID=StringField(columnType='varchar(5)')
+    schoolID=StringField(columnType='varchar(8)')
     money=FloatField()
     mineral=StringField(columnType='varchar(2000)')
     tech=StringField(columnType='varchar(200)') #Dict str:float

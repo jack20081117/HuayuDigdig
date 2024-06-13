@@ -147,6 +147,7 @@ registerByDict({
     "强制执行":distraint,
     "国库":treasuryAction,
     "抽奖":lottery,
+    "因子查询":factorsLookup,
 })
 
      

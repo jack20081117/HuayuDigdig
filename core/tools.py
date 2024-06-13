@@ -2,6 +2,7 @@ import random,requests
 from datetime import datetime
 import numpy as np
 import imgkit
+import math
 
 from apscheduler.schedulers.background import BackgroundScheduler as bgsc
 from hashlib import md5
@@ -10,6 +11,30 @@ from globalConfig import chars,imgkit_config
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 
 digest = lambda s: md5(s.encode('ascii')).hexdigest()
+
+def prime_sieve(n):
+    is_prime = [True] * (n + 1)
+    is_prime[0] = is_prime[1] = False
+    for p in range(2, math.isqrt(n) + 1):
+        if is_prime[p]:
+            for k in range(p * p, n + 1, p):
+                is_prime[k] = False
+    return [p for p in range(2, n + 1) if is_prime[p]]
+
+def factors(n):
+    prime_factors = []
+    for p in prime_sieve(math.isqrt(n)):
+        while n % p == 0:
+            prime_factors.append(p)
+            n //= p
+        if n == 1:
+            break
+    if n > 1:
+        prime_factors.append(n)
+    factors = [1]
+    for p in prime_factors:
+        factors += [f * p for f in factors]
+    return set(prime_factors),factors
 
 def fromstr(data):
     if isinstance(data,str):
@@ -59,6 +84,22 @@ def isPrime(n)->bool:
         i += 6
     return True
 
+def indicators(schoolID:str)->list[int]:
+    if len(schoolID) == 5:
+        return [int(schoolID), int(schoolID[:3]),int(schoolID[2:]),
+                int(schoolID[:2]+'0'+schoolID[2:])]
+    elif len(schoolID) == 6:
+        return [int(schoolID), int(schoolID[:4]), int(schoolID[2:])]
+    elif len(schoolID) == 8:
+        return [int(schoolID[2:]), int(schoolID[:2]), int(schoolID[4:])]
+    return []
+
+def exchangeable(id:str,ore:int)->bool:
+    indicator = indicators(id)
+    flag = False
+    for i in indicator:
+        flag = flag or not i%ore
+    return flag
 
 def tech_validator(tech_type:str, path:list[int], sid:str):
     method_string = tech_type
@@ -67,7 +108,7 @@ def tech_validator(tech_type:str, path:list[int], sid:str):
     for i in range(len(path)):
         tech_level = i + 1
 
-        class_buff = '%s+%s' % (sid[:3], path[i])
+        class_buff = '%s+%s' % (indicators(sid)[1], path[i])
         specific_buff = '%s+%s' % (sid, path[i])
         modifier = (int(digest(specific_buff)[-2:], 16) + int(digest(class_buff)[-2:], 16) - 256) / 2048
 

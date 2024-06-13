@@ -1,6 +1,6 @@
 import numpy as np
 
-from tools import sigmoid,sqrtmoid,getnowtime,generateTimeStr,setTimeTask, mineralSample
+from tools import sigmoid,sqrtmoid,getnowtime,generateTimeStr,setTimeTask, mineralSample,exchangeable
 from update import updateDigable
 from model import User,Mine
 from globalConfig import mysql,vatRate
@@ -89,13 +89,9 @@ def exchangeMineral(messageList:list[str],qid:str):
     mineralID:int=int(messageList[1])
     user:User=User.find(qid,mysql)
     schoolID:str=user.schoolID
-    money:int=user.money
     mineral=user.mineral
     assert mineralID in mineral,'兑换失败:您不具备此矿石！'
-    assert not int(schoolID)%mineralID\
-        or not int(schoolID[:3])%mineralID\
-        or not int(schoolID[2:])%mineralID\
-        or not int(schoolID[:2]+'0'+schoolID[2:])%mineralID,'兑换失败:您不能够兑换此矿石！'
+    assert exchangeable(schoolID,mineralID),'兑换失败:您不能够兑换此矿石！'
 
     mineral[mineralID]-=1
     if mineral[mineralID]<=0:
