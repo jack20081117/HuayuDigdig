@@ -337,6 +337,54 @@ def sellStock(messageList: list[str], qid: str):
     ans = makeOrder(qid, stock.stockID, 'sell', stockNum, price)
     return ans
 
+def giveDividend(messageList: list[str], qid: str):
+    """
+    :param messageList: 分红 股票名称/缩写 钱数
+    :param qid:
+    :return: 提示信息
+    """
+    assert len(messageList) == 3, '分红失败:您的分红格式不正确！'
+    try:
+        dividend: float = float(messageList[2])
+    except ValueError:
+        return "分红失败:您的分红格式不正确！"
+
+    stockIdentifier = str(messageList[1])
+
+    if len(stockIdentifier) == 3:
+        # 通过股票缩写查找
+        stock: Stock = Stock.find(stockIdentifier, mysql)
+        assert stock, "分红失败:不存在代码为%s的股票！" % stockIdentifier
+    else:
+        # 通过股票名称查找
+        assert Stock.findAll(mysql, 'stockName=?', (stockIdentifier,)), "分红失败:不存在代码为%s的股票！" % stockIdentifier
+        stock: Stock = Stock.findAll(mysql, 'stockName=?', (stockIdentifier,))[0]
+
+    #assert dividend, '买入失败！您的报价超出了合理区间，建议重新考虑！'
+    assert stock.issuer == qid, "分红失败，您不是该股票的发行者！"
+
+    issuer: User = User.find(qid, mysql)
+    assert issuer.money >= dividend, '分红失败！您的余额不足！'
+
+    issuer.money -= dividend
+    issuer.save(mysql)
+
+    divisor = stock.stockNum
+    if qid in stock.shareholders:
+        divisor -= stock.shareholders[qid]
+
+    for share in stock.shareholders.items():
+        recipient = User.find(share[0],mysql)
+        recipient.money += dividend*share[1]/divisor
+        send(recipient.qid,'股票%s的发行者%s分红了%.2f元，您凭持有的%s股获得了其中的%.2f元！'
+             % (stock.stockID, qid, dividend, share[1], dividend*share[1]/divisor))
+        recipient.save(mysql)
+
+    stock.avg_dividend += dividend/divisor
+
+    ans = '分红成功！该股票平均每股分红已达到%.2f元！' % (stock.avg_dividend)
+
+    return ans
 
 def makeOrder(qid: str, stockID: int, direction: str, amount: int, priceLimit: float):
     nowtime = getnowtime()
@@ -358,7 +406,6 @@ def makeOrder(qid: str, stockID: int, direction: str, amount: int, priceLimit: f
 
     ans = "您的申报创建成功！"
     return ans
-
 
 def pairing(bid: Order,ask:Order, amount: int, price: float): #配对撮合，更新已成交的股数
     bid.amount -= amount
