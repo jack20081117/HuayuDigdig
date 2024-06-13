@@ -194,7 +194,7 @@ def debtMarket(messageList:list[str],qid:str):
     ans='欢迎来到债市！\n'
     if debts:
         ans+='以下是所有目前可借的贷款:\n'
-        debtData=[['债券编号','金额','债权人','借出时间','利率','起始时间','终止时间']]
+        debtData=[['债券编号','金额','债权人','借出时间','利率','时化利率','起始时间','终止时间']]
         for debt in debts:
             debttime:str=''
             if debt.duration//86400:
@@ -205,7 +205,8 @@ def debtMarket(messageList:list[str],qid:str):
                 debttime+='%d分钟'%((debt.duration%3600)//60)
             starttime:str=generateTimeStr(debt.starttime)
             endtime:str=generateTimeStr(debt.endtime)
-            debtData.append([debt.debtID,debt.money,debt.creditor,debttime,debt.interest,starttime,endtime])
+            hourly_interest = ('%.2f' % 100*debt.interest/((endtime - starttime)/3600)) + "%"
+            debtData.append([debt.debtID,debt.money,debt.creditor,debttime,debt.interest,hourly_interest,starttime,endtime])
         drawtable(debtData,'debt.png')
         ans+='[CQ:image,file=debt.png]'
     else:

@@ -142,3 +142,4 @@ def factorsLookup(messageList:list[str],qid:str):
             ans += '%s,' % factor
 
     return ans
+

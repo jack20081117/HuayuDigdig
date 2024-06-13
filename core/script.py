@@ -1,5 +1,5 @@
 from globalConfig import groupIDs,botID,adminIDs
-from model import User
+from model import User,Stock,Debt
 from user import *
 from static import *
 from extract import *
@@ -150,5 +150,12 @@ registerByDict({
     "因子查询":factorsLookup,
 })
 
-     
-            
+def assetCalculation(user:User):
+    assets = user.money
+    for i in user.stocks.items():
+        stock = Stock.find(i[0], mysql)
+        assets += i[1] * stock.price
+    for debt in Debt.findAll(mysql, 'creditor=?', (user.qid,)):
+        assets += debt.money
+
+    return assets

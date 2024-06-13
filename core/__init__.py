@@ -1,4 +1,4 @@
-from model import AllModels,User,Mine,Misc
+from model import AllModels,User,Mine,Misc,Stock
 from orm import execute
 from globalConfig import config,mysql
 from tools import setCrontab,getnowtime,mineExpectation
@@ -97,6 +97,25 @@ def createSystemMisc():
         description='Entitles the owner to build a new facility. Is already attributed.'
     ).add(mysql)
 
+def createPaperFuel():
+    stock = Stock(stockID='pfu',
+                  stockName='PaperFuel',
+                  stockNum=0,
+                  openStockNum=0,
+                  provisionalFunds=0,
+                  issuer='treasury',
+                  price=3,
+                  selfRetain=0,
+                  primaryEndTime=0,
+                  bidders=[],
+                  askers=[],
+                  histprice={'designatedIssuePrice': 3},
+                  shareholders={},
+                  primaryClosed=True,
+                  secondaryOpen=False,
+                  avgDividend=0.0)
+    stock.save(mysql)
+
 if_delete_and_create = input("Do you want to DELETE the database and remake them? This will DELETE ALL YOUR DATA NOW! (y/n): ")
 if if_delete_and_create == "y":
     if mysql:
@@ -107,6 +126,7 @@ if if_delete_and_create == "y":
     createTreasury()
     createInitialMines()
     createSystemMisc()
+    createPaperFuel()
 
     print('Successfully initialized.')
 

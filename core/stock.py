@@ -22,6 +22,9 @@ def issueStock(messageList: list[str], qid: str):
     assert len(stockID) == 3, '发行失败:股票缩写必须为3个字符！'
     assert not Stock.find(stockID, mysql), "发行失败:该股票缩写已经被占用！"
 
+    issuer: User = User.find(qid, mysql)
+    assert issuer.money >= 1000,'发行失败：要发行股票，您需要证明自己至少有1000元资产（不会扣除）！'
+
     stockNum: int = int(messageList[3])
     assert 10000 <= stockNum <= 100000, '发行失败:股票发行量必须在10000股到100000股之间！'
 
@@ -50,7 +53,6 @@ def issueStock(messageList: list[str], qid: str):
                   secondaryOpen=False,
                   avgDividend=0.0)
     stock.add(mysql)
-    issuer: User = User.find(qid, mysql)
     issuer.stocks[stockID] = selfRetain
     issuer.save(mysql)
     setTimeTask(primaryClosing, primaryEndTime, stock)  # 一级市场认购结束事件
@@ -161,6 +163,73 @@ def acquireStock(messageList: list[str], qid: str):
     ans = '认购成功！'
     return ans
 
+def toPaperFuel(messageList: list[str], qid: str):
+    """
+    :param messageList: 兑换纸燃油 数量
+    :param qid:
+    :return: 提示信息
+    """
+    assert len(messageList) == 2, '兑换失败:您的兑换格式不正确！'
+    try:
+        stockNum: int = int(messageList[1])
+    except ValueError:
+        return "兑换失败:您的兑换格式不正确！"
+    user = User.find(qid, mysql)
+    assert 0 in user.minerals, '兑换失败：您没有燃油！'
+    assert user.minerals[0] >= stockNum,'兑换失败：您现在只有%s单位纸燃油！' % user.minerals[0]
+
+    pfu = Stock.find('pfu', mysql)
+    user = User.find(qid, mysql)
+    pfu.stockNum += stockNum
+    pfu.shareholders.setdefault(qid, 0)
+    pfu.shareholders[qid] += stockNum
+    user.minerals[0] -= stockNum
+    if user.minerals[0] == 0:
+        user.stocks.pop(0)
+    user.stocks.setdefault('pfu',0)
+    user.stocks['pfu'] += stockNum
+
+    pfu.save(mysql)
+    user.save(mysql)
+
+    ans = '您已成功兑换%s单位纸燃油！' % stockNum
+
+    return ans
+
+
+def fromPaperFuel(messageList: list[str], qid: str):
+    """
+    :param messageList: 兑换燃油 数量
+    :param qid:
+    :return: 提示信息
+    """
+    assert len(messageList) == 2, '兑换失败:您的兑换格式不正确！'
+    try:
+        stockNum: int = int(messageList[1])
+    except ValueError:
+        return "兑换失败:您的兑换格式不正确！"
+    user = User.find(qid, mysql)
+    assert 'pfu' in user.stocks, '兑换失败：您没有纸燃油！'
+    assert user.stocks['pfu'] >= stockNum, '兑换失败：您现在只有%s单位纸燃油！' % user.stocks['pfu']
+
+    pfu = Stock.find('pfu', mysql)
+    user = User.find(qid, mysql)
+    pfu.stockNum -= stockNum
+    pfu.shareholders[qid] -= stockNum
+    if pfu.shareholders[qid] == 0:
+        pfu.shareholders.pop(qid)
+    user.minerals.setdefault(0, 0)
+    user.minerals[0] += stockNum
+    user.stocks['pfu'] -= stockNum
+    if user.stocks['pfu'] == 0:
+        user.stocks.pop('pfu')
+
+    pfu.save(mysql)
+    user.save(mysql)
+
+    ans = '您已成功兑换%s单位燃油！' % stockNum
+
+    return ans
 
 def stockMarket(messageList: list[str], qid: str):
     """
