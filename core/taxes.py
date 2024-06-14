@@ -65,7 +65,7 @@ def taxUpdate():
                 send(user.qid, '您本期已结清税款，进项税额余额%.2f元转结至下一期继续抵扣，感谢您对我游税务工作的支持。' % user.inputTax)
             elif user.outputTax - user.inputTax <= 10:
                 send(user.qid,'提醒：本期您无需缴税或欠缴税额较小，但并未主动缴清，以后切勿忘记缴税。')
-            elif 0.8*user.money > (user.outputTax - user.inputTax)*1.005:
+            elif 0.9*user.money > (user.outputTax - user.inputTax)*1.005:
                 user.money -= (user.outputTax - user.inputTax)*1.005
                 treasury.money += (user.outputTax - user.inputTax)*1.005
                 user.save(mysql)
@@ -99,6 +99,7 @@ def lottery(messageList:list[str],qid:str):
     except ValueError:
         return '抽奖失败:您的抽奖次数不正确！'
     assert multiplier>0,"还在玩负数倍率的bug，真是不可饶恕！"
+    assert multiplier <= 10, "大赌伤身，一次最多抽10倍！"
     assert duplication <= 20,"大赌伤身，一次最多抽20发！"
     user = User.find(qid, mysql)
     treasury = User.find('treasury', mysql)

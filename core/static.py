@@ -1,6 +1,7 @@
 import imgkit, markdown
 from datetime import datetime
 from matplotlib import pyplot as plt
+plt.rcParams['font.family']='Microsoft Yahei'
 
 from model import Statistics
 from globalConfig import imgkit_config,mysql
@@ -31,25 +32,26 @@ def getStats(messageList:list[str],qid:str):
         moneyData.append([date,0])
         fuelData.append([date,0])
         for stat in stats:
-            moneyData[-1][-1]+=stat.money
-            fuelData[-1][-1]+=stat.fuel
-    ans+='以下是所有兑换矿石数据：\n'
+            moneyData.append([stat.timestamp,0])
+            moneyData[-1][-1]+=stat.money+moneyData[-2][-1]
+            fuelData.append([stat.timestamp,0])
+            fuelData[-1][-1]+=stat.fuel+fuelData[-2][-1]
+    ans+='以下是所有兑换矿石与开采燃油数据：\n'
     xs,ys=[],[]
     for datum in moneyData:
-        xs.append(datetime.fromtimestamp(datum[0]).date())
+        xs.append(datetime.fromtimestamp(datum[0]-8*3600))
         ys.append(datum[1])
     plt.figure(figsize=(10,5))
-    plt.plot_date(xs,ys,linestyle='-',marker='.')
-    plt.savefig('../go-cqhttp/data/images/moneyData.png')
-    ans+='[CQ:image,file=moneyData.png]\n'
+    plt.plot(xs,ys,linestyle='-',marker='.',label='矿石')
 
-    ans+='以下是所有开采燃油数据：\n'
     xs,ys=[],[]
     for datum in fuelData:
-        xs.append(datetime.fromtimestamp(datum[0]).date())
+        xs.append(datetime.fromtimestamp(datum[0]-8*3600))
         ys.append(datum[1])
-    plt.figure(figsize=(10,5))
-    plt.plot_date(xs,ys,linestyle='-',marker='.')
-    plt.savefig('../go-cqhttp/data/images/fuelData.png')
-    ans+='[CQ:image,file=fuelData.png]\n'
+    plt.plot(xs,ys,linestyle='-',marker='.',label='燃油')
+
+    plt.legend()
+    plt.savefig('../go-cqhttp/data/images/statistics.png')
+    ans+='[CQ:image,file=statistics.png]\n'
+
     return ans

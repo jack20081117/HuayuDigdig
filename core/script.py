@@ -104,6 +104,34 @@ def treasuryAction(messageList:list[str],qid:str):
 
     return commands[funcStr](messageList[1:],'treasury')
 
+
+def assetCalculation(user:User):
+    assets = user.money
+    for i in user.stocks.items():
+        stock = Stock.find(i[0], mysql)
+        assets += i[1] * stock.price
+    for debt in Debt.findAll(mysql, 'creditor=?', (user.qid,)):
+        assets += debt.money
+    for debt in Debt.findAll(mysql, 'debitor=?', (user.qid,)):
+        assets -= debt.money
+
+    return assets
+
+def showWealthiest(messageList: list[str], qid: str):
+    """
+    显示最富有的前10%
+    :param messageList: 财富排行
+    :param qid:
+    :return: 提示信息
+    """
+    ans = ""
+    allUserList = User.findAll(mysql)
+    allUserList.sort(key=assetCalculation, reverse=True)
+    showNum = round(0.1 * len(allUserList) + 1)
+    for i in range(showNum):
+        ans += "%s. %s拥有流动资产 %.2f 元\n" % (i, allUserList[i].qid, assetCalculation(allUserList[i]))
+
+    return ans
        
 registerByDict({
     "time":returnTime,
@@ -126,6 +154,7 @@ registerByDict({
     "买入":buyStock,
     "抛出":sellStock,
     "股市":stockMarket,
+    "分红":giveDividend,
     "支付":pay,
     "放贷":prelendDebt,
     "借贷":borrowDebt,
@@ -150,14 +179,8 @@ registerByDict({
     "国库":treasuryAction,
     "抽奖":lottery,
     "因子查询":factorsLookup,
+    "财富排行":showWealthiest,
 })
 
-def assetCalculation(user:User):
-    assets = user.money
-    for i in user.stocks.items():
-        stock = Stock.find(i[0], mysql)
-        assets += i[1] * stock.price
-    for debt in Debt.findAll(mysql, 'creditor=?', (user.qid,)):
-        assets += debt.money
 
-    return assets
+
