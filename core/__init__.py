@@ -116,6 +116,43 @@ def createPaperFuel():
                   avgDividend=0.0)
     stock.save(mysql)
 
+def createInitialStocks():
+    Stock(stockID='lyi',
+          stockName='Longyin Index',
+          stockNum=0,
+          openStockNum=0,
+          provisionalFunds=0,
+          issuer='treasury',
+          price=100,
+          selfRetain=0,
+          primaryEndTime=0,
+          bidders=[],
+          askers=[],
+          histprice={},
+          shareholders={},
+          primaryClosed=True,
+          secondaryOpen=True,
+          isIndex=True,
+          avgDividend=0.0).save(mysql)
+
+    Stock(stockID='loi',
+          stockName='Longyin Oil Index',
+          stockNum=0,
+          openStockNum=0,
+          provisionalFunds=0,
+          issuer='treasury',
+          price=100,
+          selfRetain=0,
+          primaryEndTime=0,
+          bidders=[],
+          askers=[],
+          histprice={},
+          shareholders={},
+          primaryClosed=True,
+          secondaryOpen=True,
+          isIndex=True,
+          avgDividend=0.0).save(mysql)
+
 if_delete_and_create = input("Do you want to DELETE the database and remake them? This will DELETE ALL YOUR DATA NOW! (y/n): ")
 if if_delete_and_create == "y":
     if mysql:
@@ -127,6 +164,7 @@ if if_delete_and_create == "y":
     createInitialMines()
     createSystemMisc()
     createPaperFuel()
+    createInitialStocks()
 
     print('Successfully initialized.')
 

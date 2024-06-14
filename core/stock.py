@@ -51,6 +51,7 @@ def issueStock(messageList: list[str], qid: str):
                   shareholders={qid: selfRetain},
                   primaryClosed=False,
                   secondaryOpen=False,
+                  isIndex=False,
                   avgDividend=0.0)
     stock.add(mysql)
     issuer.stocks[stockID] = selfRetain
@@ -276,6 +277,7 @@ def buyStock(messageList: list[str], qid: str):
         assert Stock.findAll(mysql, 'stockName=?', (stockIdentifier,)), "买入失败:不存在代码为%s的股票！" % stockIdentifier
         stock: Stock = Stock.findAll(mysql, 'stockName=?', (stockIdentifier,))[0]
 
+    assert not stock.isIndex, "您输入的股票是指数，不能直接购买！"
     assert stock.secondaryOpen, "买入失败！该股票还未开始二级市场交易阶段！"
     assert stockNum <= stock.stockNum, '买入失败！您想要买入的股数超过了该股票总股数！'
     assert not qid in stock.askers, '您不能在同一期开盘中既买又卖同一只股票！'
@@ -498,10 +500,22 @@ def resolveAuction(aggregate=True, closing=False):
         prices={},
         volumes={},
         opening=aggregate,
-        closing=closing
+        closing=closing,
+        index=100,
+        index2=100,
     )
+    capitalSum = 0
+    capitalSumNoOil = 0
+    indexSum = 0
+    indexSumNoOil = 0
     for stock in Stock.findAll(mysql):
+        if stock.isIndex: continue
         stockID = stock.stockID
+        oldPrice = stock.price
+        oldCapital = stock.price*stock.stockNum
+        capitalSum += oldCapital
+        if not stockID=='pfu':
+            capitalSumNoOil += oldCapital
         if not stock.secondaryOpen:
             continue
         orders = Order.findAll(mysql, 'stockID=?', (stockID,), OrderBy='timestamp')
@@ -519,10 +533,25 @@ def resolveAuction(aggregate=True, closing=False):
         else:
             stock = brokerage(stockID, orders, stock.price, stock.openingPrice, aggregate)
 
+        difference = stock.price/oldPrice
+        indexSum += difference*oldCapital
+        if not stockID=='pfu':
+            indexSumNoOil += difference*oldCapital
         dataEntry.prices[stock.stockID] = stock.price
         dataEntry.volumes[stock.stockID] = stock.volume
         stock.save(mysql)
-        dataEntry.save(mysql)
+
+    index = Stock.find('loi',mysql)
+    index2 = Stock.find('lyi',mysql)
+    indexDifference = indexSum/capitalSum
+    indexDifferenceNoOil = indexSumNoOil/capitalSumNoOil
+    dataEntry.index = indexDifference*index.price
+    dataEntry.index2 = indexDifferenceNoOil*index2.price
+    index.price = dataEntry.index
+    index2.price = dataEntry.index2
+    dataEntry.save(mysql)
+    index.save(mysql)
+    index2.save(mysql)
 
     return None
 
