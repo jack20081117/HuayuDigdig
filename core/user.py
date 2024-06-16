@@ -2,6 +2,7 @@ import re
 from globalConfig import mysql,effisStr,infoMsg,playerTax,effisItemCount
 from tools import getnowtime,sigmoid, indicators, factors
 from model import User
+from update import updateEfficiency
 
 def signup(messageList:list[str],qid:str):
     """
@@ -35,7 +36,9 @@ def signup(messageList:list[str],qid:str):
         busyFactoryNum=0,
         lastEffisUpdateTime=nowtime,
         inputTax=0.0, #进项税额（抵扣）
-        outputTax=0.0 #销项税额
+        outputTax=0.0, #销项税额
+        effisFee=0.0,
+        learnAllow=False,
     )#注册新用户
     user.add(mysql)
     ans="注册成功！"
@@ -85,17 +88,17 @@ def getUserInfo(messageList:list[str],qid:str):
 
 def pay(messageList:list[str],qid:str):
     """
-    :param messageList: 支付 q`QQ号`/`学号` $`金额`
+    :param messageList: 支付 q`QQ号`/`学号` `金额`
     :param qid: 支付者的qq号
     :return: 支付提示信息
     """
     assert len(messageList)==3,'支付失败:您的支付格式不正确！'
     target=str(messageList[1])
-    assert messageList[2].startswith("$"),'支付失败:您的金额格式不正确！'
+    #assert messageList[2].startswith("$"),'支付失败:您的金额格式不正确！'
     try:
-        money:int=int(str(messageList[2])[1:])
+        money:float=float(str(messageList[2]))
     except ValueError:
-        return "支付失败:您的金额格式不正确！应当为:$`金额`"
+        return "支付失败:您的金额格式不正确！应当为:`金额`"
 
     user:User=User.find(qid,mysql)
 
@@ -140,3 +143,73 @@ def factorsLookup(messageList:list[str],qid:str):
 
     return ans
 
+def forbidLearning(messageList:list[str],qid:str):
+    """
+    :param messageList: 禁止学习
+    :param qid: 允许者的qq号
+    :return: 允许提示信息
+    """
+    user = User.find(qid,mysql)
+    user.allowLearning = False
+    user.save(mysql)
+
+    return "已经禁止他人向您学习生产效率！"
+
+
+def allowLearning(messageList:list[str],qid:str):
+    """
+    :param messageList: 允许学习 学费价格
+    :param qid: 允许者的qq号
+    :return: 允许提示信息
+    """
+    assert len(messageList)==2,'允许失败:您的指令格式不正确！'
+    try:
+        money:float=float(str(messageList[1]))
+    except ValueError:
+        return "允许失败:您的学费格式不正确！"
+    user = User.find(qid, mysql)
+    user.allowLearning = True
+    user.effisFee = money
+    user.save(mysql)
+
+    return "已经允许他人以%.2f一项一次的学费向您学习生产效率！" % money
+
+def learnEffis(messageList:list[str],qid:str):
+    """
+    :param messageList: 学习 效率名 学习对象
+    :param qid: 允许者的qq号
+    :return: 允许提示信息
+    """
+    assert len(messageList) == 3, '学习失败:您的指令格式不正确！'
+    assert messageList[1] in effisNameDict, '学习失败：未知效率类别！'
+    effisID = effisNameDict[messageList[1]]
+    target = messageList[2]
+    if target.startswith("q"):
+        # 通过QQ号查找对方
+        tqid:str=target[1:]
+        tuser:User=User.find(tqid,mysql)
+        assert tuser,"学习失败:QQ号为%s的用户未注册！"%tqid
+    else:
+        tschoolID:str=target
+        # 通过学号查找
+        assert User.findAll(mysql,'schoolID=?',(tschoolID,)),"学习失败:学号为%s的用户未注册！"%tschoolID
+        tuser:User=User.findAll(mysql,'schoolID=?',(tschoolID,))[0]
+
+    assert tuser.allowLearning, "学习失败：对方禁止了他人学习效率！"
+    user = User.find(qid,mysql)
+    assert user.money >= tuser.effisFee, "学习失败：您的余额不够缴纳学费！"
+
+    updateEfficiency(tuser, 0)
+    assert user.effis[effisID] < tuser.effis[effisID], "您的该项效率目前比学习对象还要高，不需要进行学习！"
+
+    user.effis[effisID] = user.effis[effisID]*0.25+tuser.effis[effisID]*0.75
+    tuser.effis[effisID] = user.effis[effisID]*0.1+tuser.effis[effisID]*0.9
+    user.money -= tuser.effisFee
+    tuser.money += tuser.effisFee
+    send(tuser.qid,"%s(%s)向你学习了%s效率，您得到了%.2f元报酬，当前该项效率为%.2f点" %
+         (user.schoolID,user.qid,messageList[1],tuser.effisFee,tuser.effis[effisID]))
+
+    user.save(mysql)
+    tuser.save(mysql)
+
+    return "学习成功！您的%s效率已经提高到了%.2f点" % (messageList[1], user.effis[effisID])

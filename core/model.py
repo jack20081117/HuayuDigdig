@@ -23,7 +23,8 @@ class User(Model):
     outputTax=FloatField() #销项税额
     paidTaxes=BooleanField()
     techCards=StringField(columnType='varchar(2000)')
-
+    effisFee=FloatField()
+    allowLearning=BooleanField()
 
 class Plan(Model):
     __table__='plans'

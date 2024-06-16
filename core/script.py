@@ -180,6 +180,9 @@ registerByDict({
     "抽奖":lottery,
     "因子查询":factorsLookup,
     "财富排行":showWealthiest,
+    "允许学习":allowLearning,
+    "禁止学习":forbidLearning,
+    "学习":learnEffis,
 })
 
 
