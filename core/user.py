@@ -1,6 +1,6 @@
 import re
-from globalConfig import mysql,effisStr,infoMsg,playerTax,effisItemCount
-from tools import getnowtime,sigmoid, indicators, factors
+from globalConfig import mysql,effisStr,infoMsg,playerTax,effisItemCount,effisNameDict
+from tools import getnowtime,sigmoid, indicators, factors, send
 from model import User
 from update import updateEfficiency
 
@@ -38,7 +38,7 @@ def signup(messageList:list[str],qid:str):
         inputTax=0.0, #进项税额（抵扣）
         outputTax=0.0, #销项税额
         effisFee=0.0,
-        learnAllow=False,
+        allowLearning=False,
     )#注册新用户
     user.add(mysql)
     ans="注册成功！"

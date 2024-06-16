@@ -94,8 +94,8 @@ def indicators(schoolID:str)->list[int]:
         return [int(schoolID[2:]), int(schoolID[:2]), int(schoolID[4:])]
     return []
 
-def exchangeable(id:str,ore:int)->bool:
-    indicator = indicators(id)
+def exchangeable(qid:str,ore:int)->bool:
+    indicator = indicators(qid)
     flag = False
     for i in indicator:
         flag = flag or not i%ore

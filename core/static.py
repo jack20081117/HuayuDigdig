@@ -3,7 +3,7 @@ from datetime import datetime
 from matplotlib import pyplot as plt
 plt.rcParams['font.family']='Microsoft Yahei'
 
-from model import Statistics
+from model import Statistics,User,Stock,Debt
 from globalConfig import imgkit_config,mysql
 from tools import getnowdate
 
@@ -53,5 +53,33 @@ def getStats(messageList:list[str],qid:str):
     plt.legend()
     plt.savefig('../go-cqhttp/data/images/statistics.png')
     ans+='[CQ:image,file=statistics.png]\n'
+
+    return ans
+
+def assetCalculation(user:User):
+    assets = user.money
+    for i in user.stocks.items():
+        stock = Stock.find(i[0], mysql)
+        assets += i[1] * stock.price
+    for debt in Debt.findAll(mysql, 'creditor=?', (user.qid,)):
+        assets += debt.money
+    for debt in Debt.findAll(mysql, 'debitor=?', (user.qid,)):
+        assets -= debt.money
+
+    return assets
+
+def showWealthiest(messageList: list[str], qid: str):
+    """
+    显示最富有的前10%
+    :param messageList: 财富排行
+    :param qid:
+    :return: 提示信息
+    """
+    ans = ""
+    allUserList = User.findAll(mysql)
+    allUserList.sort(key=assetCalculation, reverse=True)
+    showNum = round(0.1 * len(allUserList) + 1)
+    for i in range(showNum):
+        ans += "%s. %s拥有流动资产 %.2f 元\n" % (i, allUserList[i].qid, assetCalculation(allUserList[i]))
 
     return ans
