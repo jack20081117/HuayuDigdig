@@ -275,7 +275,7 @@ def stockMarket(messageList: list[str], qid: str):
             xs.append(datetime.fromtimestamp(datum[0]-8*3600))
             ys.append(datum[1])
         plt.plot(xs,ys,linestyle='-',marker=',',label=stockID,alpha=0.5)
-    plt.legend()
+    plt.legend(loc='upper right')
 
     plt.savefig('../go-cqhttp/data/images/stockprices.png')
     ans+='[CQ:image,file=stockprices.png]\n'
