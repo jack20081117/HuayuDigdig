@@ -182,7 +182,7 @@ def duplicate(messageList: list[str], qid: str):
                       workUnitsRequired=workUnitsRequired, enacted=False)
     plan.add(mysql)
 
-    ans = '编号为%s的复制计划制定成功！按照此计划，%s个工厂将被调用，预计消耗%s单位燃油和%s时间！。' % (planID, factoryNum,
+    ans = '编号为%s的复制计划制定成功！按照此计划，%s个工厂将被调用，预计消耗%s单位燃油和%s时间！' % (planID, factoryNum,
                                                                 fuelRequired, smartInterval(timeRequired))
 
     return ans

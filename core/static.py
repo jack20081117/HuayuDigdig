@@ -15,8 +15,12 @@ def returnTime(m,q):
 
 
 def getHelp(messageList:list[str],qid:str):
-    with open('help_msg.md','r',encoding='utf-8') as help_msg:
-        html=markdown.markdown(help_msg.read())
+    filename='help_msg.md' if len(messageList)==1 else '%s.md'%messageList[1]
+    try:
+        with open('help_msg/%s'%filename,'r',encoding='utf-8') as help_msg:
+            html=markdown.markdown(help_msg.read())
+    except FileNotFoundError:
+        return '您的指令错误！'
     imgkit.from_string(html,'../go-cqhttp/data/images/help.png',config=imgkit_config,css='./style.css')
     ans='[CQ:image,file=help.png]'
     return ans

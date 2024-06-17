@@ -27,7 +27,7 @@ def dealWithRequest(funcStr:str,messageList:list[str],qid:str):
     if funcStr in commands:
         ans=commands[funcStr](messageList,qid)
     else:
-        ans="未知命令:请输入'帮助'以获取帮助信息！"
+        ans="未知命令:请输入`帮助`以获取帮助信息，或通过`帮助 功能`获取该功能详细信息！"
     return ans
 
 def handle(res,group):
