@@ -32,23 +32,25 @@ def getStats(messageList:list[str],qid:str):
         moneyData.append([date,0])
         fuelData.append([date,0])
         for stat in stats:
-            moneyData.append([stat.timestamp,0])
-            moneyData[-1][-1]+=stat.money+moneyData[-2][-1]
-            fuelData.append([stat.timestamp,0])
-            fuelData[-1][-1]+=stat.fuel+fuelData[-2][-1]
+            if stat.money:
+                moneyData.append([stat.timestamp,0])
+                moneyData[-1][-1]+=stat.money+moneyData[-2][-1]
+            if stat.fuel:
+                fuelData.append([stat.timestamp,0])
+                fuelData[-1][-1]+=stat.fuel+fuelData[-2][-1]
     ans+='以下是所有兑换矿石与开采燃油数据：\n'
     xs,ys=[],[]
     for datum in moneyData:
         xs.append(datetime.fromtimestamp(datum[0]-8*3600))
         ys.append(datum[1])
     plt.figure(figsize=(10,5))
-    plt.plot(xs,ys,linestyle='-',marker='.',label='矿石')
+    plt.plot(xs,ys,linestyle='-',marker=',',label='矿石',alpha=0.5)
 
     xs,ys=[],[]
     for datum in fuelData:
         xs.append(datetime.fromtimestamp(datum[0]-8*3600))
         ys.append(datum[1])
-    plt.plot(xs,ys,linestyle='-',marker='.',label='燃油')
+    plt.plot(xs,ys,linestyle='-',marker=',',label='燃油',alpha=0.5)
 
     plt.legend()
     plt.savefig('../go-cqhttp/data/images/statistics.png')
