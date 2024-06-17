@@ -509,7 +509,8 @@ def resolveAuction(aggregate=True, closing=False):
     indexSum = 0
     indexSumNoOil = 0
     for stock in Stock.findAll(mysql):
-        if stock.isIndex: continue
+        if stock.isIndex:
+            continue
         stockID = stock.stockID
         oldPrice = stock.price
         oldCapital = stock.price*stock.stockNum
@@ -549,7 +550,7 @@ def resolveAuction(aggregate=True, closing=False):
     dataEntry.index2 = indexDifferenceNoOil*index2.price
     index.price = dataEntry.index
     index2.price = dataEntry.index2
-    dataEntry.save(mysql)
+    dataEntry.add(mysql)
     index.save(mysql)
     index2.save(mysql)
 
