@@ -174,8 +174,6 @@ def createInitialStocks():
 
 if_delete_and_create = input("Do you want to DELETE the database and remake them? This will DELETE ALL YOUR DATA NOW! (y/n): ")
 if if_delete_and_create == "y":
-    if mysql:
-        execute("drop database if exists %s", mysql, (config["db"], ))
     for model in AllModels:
         model.delete(mysql)
         model.create(mysql)
