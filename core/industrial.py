@@ -383,7 +383,7 @@ def research(messageList:list[str], qid: str):
             ingredients[ingredient] += 1
         if techCards:
             techPath = techCards[0] + ingredientList
-        work_modifier = (np.log(np.array(techPath)).average() / 10 + 1)
+        work_modifier = (np.log(np.array(techPath)).mean() / 10 + 1)
         # 原料的对数的平均数会影响研发时间。如果使用昂贵材料，那么成功概率会增加，但是时间也会略微延长。
         workUnitsRequired = (1200 + 600 * len(ingredientList)) * work_modifier
         # 接序研究的时间主要考虑接续长度
@@ -407,7 +407,7 @@ def research(messageList:list[str], qid: str):
         else:
             ans+='您将制定一个全新的科研计划，与您已知的科研路径无重合之处！\n'
         divergentPath = ingredientList[matchAmount:]
-        work_modifier = (np.log(np.array(techPath)).average() / 10 + 1)
+        work_modifier = (np.log(np.array(techPath)).mean() / 10 + 1)
         workUnitsRequired = (1200 + 600 * len(divergentPath)) * work_modifier
         timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, techEff, 0, factoryNum, fuelFactorDict[6])
         for ingredient in divergentPath:

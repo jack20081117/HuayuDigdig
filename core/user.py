@@ -17,7 +17,7 @@ def signup(messageList:list[str],qid:str):
     schoolID:str=messageList[1]
     nowtime = getnowtime()
     assert not User.find(qid,mysql) and not User.findAll(mysql,'schoolID=?',(schoolID,)),'注册失败:您已经注册过，无法重复注册！'
-    effis={key:0.0 for key in range(0,5)}
+    effis={key:0.0 for key in range(0,8)}
     user=User(
         qid=qid,
         schoolID=schoolID,

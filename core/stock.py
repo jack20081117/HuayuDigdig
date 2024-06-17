@@ -272,7 +272,7 @@ def stockMarket(messageList: list[str], qid: str):
     for stockID in stockPrices.keys():
         xs,ys=[],[]
         for datum in stockPrices[stockID]:
-            xs.append(datetime.fromtimestamp(datum[0]-8*3600))
+            xs.append(datetime.fromtimestamp(datum[0]))
             ys.append(datum[1])
         plt.plot(xs,ys,linestyle='-',marker=',',label=stockID,alpha=0.5)
     plt.legend(loc='upper right')
