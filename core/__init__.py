@@ -114,7 +114,7 @@ def createPaperFuel():
                   primaryClosed=True,
                   secondaryOpen=False,
                   avgDividend=0.0)
-    stock.save(mysql)
+    stock.add(mysql)
 
 def createInitialStocks():
     Stock(stockID='lyi',
@@ -133,7 +133,7 @@ def createInitialStocks():
           primaryClosed=True,
           secondaryOpen=True,
           isIndex=True,
-          avgDividend=0.0).save(mysql)
+          avgDividend=0.0).add(mysql)
 
     Stock(stockID='loi',
           stockName='Longyin Oil Index',
@@ -151,7 +151,7 @@ def createInitialStocks():
           primaryClosed=True,
           secondaryOpen=True,
           isIndex=True,
-          avgDividend=0.0).save(mysql)
+          avgDividend=0.0).add(mysql)
 
 if_delete_and_create = input("Do you want to DELETE the database and remake them? This will DELETE ALL YOUR DATA NOW! (y/n): ")
 if if_delete_and_create == "y":

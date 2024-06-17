@@ -81,7 +81,7 @@ def decompose(messageList: list[str], qid: str):
 
     ans = '编号为%s的分解计划制定成功！按照此计划，%s个工厂将被调用，预计消耗%s单位燃油和%s时间！产物：%s, %s。' % (planID, factoryNum,
                                                                          fuelRequired, smartInterval(timeRequired),
-                                                                         divide, ingredient / divide)
+                                                                         divide, ingredient // divide)
 
     return ans
 

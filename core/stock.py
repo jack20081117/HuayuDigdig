@@ -176,17 +176,17 @@ def toPaperFuel(messageList: list[str], qid: str):
     except ValueError:
         return "兑换失败:您的兑换格式不正确！"
     user = User.find(qid, mysql)
-    assert 0 in user.minerals, '兑换失败：您没有燃油！'
-    assert user.minerals[0] >= stockNum,'兑换失败：您现在只有%s单位燃油！' % user.minerals[0]
+    assert 0 in user.mineral, '兑换失败：您没有燃油！'
+    assert user.mineral[0] >= stockNum,'兑换失败：您现在只有%s单位燃油！' % user.mineral[0]
 
     pfu = Stock.find('pfu', mysql)
     user = User.find(qid, mysql)
     pfu.stockNum += stockNum
     pfu.shareholders.setdefault(qid, 0)
     pfu.shareholders[qid] += stockNum
-    user.minerals[0] -= stockNum
-    if user.minerals[0] == 0:
-        user.stocks.pop(0)
+    user.mineral[0] -= stockNum
+    if user.mineral[0] == 0:
+        user.mineral.pop(0)
     user.stocks.setdefault('pfu',0)
     user.stocks['pfu'] += stockNum
 
@@ -219,8 +219,8 @@ def fromPaperFuel(messageList: list[str], qid: str):
     pfu.shareholders[qid] -= stockNum
     if pfu.shareholders[qid] == 0:
         pfu.shareholders.pop(qid)
-    user.minerals.setdefault(0, 0)
-    user.minerals[0] += stockNum
+    user.mineral.setdefault(0, 0)
+    user.mineral[0] += stockNum
     user.stocks['pfu'] -= stockNum
     if user.stocks['pfu'] == 0:
         user.stocks.pop('pfu')
@@ -384,7 +384,7 @@ def giveDividend(messageList: list[str], qid: str):
 
     stock.avg_dividend += dividend/divisor
 
-    ans = '分红成功！该股票平均每股分红已达到%.2f元！' % (stock.avg_dividend)
+    ans = '分红成功！该股票平均每股分红已达到%.2f元！' % stock.avg_dividend
 
     return ans
 
@@ -438,7 +438,7 @@ def resolveOrder(stock:Stock, order: Order, price:float)->tuple[Stock,float]: #�
         stockTax = 0.005 * money
         requester.money += money - stockTax
         #shareholders更新具有滞后性，在提出申请时，User里的股数已经扣除（失败返还），但是在卖出成功之前，Stock中的字典不会改变
-        treasury.save(mysql)
+        #treasury.save(mysql)
         stock.shareholders[requester.qid] -= order.completedAmount
         message = "您的股市卖出申请%s成功以%.2f一股的价格成交%s股！征收了您%.2f元股票交易税！\n" % (order.orderID, price, order.completedAmount, stockTax)
         if order.amount == 0:
