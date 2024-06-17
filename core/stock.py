@@ -254,7 +254,7 @@ def stockMarket(messageList: list[str], qid: str):
     ans += '[CQ:image,file=stock.png]\n'
 
     date=getnowdate()
-    AllStockData:list[StockData]=StockData.findAll(mysql,where='timestamp<=? and timestamp>=?',args=[date,date+86400])
+    AllStockData:list[StockData]=StockData.findAll(mysql,where='timestamp>=? and timestamp<=?',args=[date-6*86400,date+86400])
     if not AllStockData:
         return ans
     ans+='以下是所有发行股票的股价变动:\n'
@@ -273,6 +273,7 @@ def stockMarket(messageList: list[str], qid: str):
             xs.append(datetime.fromtimestamp(datum[0]-8*3600))
             ys.append(datum[1])
         plt.plot(xs,ys,linestyle='-',marker=',',label=stockID,alpha=0.5)
+    plt.legend()
 
     plt.savefig('../go-cqhttp/data/images/stockprices.png')
     ans+='[CQ:image,file=stockprices.png]\n'
