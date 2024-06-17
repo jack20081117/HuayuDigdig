@@ -1,7 +1,7 @@
 from model import AllModels,User,Mine,Misc,Stock
 from orm import execute
-from globalConfig import config,mysql
-from tools import setCrontab,getnowtime,mineExpectation
+from globalConfig import config,mysql,adminIDs
+from tools import getnowtime,mineExpectation
 
 def createTreasury():
     """
@@ -151,6 +151,24 @@ def createInitialStocks():
           primaryClosed=True,
           secondaryOpen=True,
           isIndex=True,
+          avgDividend=0.0).add(mysql)
+
+    Stock(stockID='adm',
+          stockName='Administrative stock',
+          stockNum=10000,
+          openStockNum=0,
+          provisionalFunds=0,
+          issuer='treasury',
+          price=100,
+          selfRetain=4000,
+          primaryEndTime=0,
+          bidders=[],
+          askers=[],
+          histprice={},
+          shareholders={adminID:2000 for adminID in adminIDs},
+          primaryClosed=True,
+          secondaryOpen=False,
+          isIndex=False,
           avgDividend=0.0).add(mysql)
 
 if_delete_and_create = input("Do you want to DELETE the database and remake them? This will DELETE ALL YOUR DATA NOW! (y/n): ")
