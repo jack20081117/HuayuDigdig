@@ -1,5 +1,4 @@
 from orm import Model,StringField,IntegerField,BooleanField,FloatField
-from globalConfig import mysql
 
 class User(Model):
     __table__='users'
