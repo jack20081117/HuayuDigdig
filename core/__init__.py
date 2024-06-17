@@ -112,7 +112,8 @@ def createPaperFuel():
                   histprice={'designatedIssuePrice': 3},
                   shareholders={},
                   primaryClosed=True,
-                  secondaryOpen=False,
+                  secondaryOpen=True,
+                  isIndex=False,
                   avgDividend=0.0)
     stock.add(mysql)
 

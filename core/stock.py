@@ -1,7 +1,9 @@
 import numpy as np
+from matplotlib import pyplot as plt
+from datetime import datetime
 from typing import TypedDict
 
-from tools import drawtable, setTimeTask, getnowtime, send, generateTimeStr
+from tools import drawtable, setTimeTask, getnowtime, getnowdate,send
 from model import User, Stock, Order, StockData
 from globalConfig import mysql, groupIDs
 import globalConfig
@@ -240,16 +242,40 @@ def stockMarket(messageList: list[str], qid: str):
     """
     stocks: list[Stock] = Stock.findAll(mysql)
     ans = '欢迎来到股市！\n'
-    if stocks:
-        ans += '以下是所有目前发行的股票:\n'
-        stockData = [['股票名称', '股票缩写', '发行量', '可购量','当前股价','股票状态']]
-        for stock in stocks:
-            status:str=('开放交易' if stock.secondaryOpen else '认购结束') if stock.primaryClosed else '开放认购'
-            stockData.append([stock.stockName, stock.stockID, stock.stockNum,stock.openStockNum,stock.price,status])
-        drawtable(stockData, 'stock.png')
-        ans += '[CQ:image,file=stock.png]'
-    else:
-        ans += '目前没有发行的股票！'
+    if not stocks:
+        ans+='目前没有发行的股票！'
+        return ans
+    ans += '以下是所有目前发行的股票:\n'
+    stockTable = [['股票名称', '股票缩写', '发行量', '可购量','当前股价','股票状态']]
+    for stock in stocks:
+        status:str='证券指数' if stock.isIndex else (('开放交易' if stock.secondaryOpen else '认购结束') if stock.primaryClosed else '开放认购')
+        stockTable.append([stock.stockName, stock.stockID, stock.stockNum,stock.openStockNum,stock.price,status])
+    drawtable(stockTable, 'stock.png')
+    ans += '[CQ:image,file=stock.png]\n'
+
+    date=getnowdate()
+    AllStockData:list[StockData]=StockData.findAll(mysql,where='timestamp<=? and timestamp>=?',args=[date,date+86400])
+    if not AllStockData:
+        return ans
+    ans+='以下是所有发行股票的股价变动:\n'
+    stockPrices:dict[str,list]={}
+    for stockData in AllStockData:
+        timestamp=stockData.timestamp
+        prices=stockData.prices
+        for stockID,price in prices.items():
+            stockPrices.setdefault(stockID,[])
+            stockPrices[stockID].append([timestamp,price])
+
+    plt.figure(figsize=(10,5))
+    for stockID in stockPrices.keys():
+        xs,ys=[],[]
+        for datum in stockPrices[stockID]:
+            xs.append(datetime.fromtimestamp(datum[0]-8*3600))
+            ys.append(datum[1])
+        plt.plot(xs,ys,linestyle='-',marker=',',label=stockID,alpha=0.5)
+
+    plt.savefig('../go-cqhttp/data/images/stockprices.png')
+    ans+='[CQ:image,file=stockprices.png]\n'
     return ans
 
 def buyStock(messageList: list[str], qid: str):
@@ -496,7 +522,7 @@ def stockMarketClose():
 def resolveAuction(aggregate=True, closing=False):
     nowtime = getnowtime()
     dataEntry = StockData(
-        timestamp=generateTimeStr(nowtime),
+        timestamp=nowtime,
         prices={},
         volumes={},
         opening=aggregate,

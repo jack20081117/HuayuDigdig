@@ -142,7 +142,7 @@ class Order(Model): #股市委托
 class StockData(Model): #持久化储存股市信息
     __table__ = "stockData"
 
-    timestamp = StringField(columnType='varchar(20)',primaryKey=True)
+    timestamp = IntegerField(primaryKey=True)
     prices = StringField(columnType='varchar(500)') #字典，储存每个时间点股价
     volumes = StringField(columnType='varchar(500)') #字典，储存每个时间点成交量
     opening = BooleanField()
