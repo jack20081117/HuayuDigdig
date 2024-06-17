@@ -160,7 +160,7 @@ def createInitialStocks():
           openStockNum=0,
           provisionalFunds=0,
           issuer='treasury',
-          price=100,
+          price=5,
           selfRetain=4000,
           primaryEndTime=0,
           bidders=[],
@@ -168,7 +168,7 @@ def createInitialStocks():
           histprice={},
           shareholders={adminID:2000 for adminID in adminIDs},
           primaryClosed=True,
-          secondaryOpen=False,
+          secondaryOpen=True,
           isIndex=False,
           avgDividend=0.0).add(mysql)
 

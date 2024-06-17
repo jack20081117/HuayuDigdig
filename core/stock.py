@@ -258,10 +258,12 @@ def stockMarket(messageList: list[str], qid: str):
     if not AllStockData:
         return ans
     ans+='以下是所有发行股票的股价变动:\n'
-    stockPrices:dict[str,list]={}
+    stockPrices:dict[str,list]={'loi':[],'lyi':[]}
     for stockData in AllStockData:
         timestamp=stockData.timestamp
         prices=stockData.prices
+        stockPrices['loi'].append([timestamp,stockData.index])
+        stockPrices['lyi'].append([timestamp,stockData.index2])
         for stockID,price in prices.items():
             stockPrices.setdefault(stockID,[])
             stockPrices[stockID].append([timestamp,price])
@@ -531,6 +533,7 @@ def resolveAuction(aggregate=True, closing=False):
         index=100,
         index2=100,
     )
+    dataEntry.add(mysql)
     capitalSum = 0
     capitalSumNoOil = 0
     indexSum = 0
@@ -547,7 +550,7 @@ def resolveAuction(aggregate=True, closing=False):
         if not stock.secondaryOpen:
             continue
         orders = Order.findAll(mysql, 'stockID=?', (stockID,), OrderBy='timestamp')
-        if len(orders) == 0:
+        if not orders:
             stock.volume = 0
             dataEntry.prices[stock.stockID] = stock.price
             dataEntry.volumes[stock.stockID] = stock.volume
@@ -577,7 +580,7 @@ def resolveAuction(aggregate=True, closing=False):
     dataEntry.index2 = indexDifferenceNoOil*index2.price
     index.price = dataEntry.index
     index2.price = dataEntry.index2
-    dataEntry.add(mysql)
+    dataEntry.save(mysql)
     index.save(mysql)
     index2.save(mysql)
 

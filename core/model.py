@@ -147,8 +147,8 @@ class StockData(Model): #持久化储存股市信息
     volumes = StringField(columnType='varchar(500)') #字典，储存每个时间点成交量
     opening = BooleanField()
     closing = BooleanField()
-    index = FloatField() # 龙吟证券指数：不含纸燃油
-    index2 = FloatField() # 龙吟证券指数：含纸燃油
+    index = FloatField() # 龙吟证券指数：含纸燃油
+    index2 = FloatField() # 龙吟证券指数：不含纸燃油
 
 class Statistics(Model):#国家统计局
     __table__="statistics"
