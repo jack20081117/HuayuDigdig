@@ -177,7 +177,7 @@ def toPaperFuel(messageList: list[str], qid: str):
         return "兑换失败:您的兑换格式不正确！"
     user = User.find(qid, mysql)
     assert 0 in user.minerals, '兑换失败：您没有燃油！'
-    assert user.minerals[0] >= stockNum,'兑换失败：您现在只有%s单位纸燃油！' % user.minerals[0]
+    assert user.minerals[0] >= stockNum,'兑换失败：您现在只有%s单位燃油！' % user.minerals[0]
 
     pfu = Stock.find('pfu', mysql)
     user = User.find(qid, mysql)

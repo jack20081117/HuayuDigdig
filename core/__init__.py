@@ -19,7 +19,7 @@ def createTreasury():
         factoryNum=1,
         effis={},
         mines=[],
-        stocks=[],
+        stocks={},
         misc={},
         enactedPlanTypes={},
         busyFactoryNum=0,

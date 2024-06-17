@@ -80,6 +80,6 @@ def showWealthiest(messageList: list[str], qid: str):
     allUserList.sort(key=assetCalculation, reverse=True)
     showNum = round(0.1 * len(allUserList) + 1)
     for i in range(showNum):
-        ans += "%s. %s拥有流动资产 %.2f 元\n" % (i, allUserList[i].qid, assetCalculation(allUserList[i]))
+        ans += "%s. %s拥有流动资产 %.2f 元\n" % (i+1, allUserList[i].qid, assetCalculation(allUserList[i]))
 
     return ans
