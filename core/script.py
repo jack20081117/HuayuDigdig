@@ -125,6 +125,8 @@ registerByDict({
     "抛出":sellStock,
     "股市":stockMarket,
     "分红":giveDividend,
+    "兑换纸燃油":toPaperFuel,
+    "兑换燃油":fromPaperFuel,
     "支付":pay,
     "放贷":prelendDebt,
     "借贷":borrowDebt,
