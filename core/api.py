@@ -26,7 +26,7 @@ def log(mes, level=2):
         write_str = "%s %s %s"%(time, level2name[level], mes)
         if len(write_str) >= 20:
             write_str = write_str.split("\n")[0]
-            if write_str.__len__ >= 20:
+            if write_str.__len__() >= 20:
                 write_str = write_str[:20]
         file.write(write_str+"\r\n")
 
