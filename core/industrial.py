@@ -2,7 +2,8 @@ from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval
 from model import User, Plan,Statistics
 from update import updateEfficiency, updatePlan
 from globalConfig import mysql,effisValueDict, fuelFactorDict, permitBase, permitGradient, factoryWUR, robotWUR
-from numpy import log
+#from numpy import log
+from math import log
 import numpy as np
 
 def expenseCalculator(multiplier:float,duplication:int,primaryScale:int,secondaryScale:int,
@@ -21,9 +22,9 @@ def expenseCalculator(multiplier:float,duplication:int,primaryScale:int,secondar
     :return: 该加工需要的产能点数、时间与燃油
     """
 
-    workUnitsRequired = multiplier * duplication * primaryScale * log(log(secondaryScale) + 1)
+    workUnitsRequired = multiplier * duplication * primaryScale * log(log(float(secondaryScale)) + 1)
     if useLogDivisor:
-        workUnitsRequired /= log(primaryScale)
+        workUnitsRequired /= log(float(primaryScale))
     timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuelFactor)
 
     return workUnitsRequired, timeRequired, fuelRequired
