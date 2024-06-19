@@ -1,4 +1,5 @@
 ﻿from flask import Flask,request
+from datetime import datetime
 from script import handle
 from update import init,updateAbundance
 from taxes import taxUpdate
@@ -8,17 +9,21 @@ from globalConfig import mysql
 import globalConfig
 import warnings
 import signal
-import logging
-logging.basicConfig(
-        filename='./digdig.log',
-        filemode="a",
-        level=logging.INFO,
-        format='%(asctime)s-%(levelname)s-%(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S %p'
-)
 warnings.filterwarnings('ignore')
 
 app=Flask(__name__)
+level2name = {
+    1: "DEBUG",
+    2: "INFO",
+    3: "WARN",
+    4: "ERROR",
+    5: "FATAL"
+}
+def log(mes, level=2):
+    timre = datetime.now().strftime("%Y-%m-%d")
+    time = datetime.now().strftime("%H:%M:%S")
+    with open("./%s log.log"%timre, "a") as file:
+        file.write("%s %s %s"%(time, level2name[level], mes))
 
 init()
 globalConfig.stockMarketOpenFlag=True
@@ -46,9 +51,9 @@ def post():
             r = handle(res,group=False, message=message,qid=qid)
         elif res.get('message_type')=='group':
             r = handle(res,group=True, message=message,qid=qid)
-        logging.info("收到来自%s的消息：%s；  回复了：%s"%(qid, message, r))
+        log("收到来自%s的消息：%s；  回复了：%s"%(qid, message, r))
     except BaseException as err:
-        logging.error(str(err), logging.getLevelName(logging.ERROR))
+        log(str(err), 4)
 
     return 'OK'
 
