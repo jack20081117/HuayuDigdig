@@ -38,6 +38,7 @@ def signup(messageList:list[str],qid:str):
         outputTax=0.0, #销项税额
         effisFee=0.0,
         allowLearning=False,
+        robotNum=0,
     )#注册新用户
     user.add(mysql)
     ans="注册成功！"
