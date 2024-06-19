@@ -18,7 +18,7 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
     mineral:dict[int,int]=user.mineral # 用户拥有的矿石
     extractTech:float=user.tech['extract'] # 开采科技
 
-    assert user.digable,'开采失败:您必须等到%s才能再次开采矿井！'%generateTimeStr(user.forbidtime)
+    assert nowtime >= user.forbidtime,'开采失败:您必须等到%s才能再次开采矿井！'%generateTimeStr(user.forbidtime)
 
     if mine.private and qid != mine.owner:
         owner = User.find(mine.owner, mysql)

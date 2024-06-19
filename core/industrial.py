@@ -55,7 +55,7 @@ def decompose(messageList: list[str], qid: str):
     decomp_eff=user.effis[0]#用户的分解效率
 
     assert duplication>=1,'制定生产计划失败:倍数无效！'
-    assert ingredient>1,'制定生产计划失败:原料无效！'
+    assert 1e7>ingredient>1,'制定生产计划失败:原料无效！'
     assert divide>1,'制定生产计划失败:产物无效！'
     assert divide<ingredient,'制定生产计划失败:产物无效！'
     assert factoryNum>=1,'制定生产计划失败:工厂数无效！'
@@ -110,7 +110,7 @@ def synthesize(messageList: list[str], qid: str):
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
     for ingredient in ingredientList:
-        assert ingredient > 1, '制定生产计划失败:原料无效！'
+        assert 1e7 > ingredient > 1, '制定生产计划失败:原料无效！'
     assert factoryNum >= 1, '制定生产计划失败:工厂数无效！'
     assert factoryNum <= user.factoryNum, '制定生产计划失败:您没有足够工厂！'
 
@@ -162,7 +162,7 @@ def duplicate(messageList: list[str], qid: str):
     duplicate_eff = user.effis[2]#用户的复制效率
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
-    assert ingredient > 1, '制定生产计划失败:原料无效！'
+    assert 1e7 > ingredient > 1, '制定生产计划失败:原料无效！'
     assert factoryNum >= 1, '制定生产计划失败:工厂数无效！'
     assert factoryNum <= user.factoryNum, '制定生产计划失败:您没有足够工厂！'
 
@@ -208,7 +208,7 @@ def decorate(messageList: list[str], qid: str):
     decorate_eff = user.effis[3]#用户的修饰效率
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
-    assert ingredient > 1, '制定生产计划失败:原料无效！'
+    assert 1e7 > ingredient > 1, '制定生产计划失败:原料无效！'
     assert factoryNum >= 1, '制定生产计划失败:工厂数无效！'
     assert factoryNum <= user.factoryNum, '制定生产计划失败:您没有足够工厂！'
 
@@ -254,7 +254,7 @@ def refine(messageList: list[str], qid: str):
     refine_eff = user.effis[4]#用户的炼化效率
 
     assert duplication >= 1, '制定生产计划失败:倍数无效！'
-    assert ingredient > 1, '制定生产计划失败:原料无效！'
+    assert 1e7 > ingredient > 1, '制定生产计划失败:原料无效！'
     assert isPrime(ingredient), '制定生产计划失败:原料无效，炼油需要质数矿石！'
     assert factoryNum >= 1, '制定生产计划失败:工厂数无效！'
     assert factoryNum <= user.factoryNum, '制定生产计划失败:您没有足够工厂！'
@@ -361,7 +361,7 @@ def research(messageList:list[str], qid: str):
     assert techName in techNameDict, '制定科研计划失败:科技名无效！'
     assert continuation in [1,0], '制定科研计划失败:接续指令无效！'
     for ingredient in ingredientList:
-        assert ingredient > 1, '制定科研计划失败:试剂无效！'
+        assert 1e6 > ingredient > 1, '制定科研计划失败:试剂无效！'
     assert factoryNum >= 1, '制定科研计划失败:工厂数无效！'
     assert factoryNum <= user.factoryNum, '制定科研计划失败:您没有足够工厂！'
 
