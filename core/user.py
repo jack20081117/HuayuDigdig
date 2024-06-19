@@ -25,7 +25,7 @@ def signup(messageList:list[str],qid:str):
         mineral={},
         tech={'extract':0.0,'industrial':0.0,'refine':0.0},
         techCards={'extract':[],'industrial':[],'refine':[]},
-        forbidtime=nowtime,
+        forbidtime=[nowtime],
         factoryNum=1,
         effis=effis,
         mines=[],
@@ -38,6 +38,7 @@ def signup(messageList:list[str],qid:str):
         outputTax=0.0, #销项税额
         effisFee=0.0,
         allowLearning=False,
+        robotNum=0,
     )#注册新用户
     user.add(mysql)
     ans="注册成功！"
