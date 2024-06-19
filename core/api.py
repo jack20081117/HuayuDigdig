@@ -23,7 +23,7 @@ def log(mes, level=2):
     timre = datetime.now().strftime("%Y-%m-%d")
     time = datetime.now().strftime("%H:%M:%S")
     with open("./%s log.log"%timre, "a") as file:
-        file.write("%s %s %s"%(time, level2name[level], mes))
+        file.write("%s %s %s\r\n"%(time, level2name[level], mes))
 
 init()
 globalConfig.stockMarketOpenFlag=True
