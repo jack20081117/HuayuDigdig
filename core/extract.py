@@ -1,7 +1,6 @@
 import numpy as np
 
 from tools import sigmoid,sqrtmoid,getnowtime,generateTimeStr,setTimeTask, mineralSample,exchangeable
-from update import updateDigable
 from model import User,Mine,Statistics
 from globalConfig import mysql,vatRate
 
@@ -57,13 +56,12 @@ def extractMineral(qid:str,mineralID:int,mine:Mine,user:User, useRobot:bool=Fals
         user.mineral = mineral
         mine.save(mysql)
     if mine.private:
-        forbidInterval /= 1.5
+        forbidInterval /= 1.2
 
     forbidtime = round(getnowtime() + forbidInterval)
     user.forbidtime[robotID]=forbidtime
     user.save(mysql)
 
-    setTimeTask(updateDigable, user.forbidtime, user)
     return ans
 
 def getMineral(messageList:list[str],qid:str):

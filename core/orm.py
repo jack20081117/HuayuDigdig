@@ -88,7 +88,7 @@ class ModelMetaclass(type):
         attrs['__table__']=tableName
         attrs['__primaryKey__']=primaryKey
         attrs['__fields__']=fields
-        attrs['__create__']='create table if not exists `%s` (`%s` %s primary key,%s) default charset utf8'\
+        attrs['__create__']='create table if not exists `%s` (`%s` %s primary key,%s)'\
                             %(tableName,primaryKey,mappings[primaryKey].columnType,','.join(list(map(lambda f:'`%s` %s'%(f,mappings[f].columnType),fields))))
         attrs['__drop__']='drop table if exists %s'%tableName
         attrs['__select__']='select `%s`,%s from `%s`'\

@@ -16,7 +16,7 @@ def init():
     endedDebts:list[Debt]=Debt.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的债券
 
     for user in User.findAll(mysql):
-        updateDigable(user)
+        updateForbidTime(user)
     for debt in Debt.findAll(mysql):
         debt.money=round(debt.money*(1+debt.interest))
         debt.save(mysql)
@@ -30,8 +30,8 @@ def init():
     for debt in endedDebts:
         updateDebt(debt)
 
-def updateDigable(user:User):
-    user.digable=1
+def updateForbidTime(user:User):
+    user.forbidtime=0
     user.save(mysql)
 
 def updateAbundance():
