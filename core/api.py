@@ -46,7 +46,7 @@ def post():
             message:str=res.get("raw_message")
             qid:str=str(res.get('sender').get('user_id'))  #发消息者的qq号
         except:
-            return
+            return "KO"
         if res.get('message_type')=='private':  # 说明有好友发送信息过来
             r = handle(res,group=False, message=message,qid=qid)
         elif res.get('message_type')=='group':
