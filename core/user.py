@@ -25,7 +25,6 @@ def signup(messageList:list[str],qid:str):
         mineral={},
         tech={'extract':0.0,'industrial':0.0,'refine':0.0},
         techCards={'extract':[],'industrial':[],'refine':[]},
-        digable=1,
         forbidtime=nowtime,
         factoryNum=1,
         effis=effis,

@@ -1,7 +1,6 @@
 import numpy as np
 
 from tools import sigmoid,sqrtmoid,getnowtime,generateTimeStr,setTimeTask, mineralSample,exchangeable
-from update import updateDigable
 from model import User,Mine,Statistics
 from globalConfig import mysql,vatRate
 
@@ -33,8 +32,6 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
     else:
         prob=round(abundance*sqrtmoid(extractTech),2)
 
-    user.digable = 0  # 在下一次刷新前不可开采
-
     if np.random.random()>prob:#开采失败
         forbidInterval = 90 * np.log(mineralID) / sqrtmoid(extractTech)
         ans='开采失败:您的运气不佳，未能开采成功！'
@@ -61,7 +58,6 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
     user.forbidtime=forbidtime
     user.save(mysql)
 
-    setTimeTask(updateDigable, user.forbidtime, user)
     return ans
 
 def getMineral(messageList:list[str],qid:str):
