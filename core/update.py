@@ -1,9 +1,9 @@
 import numpy as np
 
-from tools import send,getnowtime
+from staticFunctions import send,getnowtime
 from model import User,Mine,Sale,Purchase,Auction,Debt,Plan
 from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate, factoryWUR, robotWUR
-from tools import sqrtmoid, tech_validator,mineralSample,mineExpectation
+from staticFunctions import sqrtmoid, tech_validator,mineralSample,mineExpectation
 
 def init():
     """
@@ -213,7 +213,7 @@ def updateDebt(debt:Debt):
             creditor.save(mysql)
             debitor.save(mysql)
 
-def updateEfficiency(user:User,finishedPlan:int or Plan):
+def updateEfficiency(user:User,finishedPlan):
     """
     :param user : 涉及到的用户
     :param finishedPlan: 到达截止时间的生产计划，如无填0

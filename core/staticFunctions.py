@@ -4,9 +4,11 @@ import numpy as np
 import imgkit
 import math
 
+import model
+import globalConfig
+
 from apscheduler.schedulers.background import BackgroundScheduler as bgsc
 from hashlib import md5
-from globalConfig import chars,imgkit_config
 
 def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 
@@ -56,10 +58,11 @@ def tostr(data):
         return data
     return str(data)
 
-def sqrtmoid(x:float)->float:return 0.25*np.sqrt(x)+0.5
+def sqrtmoid(x:float)->float:
+    return 0.25*np.sqrt(x)+0.5
 
 def generate_random_digits(wei:int):
-    return "".join(random.choice(chars) for i in wei)
+    return "".join(random.choice(globalConfig.chars) for i in wei)
 
 def smartInterval(seconds:float):
     if seconds < 60:
@@ -219,7 +222,7 @@ def drawtable(data:list,filename:str):
             html+='<td>%s</td>'%element
         html+='</tr>'
     html+='</table>'
-    imgkit.from_string(html,'../go-cqhttp/data/images/%s'%filename,config=imgkit_config,css='./style.css')
+    imgkit.from_string(html,'../go-cqhttp/data/images/%s'%filename,config=globalConfig.imgkit_config,css='./style.css')
 
 def setInterval(func:callable,interval:int,*args,**kwargs):
     """
@@ -256,6 +259,18 @@ def setTimeTask(func:callable,runtime:int,*args,**kwargs):
     scheduler=bgsc()
     scheduler.add_job(func,"date",args=args,kwargs=kwargs,run_date=datetime.fromtimestamp(float(runtime)))
     scheduler.start()
+
+def assetCalculation(user: model.User):
+    assets = user.money
+    for i in user.stocks.items():
+        stock = model.Stock.find(i[0], globalConfig.mysql)
+        assets += i[1] * stock.price
+    for debt in model.Debt.findAll(globalConfig.mysql, 'creditor=?', (user.qid,)):
+        assets += debt.money
+    for debt in model.Debt.findAll(globalConfig.mysql, 'debitor=?', (user.qid,)):
+        assets -= debt.money
+
+    return assets
 
 def send(qid:str,message:str,group=False):
     """

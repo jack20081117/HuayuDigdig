@@ -4,7 +4,7 @@ from script import handle
 from update import init,updateAbundance
 from taxes import taxUpdate
 from stock import resolveAuction,stockMarketOpen,stockMarketClose
-from tools import setCrontab
+from staticFunctions import setCrontab
 from globalConfig import mysql
 import globalConfig
 import warnings

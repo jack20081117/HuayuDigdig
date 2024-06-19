@@ -1,8 +1,9 @@
 import numpy as np
 
-from tools import sigmoid,sqrtmoid,getnowtime,generateTimeStr,setTimeTask, mineralSample,exchangeable
+from staticFunctions import sigmoid,sqrtmoid,getnowtime,generateTimeStr,setTimeTask, mineralSample,exchangeable
 from model import User,Mine,Statistics
 from globalConfig import mysql,vatRate
+
 
 def extractMineral(qid:str,mineralID:int,mine:Mine, useRobot:bool=False, robotID:int=0):
     """获取矿石
@@ -66,152 +67,154 @@ def extractMineral(qid:str,mineralID:int,mine:Mine, useRobot:bool=False, robotID
 
     return ans
 
-def getMineral(messageList:list[str],qid:str):
-    """
-    根据传入的信息开采矿井
-    :param messageList: 开采 矿井编号
-    :param qid: 开采者的qq号
-    :return: 开采提示信息
-    """
-    assert len(messageList)==2,'开采失败:请指定要开采的矿井！'
-    mineID:int=int(messageList[1])
-    mine: Mine = Mine.find(mineID, mysql)
-    assert mine, '开采失败:不存在此矿井！'
-    assert mine.open or qid==mine.owner, '该矿井目前并未开放！'
-    nowtime = getnowtime()
-    user = User.find(qid, mysql)
-    assert nowtime >= user.forbidtime[0], '开采失败:您必须等到%s才能再次手动开采矿井！' % generateTimeStr(user.forbidtime[0])
-    mineralID = mineralSample(mine.lower,mine.upper,logUniform=mine.logUniform)
-    ans = extractMineral(qid,mineralID,mine)
-    return ans
+class extractService():
+    def getMineral(self, messageList:list[str],qid:str):
+        """
+        根据传入的信息开采矿井
+        :param messageList: 开采 矿井编号
+        :param qid: 开采者的qq号
+        :return: 开采提示信息
+        """
+        assert len(messageList)==2,'开采失败:请指定要开采的矿井！'
+        mineID:int=int(messageList[1])
+        mine: Mine = Mine.find(mineID, mysql)
+        assert mine, '开采失败:不存在此矿井！'
+        assert mine.open or qid==mine.owner, '该矿井目前并未开放！'
+        nowtime = getnowtime()
+        user = User.find(qid, mysql)
+        assert nowtime >= user.forbidtime[0], '开采失败:您必须等到%s才能再次手动开采矿井！' % generateTimeStr(user.forbidtime[0])
+        mineralID = mineralSample(mine.lower,mine.upper,logUniform=mine.logUniform)
+        ans = extractMineral(qid,mineralID,mine)
+        return ans
 
-def getMineralAuto(messageList:list[str],qid:str):
-    """
-    根据传入的信息使用采矿机器人开采矿井
-    :param messageList: 机器开采 矿井编号
-    :param qid: 开采者的qq号
-    :return: 开采提示信息
-    """
-    assert len(messageList)==2,'开采失败:请指定要开采的矿井！'
-    mineID:int=int(messageList[1])
-    mine: Mine = Mine.find(mineID, mysql)
-    assert mine, '开采失败:不存在此矿井！'
-    assert mine.open or qid==mine.owner, '该矿井目前并未开放！'
-    nowtime = getnowtime()
-    user = User.find(qid, mysql)
-    assert user.robotNum > 0,'您没有采矿机器人！'
-    vacancy:bool = False
-    vacantID:int = 0
-    busymessage = ''
-    for i in range(1,len(user.forbidtime)):
-        if nowtime >= user.forbidtime[i]:
-            vacancy = True
-            vacantID = i
-            break
+    def getMineralAuto(self, messageList:list[str],qid:str):
+        """
+        根据传入的信息使用采矿机器人开采矿井
+        :param messageList: 机器开采 矿井编号
+        :param qid: 开采者的qq号
+        :return: 开采提示信息
+        """
+        assert len(messageList)==2,'开采失败:请指定要开采的矿井！'
+        mineID:int=int(messageList[1])
+        mine: Mine = Mine.find(mineID, mysql)
+        assert mine, '开采失败:不存在此矿井！'
+        assert mine.open or qid==mine.owner, '该矿井目前并未开放！'
+        nowtime = getnowtime()
+        user = User.find(qid, mysql)
+        assert user.robotNum > 0,'您没有采矿机器人！'
+        vacancy:bool = False
+        vacantID:int = 0
+        busymessage = ''
+        for i in range(1,len(user.forbidtime)):
+            if nowtime >= user.forbidtime[i]:
+                vacancy = True
+                vacantID = i
+                break
+            else:
+                busymessage += '机器人%d需要等到%s才能再次开采！\n' % (i, generateTimeStr(user.forbidtime[i]))
+        assert vacancy, "您没有当前空闲的采矿机器人！\n" + busymessage
+        mineralID = mineralSample(mine.lower,mine.upper,logUniform=mine.logUniform)
+        ans = extractMineral(qid,mineralID,mine,user,useRobot=True,robotID=vacantID)
+        return ans
+
+    def exchangeMineral(self, messageList:list[str],qid:str):
+        """
+        兑换矿石
+        :param messageList: 兑换 矿石编号
+        :param qid: 兑换者的qq号
+        :return: 兑换提示信息
+        """
+        assert len(messageList)==2,'兑换失败:请指定要兑换的矿石！'
+        nowtime:int=getnowtime()
+        try:
+            mineralID:int=int(messageList[1])
+        except ValueError:
+            return '兑换失败:您的兑换格式不正确！'
+        user:User=User.find(qid,mysql)
+        schoolID:str=user.schoolID
+        mineral=user.mineral
+        assert mineralID in mineral,'兑换失败:您不具备此矿石！'
+        assert exchangeable(schoolID,mineralID),'兑换失败:您不能够兑换此矿石！'
+
+        mineral[mineralID]-=1
+        if mineral[mineralID]<=0:
+            mineral.pop(mineralID)
+
+        user.mineral=mineral
+        user.money+=mineralID
+        user.outputTax += mineralID * vatRate #增值税
+        user.save(mysql)
+
+        Statistics(timestamp=nowtime,money=mineralID,fuel=0).add(mysql)
+
+        ans='兑换成功！'
+        return ans
+
+    def openMine(self, messageList:list[str],qid:str):
+        """
+        根据传入的信息开放私有矿井
+        :param messageList: 开放 矿井编号 收费
+        :param qid: qq号
+        :return: 提示信息
+        """
+        assert len(messageList) == 3, '开放失败:请按照格式输入！'
+        try:
+            mineID: int = int(messageList[1])
+            fee: float = float(messageList[2])
+        except ValueError:
+            return '开放失败:请按照规定格式进行开放！'
+
+        user = User.find(qid, mysql)
+        assert mineID in user.mines, '您不拥有该矿井！'
+
+        mine=Mine.find(mineID,mysql)
+
+        mine.open = True
+        mine.fee = fee
+
+        mine.save(mysql)
+
+        return '开放成功！'
+
+    def transferMine(self, messageList:list[str],qid:str):
+        """
+        :param messageList: 转让矿井 矿井编号 转让对象(学号/q+QQ号）
+        :param qid: 转让者的qq号
+        :return: 转让提示信息
+        """
+        assert len(messageList) == 3, '转让矿井失败:您的转让格式不正确！'
+        try:
+            transferID:int=int(messageList[1])
+            newOwnerID:str=str(messageList[2])
+        except ValueError:
+            return '转让工厂失败:您的输入格式不正确！'
+
+        user=User.find(qid,mysql)
+
+        mine=Mine.find(transferID,mysql)
+        assert mine is not None,"转让矿井失败:不存在此矿井！"
+        assert mine.owner==qid,'转让矿井失败:您不是此矿井的主人！'
+
+        if newOwnerID.startswith("q"):
+            # 通过QQ号查找对方
+            tqid: str = newOwnerID[1:]
+            newOwner: User = User.find(tqid, mysql)
+            assert newOwner, "转让矿井失败:QQ号为%s的用户未注册！" % tqid
         else:
-            busymessage += '机器人%d需要等到%s才能再次开采！\n' % (i, generateTimeStr(user.forbidtime[i]))
-    assert vacancy, "您没有当前空闲的采矿机器人！\n" + busymessage
-    mineralID = mineralSample(mine.lower,mine.upper,logUniform=mine.logUniform)
-    ans = extractMineral(qid,mineralID,mine,user,useRobot=True,robotID=vacantID)
-    return ans
+            tschoolID: str = newOwnerID
+            # 通过学号查找
+            assert User.findAll(mysql, 'schoolID=?', (tschoolID,)), "转让矿井失败:学号为%s的用户未注册！" % tschoolID
+            newOwner: User = User.findAll(mysql, 'schoolID=?', (tschoolID,))[0]
 
-def exchangeMineral(messageList:list[str],qid:str):
-    """
-    兑换矿石
-    :param messageList: 兑换 矿石编号
-    :param qid: 兑换者的qq号
-    :return: 兑换提示信息
-    """
-    assert len(messageList)==2,'兑换失败:请指定要兑换的矿石！'
-    nowtime:int=getnowtime()
-    try:
-        mineralID:int=int(messageList[1])
-    except ValueError:
-        return '兑换失败:您的兑换格式不正确！'
-    user:User=User.find(qid,mysql)
-    schoolID:str=user.schoolID
-    mineral=user.mineral
-    assert mineralID in mineral,'兑换失败:您不具备此矿石！'
-    assert exchangeable(schoolID,mineralID),'兑换失败:您不能够兑换此矿石！'
+        if newOwner.qid == 'treasury':
+            mine.private = False
 
-    mineral[mineralID]-=1
-    if mineral[mineralID]<=0:
-        mineral.pop(mineralID)
+        mine.owner = newOwner.qid
+        user.mines.pop(user.mines.index(transferID))
+        newOwner.mines.append(transferID)
+        user.save(mysql)
+        newOwner.save(mysql)
+        ans = '转让矿井成功！矿井编号%s已成功转让给%s' % (transferID, newOwnerID)
 
-    user.mineral=mineral
-    user.money+=mineralID
-    user.outputTax += mineralID * vatRate #增值税
-    user.save(mysql)
+        return ans
 
-    Statistics(timestamp=nowtime,money=mineralID,fuel=0).add(mysql)
-
-    ans='兑换成功！'
-    return ans
-
-def openMine(messageList:list[str],qid:str):
-    """
-    根据传入的信息开放私有矿井
-    :param messageList: 开放 矿井编号 收费
-    :param qid: qq号
-    :return: 提示信息
-    """
-    assert len(messageList) == 3, '开放失败:请按照格式输入！'
-    try:
-        mineID: int = int(messageList[1])
-        fee: float = float(messageList[2])
-    except ValueError:
-        return '开放失败:请按照规定格式进行开放！'
-
-    user = User.find(qid, mysql)
-    assert mineID in user.mines, '您不拥有该矿井！'
-
-    mine=Mine.find(mineID,mysql)
-
-    mine.open = True
-    mine.fee = fee
-
-    mine.save(mysql)
-
-    return '开放成功！'
-
-def transferMine(messageList:list[str],qid:str):
-    """
-    :param messageList: 转让矿井 矿井编号 转让对象(学号/q+QQ号）
-    :param qid: 转让者的qq号
-    :return: 转让提示信息
-    """
-    assert len(messageList) == 3, '转让矿井失败:您的转让格式不正确！'
-    try:
-        transferID:int=int(messageList[1])
-        newOwnerID:str=str(messageList[2])
-    except ValueError:
-        return '转让工厂失败:您的输入格式不正确！'
-
-    user=User.find(qid,mysql)
-
-    mine=Mine.find(transferID,mysql)
-    assert mine is not None,"转让矿井失败:不存在此矿井！"
-    assert mine.owner==qid,'转让矿井失败:您不是此矿井的主人！'
-
-    if newOwnerID.startswith("q"):
-        # 通过QQ号查找对方
-        tqid: str = newOwnerID[1:]
-        newOwner: User = User.find(tqid, mysql)
-        assert newOwner, "转让矿井失败:QQ号为%s的用户未注册！" % tqid
-    else:
-        tschoolID: str = newOwnerID
-        # 通过学号查找
-        assert User.findAll(mysql, 'schoolID=?', (tschoolID,)), "转让矿井失败:学号为%s的用户未注册！" % tschoolID
-        newOwner: User = User.findAll(mysql, 'schoolID=?', (tschoolID,))[0]
-
-    if newOwner.qid == 'treasury':
-        mine.private = False
-
-    mine.owner = newOwner.qid
-    user.mines.pop(user.mines.index(transferID))
-    newOwner.mines.append(transferID)
-    user.save(mysql)
-    newOwner.save(mysql)
-    ans = '转让矿井成功！矿井编号%s已成功转让给%s' % (transferID, newOwnerID)
-
-    return ans

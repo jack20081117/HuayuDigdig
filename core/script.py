@@ -1,6 +1,4 @@
 from globalConfig import groupIDs,botID,adminIDs
-from user import *
-from static import *
 from extract import *
 from market import *
 from stock import *
@@ -8,7 +6,15 @@ from debt import *
 from industrial import *
 from taxes import *
 
+import service
 commands:dict={}
+
+from stock import stockService
+from extract import extractService
+from taxes import taxesService
+from debt import debtService
+from industrial import industrialService
+from market import marketService
 
 def register(funcStr: str,func: callable):
     """
@@ -103,62 +109,81 @@ def treasuryAction(messageList:list[str],qid:str):
 
     return commands[funcStr](messageList[1:],'treasury')
        
+
+# SE => Service Executor
+staticSE = service.staticService()
+userSE = service.userService()
+stockSE = stockService()
+extractSE = extractService()
+taxSE = taxesService()
+debtSE = debtService()
+industrialSE = industrialService()
+marketSE = marketService()
+
 registerByDict({
-    "time":returnTime,
-    "帮助":getHelp,
-    "注册":signup,
-    "查询":getUserInfo,
-    "统计局":getStats,
-    "开采":getMineral,
-    "开放":openMine,
-    "兑换":exchangeMineral,
-    "预售":presellMineral,
-    "购买":buyMineral,
-    "预订":prebuyMineral,
-    "售卖":sellMineral,
-    "拍卖":preauctionMineral,
-    "投标":bidMineral,
-    "矿市":mineralMarket,
-    "发行":issueStock,
-    "认购":acquireStock,
-    "买入":buyStock,
-    "抛出":sellStock,
-    "股市":stockMarket,
-    "分红":giveDividend,
-    "兑换纸燃油":toPaperFuel,
-    "兑换燃油":fromPaperFuel,
-    "支付":pay,
-    "放贷":prelendDebt,
-    "借贷":borrowDebt,
-    "还款":repayDebt,
-    "转让债务":transferDebt,
-    "免除":forgiveDebt,
-    "债市":debtMarket,
-    "分解":decompose,
-    "合成":synthesize,
-    "修饰":decorate,
-    "复制":duplicate,
-    "炼化":refine,
-    "建设":build,
-    "建设机器人":buildRobot, #模糊匹配
-    "建造":build,
-    "建造机器人":buildRobot,
-    "科研":research,
-    "勘探":discover,
-    "取消":cancelPlan,
-    "执行":enactPlan,
-    "计划":showPlan,
-    "转让工厂":transferFactory,
-    "转让矿井":transferMine,
+    "time":     staticSE.returnTime,
+    "帮助":     staticSE.getHelp,
+    "财富排行": staticSE.showWealthiest,
+    "统计局":   staticSE.getStats,
+    
+    "注册":     userSE.signup,
+    "查询":     userSE.getUserInfo,
+    "支付":     userSE.pay,
+    "因子查询": userSE.factorsLookup,
+    "允许学习": userSE.allowLearning,
+    "禁止学习": userSE.forbidLearning,
+    "学习":     userSE.learnEffis,
+    
+    "发行":     stockSE.issueStock,
+    "认购":     stockSE.acquireStock,
+    "买入":     stockSE.buyStock,
+    "抛出":     stockSE.sellStock,
+    "股市":     stockSE.stockMarket,
+    "分红":     stockSE.giveDividend,
+    "兑换纸燃油":stockSE.toPaperFuel,
+    "兑换燃油": stockSE.fromPaperFuel,
+    
+    "开采":     extractSE.getMineral,
+    "开放":     extractSE.openMine,
+    "兑换":     extractSE.exchangeMineral,
+    "转让矿井": extractSE.transferMine,
+    "机器开采": extractSE.getMineralAuto,
+    
+    "抽奖":     taxSE.lottery,
+    
+    "放贷":     debtSE.prelendDebt,
+    "借贷":     debtSE.borrowDebt,
+    "还款":     debtSE.repayDebt,
+    "转让债务": debtSE.transferDebt,
+    "免除":     debtSE.forgiveDebt,
+    "债市":     debtSE.debtMarket,
+    
+    "分解":     industrialSE.decompose,
+    "合成":     industrialSE.synthesize,
+    "修饰":     industrialSE.decorate,
+    "复制":     industrialSE.duplicate,
+    "炼化":     industrialSE.refine,
+    "建设":     industrialSE.build,
+    "建设机器人":industrialSE.buildRobot, #模糊匹配
+    "建造":     industrialSE.build,
+    "建造机器人":industrialSE.buildRobot,
+    "科研":     industrialSE.research,
+    "勘探":     industrialSE.discover,
+    "取消":     industrialSE.cancelPlan,
+    "执行":     industrialSE.enactPlan,
+    "计划":     industrialSE.showPlan,
+    "转让工厂": industrialSE.transferFactory,
+    
+    "预售":     marketSE.presellMineral,
+    "购买":     marketSE.buyMineral,
+    "预订":     marketSE.prebuyMineral,
+    "售卖":     marketSE.sellMineral,
+    "拍卖":     marketSE.preauctionMineral,
+    "投标":     marketSE.bidMineral,
+    "矿市":     marketSE.mineralMarket,
+    
     "强制执行":distraint,
-    "国库":treasuryAction,
-    "抽奖":lottery,
-    "因子查询":factorsLookup,
-    "财富排行":showWealthiest,
-    "允许学习":allowLearning,
-    "禁止学习":forbidLearning,
-    "学习":learnEffis,
-    "机器开采":getMineralAuto
+    "国库":treasuryAction
 })
 
 

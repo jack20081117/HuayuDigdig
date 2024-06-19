@@ -1,7 +1,7 @@
 ﻿import logging,sqlite3
 #logging.basicConfig(level=logging.INFO)
 from globalConfig import *
-from tools import fromstr,tostr
+from staticFunctions import fromstr,tostr
 
 createArgsString=lambda num:('?,'*num)[:-1]#生成参数占位符字符串
 

@@ -168,4 +168,17 @@ class Debt(Model):
     endtime=IntegerField()
     interest=FloatField()
 
-AllModels:list[Model]=[User,Mine,Sale,Purchase,Auction,Stock,Debt,Order,Plan,StockData,Misc,Statistics]
+AllModels = {
+    "User": User,
+    "Mine": Mine,
+    "Sale": Sale,
+    "Purchase": Purchase,
+    "Auction": Auction,
+    "Stock": Stock,
+    "Debt": Debt,
+    "Order": Order,
+    "Plan": Plan,
+    "StockData": StockData,
+    "Misc": Misc,
+    "Statistics": Statistics
+}
