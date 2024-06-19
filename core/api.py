@@ -22,7 +22,7 @@ level2name = {
 def log(mes, level=2):
     timre = datetime.now().strftime("%Y-%m-%d")
     time = datetime.now().strftime("%H:%M:%S")
-    with open("./%s log.log"%timre, "a") as file:
+    with open("./log/%s log.log"%timre, "a") as file:
         file.write("%s %s %s\r\n"%(time, level2name[level], mes))
 
 init()
@@ -48,12 +48,14 @@ def post():
         except:
             return "KO"
         if res.get('message_type')=='private':  # 说明有好友发送信息过来
-            r = handle(res,group=False, message=message,qid=qid)
+            result = handle(res,group=False, message=message,qid=qid)
         elif res.get('message_type')=='group':
-            r = handle(res,group=True, message=message,qid=qid)
-        log("收到来自%s的消息：%s；  回复了：%s"%(qid, message, r))
+            result = handle(res,group=True, message=message,qid=qid)
+        else:
+            return "KO"
+        log("收到来自%s的消息:%s.回复了:%s"%(qid, message, result))
     except BaseException as err:
-        log(str(err), 4)
+        log(str(err), level=4)
 
     return 'OK'
 
