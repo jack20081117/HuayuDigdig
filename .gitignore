@@ -3,6 +3,8 @@ go-cqhttp
 
 *.py[cod]
 *.db
+*.log
+!.gitkeep
 /gocq
 .gitignore
 /core/mysql.json
