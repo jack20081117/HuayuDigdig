@@ -4,11 +4,13 @@ from tools import sigmoid,sqrtmoid,getnowtime,generateTimeStr,setTimeTask, miner
 from model import User,Mine,Statistics
 from globalConfig import mysql,vatRate
 
-def extractMineral(qid:str,mineralID:int,mine:Mine,user:User, useRobot:bool=False, robotID:int=0):
+def extractMineral(qid:str,mineralID:int,mine:Mine, useRobot:bool=False, robotID:int=0):
     """获取矿石
     :param qid:开采者的qq号
     :param mineralID:开采得矿石的编号
     :param mine:矿井
+    :param useRobot:是否使用机器人
+    :param robotID:机器人编号
     :return:开采信息
     """
     nowtime:int=getnowtime()
@@ -78,9 +80,9 @@ def getMineral(messageList:list[str],qid:str):
     assert mine.open or qid==mine.owner, '该矿井目前并未开放！'
     nowtime = getnowtime()
     user = User.find(qid, mysql)
-    assert nowtime >= user.forbidtime[0], '开采失败:您必须等到%s才能再次手动开采矿井！' % generateTimeStr(user.forbidtime)
+    assert nowtime >= user.forbidtime[0], '开采失败:您必须等到%s才能再次手动开采矿井！' % generateTimeStr(user.forbidtime[0])
     mineralID = mineralSample(mine.lower,mine.upper,logUniform=mine.logUniform)
-    ans = extractMineral(qid,mineralID,mine,user)
+    ans = extractMineral(qid,mineralID,mine)
     return ans
 
 def getMineralAuto(messageList:list[str],qid:str):

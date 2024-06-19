@@ -1,4 +1,4 @@
-from orm import Model,StringField,IntegerField,BooleanField,FloatField
+﻿from orm import Model,StringField,IntegerField,BooleanField,FloatField
 
 class User(Model):
     __table__='users'
@@ -107,7 +107,7 @@ class Stock(Model):
     __table__='stocks'
 
     stockID=StringField(columnType='varchar(3)',primaryKey=True)
-    stockName=StringField(columnType='varchar(12)')
+    stockName=StringField(columnType='varchar(120)')
     stockNum=IntegerField()
     openStockNum=IntegerField() #一级市场认购时仍未被认购的股数
     provisionalFunds=FloatField() #一级市场认购进行时临时资金的存放处，如果成功上市将转移给发行人

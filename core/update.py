@@ -31,7 +31,7 @@ def init():
         updateDebt(debt)
 
 def updateForbidTime(user:User):
-    user.forbidtime=0
+    user.forbidtime=[0]*len(user.forbidtime)
     user.save(mysql)
 
 def updateAbundance():

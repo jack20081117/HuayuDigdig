@@ -1,4 +1,4 @@
-import re
+﻿import re
 from globalConfig import mysql,effisStr,infoMsg,playerTax,effisItemCount,effisNameDict
 from tools import getnowtime,sigmoid, indicators, factors, send
 from model import User

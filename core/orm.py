@@ -1,4 +1,4 @@
-import logging,sqlite3
+﻿import logging,sqlite3
 #logging.basicConfig(level=logging.INFO)
 from globalConfig import *
 from tools import fromstr,tostr
