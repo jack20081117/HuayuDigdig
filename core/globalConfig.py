@@ -22,6 +22,8 @@ effisItemCount:int=config["effis_item_count"]
 effisDailyDecreaseRate:float=config["effis_daily_decrease_rate"]
 permitBase:float=config["permit_cost"]
 permitGradient:float=config["permit_gradient"]
+factoryWUR=config['factory_wur']
+robotWUR=config['robot_wur']
 
 stockMarketOpenFlag = False
 

@@ -9,7 +9,7 @@ class User(Model):
     mineral=StringField(columnType='varchar(2000)')
     tech=StringField(columnType='varchar(200)') #Dict str:float
     digable=BooleanField()
-    forbidtime=IntegerField()
+    forbidtime=StringField(columnType='varchar(500)')
     factoryNum=IntegerField()
     effis=StringField(columnType='varchar(200)')
     mines=StringField(columnType='varchar(200)')
@@ -24,6 +24,7 @@ class User(Model):
     techCards=StringField(columnType='varchar(2000)')
     effisFee=FloatField()
     allowLearning=BooleanField()
+    robotNum=IntegerField()
 
 class Plan(Model):
     __table__='plans'

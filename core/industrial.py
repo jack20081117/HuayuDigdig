@@ -1,7 +1,7 @@
 from tools import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp
 from model import User, Plan,Statistics
 from update import updateEfficiency, updatePlan
-from globalConfig import mysql,effisValueDict, fuelFactorDict, permitBase, permitGradient
+from globalConfig import mysql,effisValueDict, fuelFactorDict, permitBase, permitGradient, factoryWUR, robotWUR
 from numpy import log
 import numpy as np
 
@@ -316,8 +316,8 @@ def build(messageList: list[str], qid: str):
      buildeff = user.effis[5]
 
      materialDict = {2:20, 4:10, 6:8, 8:7, 10:6, 12:6}
-     workUnitsRequired = 50000
-     timeRequired, fuelRequired = timeFuelCalculator(50000,buildeff,0,factoryNum,fuelFactorDict[5])
+     workUnitsRequired = factoryWUR
+     timeRequired, fuelRequired = timeFuelCalculator(factoryWUR,buildeff,0,factoryNum,fuelFactorDict[5])
      ingredients = {0:fuelRequired, material:materialDict[material]}
 
      planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
@@ -333,6 +333,46 @@ def build(messageList: list[str], qid: str):
      return ans
 
 
+def buildRobot(messageList: list[str], qid: str):
+    """
+    制定机器人建造计划
+    :param messageList: 建造机器人 建材 调拨工厂数
+    :param qid: 制定者的qq号
+    :return: 提示信息
+    """
+
+    assert len(messageList) == 3, '制定建造计划失败:请按照规定格式进行计划！'
+    user: User = User.find(qid, mysql)
+    try:
+        material: int = int(messageList[1])
+        factoryNum: int = int(messageList[-1])
+    except ValueError:
+        return '制定建造计划失败:请按照规定格式进行计划！'
+
+    assert factoryNum >= 1, '制定建造计划失败:工厂数无效！'
+    assert factoryNum <= user.factoryNum, '制定建造计划失败:您没有足够工厂！'
+    assert material in [2, 4, 6, 8, 10, 12], '制定建造计划失败：您无法使用这种建材！'
+
+    nowtime: int = getnowtime()
+
+    buildeff = user.effis[5]
+
+    materialDict = {2: 8, 4: 4, 6: 3, 8: 3, 10: 2, 12: 2}
+    workUnitsRequired = robotWUR
+    timeRequired, fuelRequired = timeFuelCalculator(robotWUR, buildeff, 0, factoryNum, fuelFactorDict[5])
+    ingredients = {0: fuelRequired, material: materialDict[material]}
+
+    planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
+    plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=5, factoryNum=factoryNum,
+                      ingredients=ingredients, products={}, timeEnacted=nowtime, timeRequired=timeRequired,
+                      workUnitsRequired=workUnitsRequired, enacted=False)
+    plan.add(mysql)
+
+    ans = '编号为%s的建造计划制定成功！按照此计划，%s个工厂将被调用，预估消耗%s单位燃油和%s时间！' % (planID, factoryNum,
+                                                               fuelRequired, smartInterval(timeRequired),
+                                                               )
+
+    return ans
 
 def research(messageList:list[str], qid: str):
     """
@@ -482,7 +522,7 @@ def enactPlan(messageList: list[str], qid: str):
     try:
         planID: int = int(messageList[1])
         if messageList[2] == '现在' or messageList[2] == 'now':
-            starttime: int = nowtime + 1
+            starttime: int = nowtime + 3
         elif generateTime(messageList[2]):
             starttime: int = nowtime + generateTime(messageList[2])
         else:
@@ -564,7 +604,7 @@ def enaction(plan: Plan):
     if plan.jobtype==4:
         Statistics(timestamp=nowtime,money=0,fuel=products[0]).add(mysql)
 
-    if plan.jobtype == 5:
+    if plan.jobtype == 5 and plan.workUnitsRequired == 50000:
         if 1 in user.misc:
             ans += '由于您有未使用的工厂建设许可证，此次不需要重新置办！\n'
             user.misc[1] -= 1

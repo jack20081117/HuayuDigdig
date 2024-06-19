@@ -5,7 +5,7 @@ from update import updateDigable
 from model import User,Mine,Statistics
 from globalConfig import mysql,vatRate
 
-def extractMineral(qid:str,mineralID:int,mine:Mine):
+def extractMineral(qid:str,mineralID:int,mine:Mine,user:User, useRobot:bool=False, robotID:int=0):
     """获取矿石
     :param qid:开采者的qq号
     :param mineralID:开采得矿石的编号
@@ -14,11 +14,9 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
     """
     nowtime:int=getnowtime()
     abundance:float=mine.abundance #矿井丰度
-    user:User=User.find(qid,mysql)
+    #user:User=User.find(qid,mysql)
     mineral:dict[int,int]=user.mineral # 用户拥有的矿石
     extractTech:float=user.tech['extract'] # 开采科技
-
-    assert nowtime >= user.forbidtime,'开采失败:您必须等到%s才能再次开采矿井！'%generateTimeStr(user.forbidtime)
 
     if mine.private and qid != mine.owner:
         owner = User.find(mine.owner, mysql)
@@ -33,7 +31,11 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
     else:
         prob=round(abundance*sqrtmoid(extractTech),2)
 
-    user.digable = 0  # 在下一次刷新前不可开采
+    if useRobot:
+        fuelUsage = 10 * np.log(mineralID) / sqrtmoid(extractTech)
+        assert 0 in user.mineral, "您没有燃油，无法使用采矿机器人！"
+        assert user.mineral[0] >= fuelUsage, "本次机器开采预计需要消耗%.2f单位燃油，您的燃油不充足！" % fuelUsage
+        user.mineral[0] -= fuelUsage
 
     if np.random.random()>prob:#开采失败
         forbidInterval = 90 * np.log(mineralID) / sqrtmoid(extractTech)
@@ -58,7 +60,7 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
         forbidInterval /= 1.5
 
     forbidtime = round(getnowtime() + forbidInterval)
-    user.forbidtime=forbidtime
+    user.forbidtime[robotID]=forbidtime
     user.save(mysql)
 
     setTimeTask(updateDigable, user.forbidtime, user)
@@ -76,8 +78,41 @@ def getMineral(messageList:list[str],qid:str):
     mine: Mine = Mine.find(mineID, mysql)
     assert mine, '开采失败:不存在此矿井！'
     assert mine.open or qid==mine.owner, '该矿井目前并未开放！'
+    nowtime = getnowtime()
+    user = User.find(qid, mysql)
+    assert nowtime >= user.forbidtime[0], '开采失败:您必须等到%s才能再次手动开采矿井！' % generateTimeStr(user.forbidtime)
     mineralID = mineralSample(mine.lower,mine.upper,logUniform=mine.logUniform)
-    ans = extractMineral(qid,mineralID,mine)
+    ans = extractMineral(qid,mineralID,mine,user)
+    return ans
+
+def getMineralAuto(messageList:list[str],qid:str):
+    """
+    根据传入的信息使用采矿机器人开采矿井
+    :param messageList: 机器开采 矿井编号
+    :param qid: 开采者的qq号
+    :return: 开采提示信息
+    """
+    assert len(messageList)==2,'开采失败:请指定要开采的矿井！'
+    mineID:int=int(messageList[1])
+    mine: Mine = Mine.find(mineID, mysql)
+    assert mine, '开采失败:不存在此矿井！'
+    assert mine.open or qid==mine.owner, '该矿井目前并未开放！'
+    nowtime = getnowtime()
+    user = User.find(qid, mysql)
+    assert user.robotNum > 0,'您没有采矿机器人！'
+    vacancy:bool = False
+    vacantID:int = 0
+    busymessage = ''
+    for i in range(1,len(user.forbidtime)):
+        if nowtime >= user.forbidtime[i]:
+            vacancy = True
+            vacantID = i
+            break
+        else:
+            busymessage += '机器人%d需要等到%s才能再次开采！\n' % (i, generateTimeStr(user.forbidtime[i]))
+    assert vacancy, "您没有当前空闲的采矿机器人！\n" + busymessage
+    mineralID = mineralSample(mine.lower,mine.upper,logUniform=mine.logUniform)
+    ans = extractMineral(qid,mineralID,mine,user,useRobot=True,robotID=vacantID)
     return ans
 
 def exchangeMineral(messageList:list[str],qid:str):

@@ -140,6 +140,9 @@ registerByDict({
     "复制":duplicate,
     "炼化":refine,
     "建设":build,
+    "建设机器人":buildRobot, #模糊匹配
+    "建造":build,
+    "建造机器人":buildRobot,
     "科研":research,
     "勘探":discover,
     "取消":cancelPlan,
@@ -155,6 +158,7 @@ registerByDict({
     "允许学习":allowLearning,
     "禁止学习":forbidLearning,
     "学习":learnEffis,
+    "机器开采":getMineralAuto
 })
 
 

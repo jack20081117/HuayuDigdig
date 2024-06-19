@@ -2,7 +2,7 @@ import numpy as np
 
 from tools import send,getnowtime
 from model import User,Mine,Sale,Purchase,Auction,Debt,Plan
-from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate
+from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate, factoryWUR, robotWUR
 from tools import sqrtmoid, tech_validator,mineralSample,mineExpectation
 
 def init():
@@ -265,11 +265,16 @@ def updatePlan(plan:Plan):
 
     ans = ''
     if plan.jobtype == 5:
-        ans = '您的工厂建设计划%s已完成！您的工厂数量已增加1'
-        user.misc[1] -= 1
-        if user.misc[1] == 0:
-            user.misc.pop(1)
-        user.factoryNum += 1
+        if plan.workUnitsRequired == factoryWUR:
+            ans = '您的工厂建设计划%s已完成！您的工厂数量已增加1'
+            user.misc[1] -= 1
+            if user.misc[1] == 0:
+                user.misc.pop(1)
+            user.factoryNum += 1
+        elif plan.workUnitsRequired == robotWUR:
+            ans = '您的机器人建设计划%s已完成！您的采矿机器人数量已增加1'
+            user.robotNum += 1
+            user.forbidTime.append(getnowtime())
     elif plan.jobtype == 6:
         validated_levels = tech_validator(plan.techName, plan.techPath, user.schoolID) #验证机返回给定技术路径前几级取得了成功
         if validated_levels == 0:  #第一级就验证失败

@@ -18,5 +18,7 @@
     "effis_item_count": 8,
     "effis_daily_decrease_rate": 4,
     "permit_cost": 50000,
-    "permit_gradient": 10000
+    "permit_gradient": 10000,
+    "factory_wur": 40000,
+    "robot_wur": 8000,
 }
