@@ -45,7 +45,7 @@ def extractMineral(qid:str,mineralID:int,mine:Mine):
         mineral[mineralID]+=1 #加一个矿石
         mine.abundance=prob#若开采成功，则后一次的丰度是前一次的成功概率
         ans='开采成功！您获得了编号为%d的矿石！'%mineralID
-        if np.random.random()<= sigmoid(extractTech)/4:
+        if np.random.random() <= sigmoid(extractTech)/4:
             percentage = np.random.random()/4+0.25
             oil = round(mineralID/np.log(mineralID) * percentage+1)
             ans+='此次开采连带发现%d单位天然燃油！' % oil

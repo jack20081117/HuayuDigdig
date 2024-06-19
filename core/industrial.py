@@ -482,7 +482,7 @@ def enactPlan(messageList: list[str], qid: str):
     try:
         planID: int = int(messageList[1])
         if messageList[2] == '现在' or messageList[2] == 'now':
-            starttime: int = nowtime
+            starttime: int = nowtime + 1
         elif generateTime(messageList[2]):
             starttime: int = nowtime + generateTime(messageList[2])
         else:
@@ -558,10 +558,12 @@ def enaction(plan: Plan):
             success = False
 
     if not success:
-        return ans
+        send(qid,ans,False)
+        return None
 
     if plan.jobtype==4:
         Statistics(timestamp=nowtime,money=0,fuel=products[0]).add(mysql)
+
     if plan.jobtype == 5:
         if 1 in user.misc:
             ans += '由于您有未使用的工厂建设许可证，此次不需要重新置办！\n'
@@ -685,6 +687,7 @@ def showPlan(messageList:list[str],qid:str):
                 products.append('矿石%s:%s个'%(pId,pNum))
         planData.append([plan.planID,effisValueDict[plan.jobtype],plan.factoryNum,','.join(ingredients),','.join(products),smartInterval(plan.timeRequired)])
     drawtable(planData,'plan.png')
+
     ans='[CQ:image,file=plan.png]'
     return ans
 
