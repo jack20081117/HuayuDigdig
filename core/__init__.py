@@ -1,6 +1,5 @@
 from model import AllModels,User,Mine,Misc,Stock
-from orm import execute
-from globalConfig import config,mysql,adminIDs
+from globalConfig import mysql,adminIDs
 from tools import getnowtime,mineExpectation
 
 def createTreasury():
@@ -15,7 +14,7 @@ def createTreasury():
         industrialTech=0.0,
         extractTech=0.0,
         refineTech=0.0,
-        digable=1,
+        forbidtime=[getnowtime()],
         factoryNum=1,
         effis={},
         mines=[],

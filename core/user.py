@@ -25,7 +25,7 @@ def signup(messageList:list[str],qid:str):
         mineral={},
         tech={'extract':0.0,'industrial':0.0,'refine':0.0},
         techCards={'extract':[],'industrial':[],'refine':[]},
-        forbidtime=nowtime,
+        forbidtime=[nowtime],
         factoryNum=1,
         effis=effis,
         mines=[],
@@ -57,7 +57,7 @@ def getUserInfo(messageList:list[str],qid:str):
     industrialTech:float=user.tech['industrial']
     extractTech:float=user.tech['extract']
     refineTech:float=user.tech['refine']
-    digable:bool=user.digable
+    digable:str='是' if user.forbidtime[0]<getnowtime() else '否'
     mineral:dict[int,int]=user.mineral
     factoryNum:int=user.factoryNum
     effis=user.effis

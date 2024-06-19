@@ -13,7 +13,7 @@ def extractMineral(qid:str,mineralID:int,mine:Mine,user:User, useRobot:bool=Fals
     """
     nowtime:int=getnowtime()
     abundance:float=mine.abundance #矿井丰度
-    #user:User=User.find(qid,mysql)
+    user:User=User.find(qid,mysql)
     mineral:dict[int,int]=user.mineral # 用户拥有的矿石
     extractTech:float=user.tech['extract'] # 开采科技
 

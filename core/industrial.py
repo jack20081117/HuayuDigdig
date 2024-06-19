@@ -604,7 +604,7 @@ def enaction(plan: Plan):
     if plan.jobtype==4:
         Statistics(timestamp=nowtime,money=0,fuel=products[0]).add(mysql)
 
-    if plan.jobtype == 5 and plan.workUnitsRequired == 50000:
+    if plan.jobtype == 5 and plan.workUnitsRequired == factoryWUR:
         if 1 in user.misc:
             ans += '由于您有未使用的工厂建设许可证，此次不需要重新置办！\n'
             user.misc[1] -= 1
