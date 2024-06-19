@@ -52,6 +52,8 @@ def getUserInfo(messageList:list[str],qid:str):
     :return: 查询提示信息
     """
     user:User=User.find(qid,mysql)
+    if not user:
+        return "[错误] 您尚未注册!"
     schoolID:str=user.schoolID
     money:int=user.money
     mineral:str=user.mineral
