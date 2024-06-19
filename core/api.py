@@ -10,7 +10,8 @@ import warnings
 import signal
 import logging
 logging.basicConfig(
-        filename='digdig.log',
+        filename='./digdig.log',
+        filemode="a",
         level=logging.INFO,
         format='%(asctime)s-%(levelname)s-%(message)s',
         datefmt='%Y-%m-%d %H:%M:%S %p'
@@ -36,8 +37,11 @@ def post():
     # 这里对消息进行分发，暂时先设置一个简单的分发
     res=request.get_json()
     try:
-        message:str=res.get("raw_message")
-        qid:str=str(res.get('sender').get('user_id'))  #发消息者的qq号
+        try:
+            message:str=res.get("raw_message")
+            qid:str=str(res.get('sender').get('user_id'))  #发消息者的qq号
+        except:
+            return
         if res.get('message_type')=='private':  # 说明有好友发送信息过来
             r = handle(res,group=False, message=message,qid=qid)
         elif res.get('message_type')=='group':
