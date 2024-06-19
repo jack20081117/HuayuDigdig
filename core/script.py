@@ -30,11 +30,9 @@ def dealWithRequest(funcStr:str,messageList:list[str],qid:str):
         ans="未知命令:请输入`帮助`以获取帮助信息，或通过`帮助 功能`获取该功能详细信息！"
     return ans
 
-def handle(res,group):
+def handle(res,group, message, qid):
     ans:str=''  #回复给用户的内容
     if group:#是群发消息
-        message:str=res.get("raw_message")
-        qid:str=str(res.get('sender').get('user_id'))  #发消息者的qq号
         gid:str=str(res.get('group_id'))  #群的qq号
         if gid not in groupIDs:
             return None
@@ -48,20 +46,22 @@ def handle(res,group):
         try:
             ans='[CQ:at,qq=%s]'%qid+dealWithRequest(funcStr,messageList,qid)
             send(gid,ans,group=True)
+            return ans
         except AssertionError as err:
             send(gid,err,group=True)
+            return err
 
     else:
-        message:str=res.get("raw_message")
-        qid:str=str(res.get('sender').get('user_id'))
         messageList:list=message.split(' ')
         funcStr:str=messageList[0]
 
         try:
             ans=dealWithRequest(funcStr,messageList,qid)
             send(qid,ans,group=False)
+            return ans
         except AssertionError as err:
             send(qid,err,group=False)
+            return err
 
 def distraint(messageList:list[str],qid:str):
     """

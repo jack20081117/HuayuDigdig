@@ -36,12 +36,15 @@ def post():
     # 这里对消息进行分发，暂时先设置一个简单的分发
     res=request.get_json()
     try:
+        message:str=res.get("raw_message")
+        qid:str=str(res.get('sender').get('user_id'))  #发消息者的qq号
         if res.get('message_type')=='private':  # 说明有好友发送信息过来
-            handle(res,group=False)
+            r = handle(res,group=False, message=message,qid=qid)
         elif res.get('message_type')=='group':
-            handle(res,group=True)
+            r = handle(res,group=True, message=message,qid=qid)
+        logging.info("收到来自%s的消息：%s；  回复了：%s"%(qid, message, r))
     except BaseException as err:
-        logging.log(logging.ERROR,err)
+        logging.error(str(err), logging.getLevelName(logging.ERROR))
 
     return 'OK'
 
