@@ -16,8 +16,8 @@
     ],
     "message_maxLength": 40,
     "bot_id": {
-        "dev0": "2470751924",
-        "dev": "3775103665"
+        "dev": "2470751924",
+        "prod": "3775103665"
     },
     "effis_item_count": 8,
     "effis_daily_decrease_rate": 4,
