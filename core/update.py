@@ -245,7 +245,6 @@ def updateEfficiency(user:User,finishedPlan):
                 tech = user.tech['industrial']
             effis[i] += 4 * finishedPlan.timeRequired * sqrtmoid(tech) * effisDailyDecreaseRate/86400
         elif enactedPlansByType[i] == 0:
-            print(effis[i],elapsedTime * effisDailyDecreaseRate/86400)
             effis[i] -= elapsedTime * effisDailyDecreaseRate/86400
             effis[i] = max(0,effis[i])
 

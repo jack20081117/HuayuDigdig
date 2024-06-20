@@ -228,7 +228,8 @@ class IndustrialService(object):
         for ingredient in ingredientList:
 
             finalProduct *= ingredient
-            ingredients[ingredient] = duplication
+            ingredients.setdefault(ingredient,0)
+            ingredients[ingredient] += duplication
 
         workUnitsRequired, timeRequired, fuelRequired = \
             expenseCalculator(4,duplication,finalProduct,finalProduct,user.tech['industrial'],synth_eff,factoryNum,fuelFactorDict[1])

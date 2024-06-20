@@ -278,9 +278,14 @@ class StockService(object):
         plt.figure(figsize=(10,5))
         for stockID in stockPrices.keys():
             xs,ys=[],[]
+            lastPrice=None
             for datum in stockPrices[stockID]:
                 xs.append(datetime.fromtimestamp(datum[0]))
-                ys.append(datum[1])
+                if lastPrice is None:
+                    ys.append(1)
+                else:
+                    ys.append(datum[1]/lastPrice)
+                lastPrice=datum[1]
             plt.plot(xs,ys,linestyle='-',marker=',',label=stockID,alpha=0.5)
         plt.legend(loc='upper right')
 
@@ -581,8 +586,8 @@ def resolveAuction(aggregate=True, closing=False):
         indexDifferenceNoOil = indexSumNoOil/capitalSumNoOil
         dataEntry.index = indexDifference*index.price
         dataEntry.index2 = indexDifferenceNoOil*index2.price
-        index.price = dataEntry.index
-        index2.price = dataEntry.index2
+        index.price = max(dataEntry.index,0.01)
+        index2.price = max(dataEntry.index2,0.01)
         dataEntry.save(mysql)
         index.save(mysql)
         index2.save(mysql)
