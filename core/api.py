@@ -23,12 +23,14 @@ def log(mes, level=2):
     timre = datetime.now().strftime("%Y-%m-%d")
     time = datetime.now().strftime("%H:%M:%S")
     with open("./log/%s log.log"%timre, "a") as file:
-        write_str = mes
-        if len(write_str) >= 20:
-            write_str = write_str.split("\n")[0]
-            if write_str.__len__() >= 20:
-                write_str = write_str[:20]
-        file.write("%s %s %s"%(time, level2name[level], write_str)+"\r\n")
+        file.write("%s %s %s"%(time, level2name[level], mes)+"\r\n")
+
+def shorten(s):
+    if len(s) >= 20:
+        s = s.split("\n")[0]
+        if s.__len__() >= 20:
+            s = s[:20]
+    return s
 
 init()
 globalConfig.stockMarketOpenFlag=True
@@ -58,7 +60,7 @@ def post():
             result = handle(res,group=True, message=message,qid=qid)
         else:
             return "KO"
-        log("收到来自%s的消息:%s.回复了:%s"%(qid, message, result))
+        log("收到来自%s的消息:%s.回复了:%s"%(qid, shorten(message), shorten(result)))
     except BaseException as err:
         log(str(err), level=4)
 
