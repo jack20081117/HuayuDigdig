@@ -320,11 +320,11 @@ class MarketService(object):
 
         if sales:
             ans+='以下是所有处于预售中的商品:\n'
-            saleData=[['交易编号','矿石编号','矿石数目','价格','起始时间','结束时间']]
+            saleData=[['交易编号','矿石编号','矿石数目','价格','发起者','起始时间','结束时间']]
             for sale in sales:
                 starttime:str=generateTimeStr(sale.starttime)
                 endtime:str=generateTimeStr(sale.endtime)
-                saleData.append([sale.tradeID,sale.mineralID,sale.mineralNum,sale.price,starttime,endtime])
+                saleData.append([sale.tradeID,sale.mineralID,sale.mineralNum,sale.price,sale.qid,starttime,endtime])
             drawtable(saleData,'sale.png')
             ans+='[CQ:image,file=sale.png]\n'
         else:
@@ -332,11 +332,11 @@ class MarketService(object):
 
         if purchases:
             ans+='以下是所有处于预订中的商品:\n'
-            purchaseData=[['交易编号','矿石编号','矿石数目','价格','起始时间','结束时间']]
+            purchaseData=[['交易编号','矿石编号','矿石数目','价格','发起者','起始时间','结束时间']]
             for purchase in purchases:
                 starttime:str=generateTimeStr(purchase.starttime)
                 endtime:str=generateTimeStr(purchase.endtime)
-                purchaseData.append([purchase.tradeID,purchase.mineralID,purchase.mineralNum,purchase.price,starttime,endtime])
+                purchaseData.append([purchase.tradeID,purchase.mineralID,purchase.mineralNum,purchase.price,purchase.qid,starttime,endtime])
             drawtable(purchaseData,'purchase.png')
             ans+='[CQ:image,file=purchase.png]\n'
         else:
@@ -344,11 +344,11 @@ class MarketService(object):
 
         if auctions:
             ans+='以下是所有处于拍卖中的商品:\n'
-            auctionData=[['交易编号','矿石编号','矿石数目','底价','起始时间','结束时间','当前最高价']]
+            auctionData=[['交易编号','矿石编号','矿石数目','底价','发起者','起始时间','结束时间','当前最高价']]
             for auction in auctions:
                 starttime:str=generateTimeStr(auction.starttime)
                 endtime:str=generateTimeStr(auction.endtime)
-                auctionDatum=[auction.tradeID,auction.mineralID,auction.mineralNum,auction.price,starttime,endtime]
+                auctionDatum=[auction.tradeID,auction.mineralID,auction.mineralNum,auction.price,auction.qid,starttime,endtime]
                 if auction.secret:
                     auctionDatum.append('-')
                 else:
