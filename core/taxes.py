@@ -116,7 +116,7 @@ class TaxesService(object):
                 ans += '您的余额不足继续抽奖！'
                 break
             user.money -= 10*multiplier
-            treasury.money += 10
+            treasury.money += 10*multiplier
             indicator = random.random()
             if indicator <= 0.00001:
                 ans += '恭喜！中了特等奖，奖金50000！（概率0.00001）\n'
