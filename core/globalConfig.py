@@ -27,6 +27,7 @@ permitBase:float=config["permit_cost"]
 permitGradient:float=config["permit_gradient"]
 factoryWUR=config['factory_wur']
 robotWUR=config['robot_wur']
+mesLength:int=config["message_maxLength"]
 
 stockMarketOpenFlag = False
 

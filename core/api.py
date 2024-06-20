@@ -26,10 +26,11 @@ def log(mes, level=2):
         file.write("%s %s %s"%(time, level2name[level], mes)+"\r\n")
 
 def shorten(s):
-    if len(s) >= 20:
+    l = globalConfig.mesLength
+    if len(s) >= l:
         s = s.split("\n")[0]
-        if s.__len__() >= 20:
-            s = s[:20]
+        if s.__len__() >= l:
+            s = s[:l]
     return s
 
 init()

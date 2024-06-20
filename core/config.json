@@ -14,6 +14,7 @@
         "1329913830",
         "486785034"
     ],
+    "message_maxLength": 40,
     "bot_id": "2470751924",
     "effis_item_count": 8,
     "effis_daily_decrease_rate": 4,
