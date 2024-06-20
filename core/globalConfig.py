@@ -28,7 +28,7 @@ factoryWUR=config['factory_wur']
 robotWUR=config['robot_wur']
 mesLength:int=config["message_maxLength"]
 
-bots_id = config["bot_id"][env]
+botID = config["bot_id"][env]
 
 stockMarketOpenFlag = False
 
