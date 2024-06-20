@@ -372,12 +372,12 @@ class IndustrialService(object):
 
         fuelRequired -= 1 # 消除负收益是否采用对数平均
 
-        if ingredient in [3, 7, 31, 127, 8191]: #梅森素数获得双倍燃油
-            ingredient *= 2
         products: dict = {0: duplication * ingredient}
         ingredients: dict = {0: fuelRequired, ingredient: duplication}
 
         ans = ''
+        if ingredient in [3, 7, 31, 127, 8191]: #梅森素数获得双倍燃油
+            products[0]*=2
         if ingredient <= 128:
             ans+= '由于您的矿石较小，您不必预先准备燃油来执行该计划！\n'
 
