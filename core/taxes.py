@@ -28,8 +28,12 @@ def taxUpdate():
         send(groupID,'本期总共征税%.2f元,感谢各位对我游税务工作的支持。' % taxedAmount,group=True)
     treasury.save(mysql)
 
-class taxesService():
-    def payTax(self, messageList:list[str],qid:str):
+class TaxesService(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def payTax(messageList:list[str],qid:str):
         """
         缴税
         :param messageList: 纳税/缴税/交税 税金
@@ -80,7 +84,8 @@ class taxesService():
             treasury.save(mysql)
             return '您本期应纳税%.2f元，缴税%s小于应纳金额，税尚未结清，请务必在本期缴完税务！' % (taxAmount, money)
 
-    def lottery(self, messageList:list[str],qid:str):
+    @staticmethod
+    def lottery(messageList:list[str],qid:str):
         """
         抽奖(每次耗费10元）
         特等奖中奖概率0.00001 奖金50000元
@@ -142,6 +147,7 @@ class taxesService():
         return ans
 
     # 强制征税（需与破产清算机制合并考虑）
+    #@staticmethod
     #def forcedTax(taxpayer:User):
     #    if not taxpayer.paidTaxes:
     #        if taxpayer.outputTax - taxpayer.inputTax <= taxpayer.money:

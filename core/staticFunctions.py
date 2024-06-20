@@ -272,6 +272,12 @@ def assetCalculation(user: model.User):
 
     return assets
 
+def transferStr(src:str,replacement:dict[str,str]):
+    target:str=src
+    for key,value in replacement.items():
+        target=target.replace(key,value)
+    return target
+
 def send(qid:str,message:str,group=False):
     """
     用于发送消息的函数

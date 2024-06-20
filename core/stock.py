@@ -7,6 +7,7 @@ from staticFunctions import drawtable, setTimeTask, getnowtime, getnowdate,send
 from model import User, Stock, Order, StockData
 from globalConfig import mysql, groupIDs
 import globalConfig
+
 def primaryClosing(stock: Stock):
     stockNum = stock.stockNum
     openStockNum = stock.openStockNum
@@ -61,8 +62,12 @@ def primaryClosing(stock: Stock):
         stock.save(mysql)
         issuer.save(mysql)
 
-class stockService():
-    def issueStock(self, messageList: list[str], qid: str):
+class StockService(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def issueStock(messageList: list[str], qid: str):
         """
         :param messageList: 发行 股票名称 缩写 发行量 价格 自我保留股数
         :param qid: 发行者的qq号
@@ -116,9 +121,8 @@ class stockService():
         ans = '发行成功！您的股票将在一级市场开放认购24小时，随后开始在二级市场流通。'
         return ans
 
-
-
-    def acquireStock(self, messageList: list[str], qid: str):
+    @staticmethod
+    def acquireStock(messageList: list[str], qid: str):
         """
         :param messageList: 认购 股票名称/缩写 股数
         :param qid:
@@ -167,7 +171,8 @@ class stockService():
         ans = '认购成功！'
         return ans
 
-    def toPaperFuel(self, messageList: list[str], qid: str):
+    @staticmethod
+    def toPaperFuel(messageList: list[str], qid: str):
         """
         :param messageList: 兑换纸燃油 数量
         :param qid:
@@ -200,8 +205,8 @@ class stockService():
 
         return ans
 
-
-    def fromPaperFuel(self, messageList: list[str], qid: str):
+    @staticmethod
+    def fromPaperFuel(messageList: list[str], qid: str):
         """
         :param messageList: 兑换燃油 数量
         :param qid:
@@ -235,7 +240,8 @@ class stockService():
 
         return ans
 
-    def stockMarket(self, messageList: list[str], qid: str):
+    @staticmethod
+    def stockMarket(messageList: list[str], qid: str):
         """
         :param messageList: 股市
         :param qid:
@@ -282,7 +288,8 @@ class stockService():
         ans+='[CQ:image,file=stockprices.png]\n'
         return ans
 
-    def buyStock(self, messageList: list[str], qid: str):
+    @staticmethod
+    def buyStock(messageList: list[str], qid: str):
         """
         :param messageList: 买入 股票名称/缩写 买入量 价格上限
         :param qid:
@@ -326,7 +333,8 @@ class stockService():
         ans = makeOrder(qid, stock.stockID, 'buy', stockNum, price)
         return ans
 
-    def sellStock(self, messageList: list[str], qid: str):
+    @staticmethod
+    def sellStock(messageList: list[str], qid: str):
         """
         :param messageList: 卖出 股票名称/缩写 卖出量 价格下限
         :param qid:
@@ -369,7 +377,8 @@ class stockService():
         ans = makeOrder(qid, stock.stockID, 'sell', stockNum, price)
         return ans
 
-    def giveDividend(self, messageList: list[str], qid: str):
+    @staticmethod
+    def giveDividend(messageList: list[str], qid: str):
         """
         :param messageList: 分红 股票名称/缩写 钱数
         :param qid:

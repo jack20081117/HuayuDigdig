@@ -1,20 +1,19 @@
-from globalConfig import groupIDs,botID,adminIDs
-from extract import *
-from market import *
-from stock import *
-from debt import *
-from industrial import *
-from taxes import *
+from globalConfig import groupIDs,botID,adminIDs,mysql
+from model import User
+from staticFunctions import send,transferStr
 
 import service
-commands:dict={}
+commands:dict[str,callable]={}
+replacement:dict[str,str]={
+    "建设":"建造"
+}
 
-from stock import stockService
-from extract import extractService
-from taxes import taxesService
-from debt import debtService
-from industrial import industrialService
-from market import marketService
+from stock import StockService
+from extract import ExtractService
+from taxes import TaxesService
+from debt import DebtService
+from industrial import IndustrialService
+from market import MarketService
 
 def register(funcStr: str,func: callable):
     """
@@ -30,7 +29,7 @@ def registerByDict(registers: dict[str,callable]):
         register(funcStr,func)
 
 def dealWithRequest(funcStr:str,messageList:list[str],qid:str):
-    if funcStr in commands:
+    if transferStr(funcStr,replacement) in commands:
         ans=commands[funcStr](messageList,qid)
     else:
         ans="未知命令:请输入`帮助`以获取帮助信息，或通过`帮助 功能`获取该功能详细信息！"
@@ -111,14 +110,14 @@ def treasuryAction(messageList:list[str],qid:str):
        
 
 # SE => Service Executor
-staticSE = service.staticService()
-userSE = service.userService()
-stockSE = stockService()
-extractSE = extractService()
-taxSE = taxesService()
-debtSE = debtService()
-industrialSE = industrialService()
-marketSE = marketService()
+staticSE = service.StaticService()
+userSE = service.UserService()
+stockSE = StockService()
+extractSE = ExtractService()
+taxSE = TaxesService()
+debtSE = DebtService()
+industrialSE = IndustrialService()
+marketSE = MarketService()
 
 registerByDict({
     "time":     staticSE.returnTime,
@@ -164,9 +163,7 @@ registerByDict({
     "复制":     industrialSE.duplicate,
     "炼化":     industrialSE.refine,
     "建设":     industrialSE.build,
-    "建设机器人":industrialSE.buildRobot, #模糊匹配
-    "建造":     industrialSE.build,
-    "建造机器人":industrialSE.buildRobot,
+    "建设机器人":industrialSE.buildRobot,
     "科研":     industrialSE.research,
     "勘探":     industrialSE.discover,
     "取消":     industrialSE.cancelPlan,

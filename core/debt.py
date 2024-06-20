@@ -3,7 +3,11 @@ from model import User,Debt
 from globalConfig import mysql
 from update import updateDebt
 
-class debtService():
+class DebtService(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
     def prelendDebt(messageList:list[str],qid:str):
         """
         :param messageList: 放贷 金额 放贷时间 利率 起始时间 终止时间
@@ -43,6 +47,7 @@ class debtService():
         ans='放贷成功！'
         return ans
 
+    @staticmethod
     def borrowDebt(messageList:list[str],qid:str):
         """
         :param messageList: 借贷 债券编号 金额
@@ -86,6 +91,7 @@ class debtService():
         ans='借贷成功！该债务编号为%s，请注意在借贷时限内还款！' % newdebtID
         return ans
 
+    @staticmethod
     def repayDebt(messageList:list[str],qid:str):
         """
         :param messageList: 还款 债券编号 金额
@@ -121,6 +127,7 @@ class debtService():
             ans='还款成功！剩余贷款金额:%d'%debt.money
         return ans
 
+    @staticmethod
     def transferDebt(messageList:list[str],qid:str):
         """
         :param messageList: 转让债务 债券编号 转让对象(学号/q+QQ号）
@@ -159,6 +166,7 @@ class debtService():
 
         return ans
 
+    @staticmethod
     def forgiveDebt(messageList:list[str],qid:str):
         """
         :param messageList: 免除 债券编号
@@ -184,7 +192,7 @@ class debtService():
 
         return ans
 
-
+    @staticmethod
     def debtMarket(messageList:list[str],qid:str):
         """
         :param messageList: 债市
@@ -206,7 +214,7 @@ class debtService():
                     debttime+='%d分钟'%((debt.duration%3600)//60)
                 starttime:str=generateTimeStr(debt.starttime)
                 endtime:str=generateTimeStr(debt.endtime)
-                hourly_interest = ('%.2f' % 100*debt.interest/((endtime - starttime)/3600)) + "%"
+                hourly_interest = ('%.2f' % 100*debt.interest/((debt.endtime - debt.starttime)/3600)) + "%"
                 debtData.append([debt.debtID,debt.money,debt.creditor,debttime,debt.interest,hourly_interest,starttime,endtime])
             drawtable(debtData,'debt.png')
             ans+='[CQ:image,file=debt.png]'

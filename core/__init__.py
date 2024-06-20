@@ -1,6 +1,6 @@
 from model import AllModels,User,Mine,Misc,Stock
 from globalConfig import mysql,adminIDs
-from tools import getnowtime,mineExpectation
+from staticFunctions import getnowtime,mineExpectation
 
 def createTreasury():
     """
@@ -173,7 +173,7 @@ def createInitialStocks():
 
 if_delete_and_create = input("Do you want to DELETE the database and remake them? This will DELETE ALL YOUR DATA NOW! (y/n): ")
 if if_delete_and_create == "y":
-    for model in AllModels:
+    for model in AllModels.values():
         model.delete(mysql)
         model.create(mysql)
     createTreasury()

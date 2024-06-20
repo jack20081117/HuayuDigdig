@@ -67,8 +67,12 @@ def extractMineral(qid:str,mineralID:int,mine:Mine, useRobot:bool=False, robotID
 
     return ans
 
-class extractService():
-    def getMineral(self, messageList:list[str],qid:str):
+class ExtractService():
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def getMineral(messageList:list[str],qid:str):
         """
         根据传入的信息开采矿井
         :param messageList: 开采 矿井编号
@@ -87,7 +91,8 @@ class extractService():
         ans = extractMineral(qid,mineralID,mine)
         return ans
 
-    def getMineralAuto(self, messageList:list[str],qid:str):
+    @staticmethod
+    def getMineralAuto(messageList:list[str],qid:str):
         """
         根据传入的信息使用采矿机器人开采矿井
         :param messageList: 机器开采 矿井编号
@@ -117,7 +122,8 @@ class extractService():
         ans = extractMineral(qid,mineralID,mine,user,useRobot=True,robotID=vacantID)
         return ans
 
-    def exchangeMineral(self, messageList:list[str],qid:str):
+    @staticmethod
+    def exchangeMineral(messageList:list[str],qid:str):
         """
         兑换矿石
         :param messageList: 兑换 矿石编号
@@ -150,7 +156,8 @@ class extractService():
         ans='兑换成功！'
         return ans
 
-    def openMine(self, messageList:list[str],qid:str):
+    @staticmethod
+    def openMine(messageList:list[str],qid:str):
         """
         根据传入的信息开放私有矿井
         :param messageList: 开放 矿井编号 收费
@@ -176,7 +183,8 @@ class extractService():
 
         return '开放成功！'
 
-    def transferMine(self, messageList:list[str],qid:str):
+    @staticmethod
+    def transferMine(messageList:list[str],qid:str):
         """
         :param messageList: 转让矿井 矿井编号 转让对象(学号/q+QQ号）
         :param qid: 转让者的qq号

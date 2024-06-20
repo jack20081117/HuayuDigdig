@@ -3,8 +3,12 @@ from model import User,Sale,Purchase,Auction
 from globalConfig import mysql,deposit,vatRate
 from update import updateSale,updatePurchase,updateAuction
 
-class marketService():
-    def presellMineral(self, messageList:list[str],qid:str):
+class MarketService(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def presellMineral(messageList:list[str],qid:str):
         """
         在市场上预售矿石
         :param messageList: 预售 矿石编号 矿石数量 价格 起始时间 终止时间
@@ -52,7 +56,8 @@ class marketService():
         ans='预售成功！编号:%d'%tradeID
         return ans
 
-    def buyMineral(self, messageList:list[str],qid:str):
+    @staticmethod
+    def buyMineral(messageList:list[str],qid:str):
         """
         在市场上购买矿石
         :param messageList: 购买 预售编号
@@ -100,7 +105,8 @@ class marketService():
         send(tqid,'您预售的商品(编号:%d)已被卖出！'%tradeID,False)
         return ans
 
-    def prebuyMineral(self, messageList:list[str],qid:str):
+    @staticmethod
+    def prebuyMineral(messageList:list[str],qid:str):
         """
         在市场上预订矿石
         :param messageList: 预订 矿石编号 矿石数量 价格 起始时间 终止时间
@@ -141,7 +147,8 @@ class marketService():
         ans='预订成功！编号:%d'%tradeID
         return ans
 
-    def sellMineral(self, messageList:list[str],qid:str):
+    @staticmethod
+    def sellMineral(messageList:list[str],qid:str):
         """
         在市场上售卖矿石
         :param messageList: 售卖 预订编号
@@ -198,7 +205,8 @@ class marketService():
         send(tqid,'您预订的商品(编号:%d)已被买入！'%tradeID,False)
         return ans
 
-    def preauctionMineral(self, messageList:list[str],qid:str):
+    @staticmethod
+    def preauctionMineral(messageList:list[str],qid:str):
         """
         在市场上拍卖矿石
         :param messageList: 拍卖 矿石编号 矿石数量 底价 起始时间 终止时间 是否保密
@@ -248,7 +256,8 @@ class marketService():
         ans='拍卖成功！编号:%d'%tradeID
         return ans
 
-    def bidMineral(self, messageList:list[str],qid:str):
+    @staticmethod
+    def bidMineral(messageList:list[str],qid:str):
         """
         在市场上对矿石进行投标
         :param messageList: 投标 拍卖编号 价格
@@ -296,7 +305,8 @@ class marketService():
         ans='投标成功！'
         return ans
 
-    def mineralMarket(self, messageList:list[str],qid:str):
+    @staticmethod
+    def mineralMarket(messageList:list[str],qid:str):
         """
         查看市场
         :param messageList: 矿市

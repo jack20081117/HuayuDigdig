@@ -137,8 +137,12 @@ def timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuelFact
     return round(timeRequired), round(fuelRequired)
 
 
-class industrialService():
-    def decompose(self, messageList: list[str], qid: str):
+class IndustrialService(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def decompose(messageList: list[str], qid: str):
         """
         制定分解计划
         :param messageList: 分解 原矿 目标产物 份数 调拨工厂数
@@ -188,8 +192,8 @@ class industrialService():
 
         return ans
 
-
-    def synthesize(self, messageList: list[str], qid: str):
+    @staticmethod
+    def synthesize(messageList: list[str], qid: str):
         """
         制定合成计划
         :param messageList: 合成 原料1 原料2 (... 原料n) 份数 调拨工厂数
@@ -245,8 +249,8 @@ class industrialService():
 
         return ans
 
-
-    def duplicate(self, messageList: list[str], qid: str):
+    @staticmethod
+    def duplicate(messageList: list[str], qid: str):
         """
         制定复制计划
         :param messageList: 复制 原料 份数 调拨工厂数
@@ -290,8 +294,8 @@ class industrialService():
 
         return ans
 
-
-    def decorate(self, messageList: list[str], qid: str):
+    @staticmethod
+    def decorate(messageList: list[str], qid: str):
         """
         制定修饰计划
         :param messageList: 修饰 原料 份数 调拨工厂数
@@ -336,8 +340,8 @@ class industrialService():
 
         return ans
 
-
-    def refine(self, messageList: list[str], qid: str):
+    @staticmethod
+    def refine(messageList: list[str], qid: str):
         """
         制定炼化计划
         :param messageList: 炼化 原料 份数 调拨工厂数
@@ -394,7 +398,8 @@ class industrialService():
                                                                 fuelRequired, smartInterval(timeRequired))
         return ans
 
-    def build(self, messageList: list[str], qid: str):
+    @staticmethod
+    def build(messageList: list[str], qid: str):
         """
         制定工厂建造计划
         :param messageList: 建造工厂 建材 调拨工厂数
@@ -435,8 +440,8 @@ class industrialService():
 
         return ans
 
-
-    def buildRobot(self, messageList: list[str], qid: str):
+    @staticmethod
+    def buildRobot(messageList: list[str], qid: str):
         """
         制定机器人建造计划
         :param messageList: 建造机器人 建材 调拨工厂数
@@ -477,7 +482,8 @@ class industrialService():
 
         return ans
 
-    def research(self, messageList:list[str], qid: str):
+    @staticmethod
+    def research(messageList:list[str], qid: str):
         """
         制定科研计划
         :param messageList: 研究 科技名 试剂1 试剂2 (... 试剂n) 是否接续主线(1/0) 调拨工厂数
@@ -574,7 +580,8 @@ class industrialService():
                                                                         )
         return ans
 
-    def discover(self, messageList: list[str], qid: str):
+    @staticmethod
+    def discover(messageList: list[str], qid: str):
         """
         制定勘探计划
         :param messageList: 勘探 预期规模 调拨工厂数
@@ -612,7 +619,8 @@ class industrialService():
 
         return ans
 
-    def enactPlan(self, messageList: list[str], qid: str):
+    @staticmethod
+    def enactPlan(messageList: list[str], qid: str):
         """
         激活计划，开始执行生产
         :param messageList: 执行 计划编号 执行时间
@@ -651,7 +659,8 @@ class industrialService():
 
         return ans
 
-    def cancelPlan(self, messageList: list[str], qid: str):
+    @staticmethod
+    def cancelPlan(messageList: list[str], qid: str):
         """
         取消计划
         :param messageList: 取消 计划编号
@@ -702,7 +711,8 @@ class industrialService():
 
         return ans
 
-    def showPlan(self, messageList:list[str],qid:str):
+    @staticmethod
+    def showPlan(messageList:list[str],qid:str):
         """
         查看计划
         :param messageList: 计划
@@ -734,7 +744,8 @@ class industrialService():
         ans='[CQ:image,file=plan.png]'
         return ans
 
-    def transferFactory(self, messageList:list[str],qid:str):
+    @staticmethod
+    def transferFactory(messageList:list[str],qid:str):
         """
         :param messageList: 转让工厂 数量 转让对象(学号/q+QQ号）
         :param qid: 转让者的qq号

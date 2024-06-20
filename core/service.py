@@ -16,18 +16,19 @@ User = model.User
 
 
 
-class staticService():
+class StaticService(object):
     def __init__(self):
         pass
-    
-    def returnTime(self, m, q):
+
+    @staticmethod
+    def returnTime(m, q):
         """
         返回当前时间
         """
         return '当前时间为:%s'%datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-
-    def getHelp(self, messageList:list[str],qid:str):
+    @staticmethod
+    def getHelp(messageList:list[str],qid:str):
         filename='help_msg.md' if len(messageList)==1 else '%s.md'%messageList[1]
         try:
             with open('help_msg/%s'%filename,'r',encoding='utf-8') as help_msg:
@@ -38,8 +39,8 @@ class staticService():
         ans='[CQ:image,file=help.png]'
         return ans
 
-
-    def getStats(self, messageList:list[str],qid:str):
+    @staticmethod
+    def getStats(messageList:list[str],qid:str):
         ans='欢迎查看国家统计局！\n'
         moneyData=[]
         fuelData=[]
@@ -76,8 +77,8 @@ class staticService():
 
         return ans
 
-
-    def showWealthiest(self, messageList: list[str], qid: str):
+    @staticmethod
+    def showWealthiest(messageList: list[str], qid: str):
         """
         显示最富有的前10%
         :param messageList: 财富排行
@@ -94,8 +95,12 @@ class staticService():
         return ans
 
 
-class userService():
-    def signup(self, messageList:list[str],qid:str):
+class UserService(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def signup(messageList:list[str],qid:str):
         """
         用户注册
         :param messageList: 注册 学号
@@ -134,8 +139,8 @@ class userService():
         user.add(globalConfig.mysql)
         ans="注册成功！"
         return ans
-    
-    
+
+    @staticmethod
     def getUserInfo(messageList:list[str],qid:str):
         """
         查询用户个人信息
@@ -180,6 +185,7 @@ class userService():
 
         return ans
 
+    @staticmethod
     def pay(messageList:list[str],qid:str):
         """
         :param messageList: 支付 q`QQ号`/`学号` `金额`
@@ -216,7 +222,7 @@ class userService():
 
         return "支付成功！"
 
-
+    @staticmethod
     def factorsLookup(messageList:list[str],qid:str):
         """
         :param messageList: 因子查询
@@ -238,6 +244,7 @@ class userService():
 
         return ans
 
+    @staticmethod
     def forbidLearning(messageList:list[str],qid:str):
         """
         :param messageList: 禁止学习
@@ -250,7 +257,7 @@ class userService():
 
         return "已经禁止他人向您学习生产效率！"
 
-
+    @staticmethod
     def allowLearning(messageList:list[str],qid:str):
         """
         :param messageList: 允许学习 学费价格
@@ -269,6 +276,7 @@ class userService():
 
         return "已经允许他人以%.2f一项一次的学费向您学习生产效率！" % money
 
+    @staticmethod
     def learnEffis(messageList:list[str],qid:str):
         """
         :param messageList: 学习 效率名 学习对象
