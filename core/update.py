@@ -1,7 +1,7 @@
 import numpy as np
 
 from staticFunctions import send,getnowtime
-from model import User,Mine,Sale,Purchase,Auction,Debt,Plan
+from model import User,Mine,Sale,Purchase,Auction,Debt,Plan,Stock
 from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate, factoryWUR, robotWUR
 from staticFunctions import sqrtmoid, tech_validator,mineralSample,mineExpectation
 
@@ -29,6 +29,18 @@ def init():
         updateAuction(auction)
     for debt in endedDebts:
         updateDebt(debt)
+
+def assetCalculation(user:User):
+    assets = user.money
+    for i in user.stocks.items():
+        stock = Stock.find(i[0],mysql)
+        assets += i[1] * stock.price
+    for debt in Debt.findAll(mysql, 'creditor=?', (user.qid,)):
+        assets += debt.money
+    for debt in Debt.findAll(mysql, 'debitor=?', (user.qid,)):
+        assets -= debt.money
+
+    return assets
 
 def updateForbidTime(user:User):
     user.forbidtime=[0]*len(user.forbidtime)

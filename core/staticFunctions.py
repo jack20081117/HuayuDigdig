@@ -4,7 +4,6 @@ import numpy as np
 import imgkit
 import math
 
-import model
 import globalConfig
 
 from apscheduler.schedulers.background import BackgroundScheduler as bgsc
@@ -259,18 +258,6 @@ def setTimeTask(func:callable,runtime:int,*args,**kwargs):
     scheduler=bgsc()
     scheduler.add_job(func,"date",args=args,kwargs=kwargs,run_date=datetime.fromtimestamp(float(runtime)))
     scheduler.start()
-
-def assetCalculation(user: model.User):
-    assets = user.money
-    for i in user.stocks.items():
-        stock = model.Stock.find(i[0], globalConfig.mysql)
-        assets += i[1] * stock.price
-    for debt in model.Debt.findAll(globalConfig.mysql, 'creditor=?', (user.qid,)):
-        assets += debt.money
-    for debt in model.Debt.findAll(globalConfig.mysql, 'debitor=?', (user.qid,)):
-        assets -= debt.money
-
-    return assets
 
 def transferStr(src:str,replacement:dict[str,str]):
     target:str=src
