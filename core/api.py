@@ -23,12 +23,12 @@ def log(mes, level=2):
     timre = datetime.now().strftime("%Y-%m-%d")
     time = datetime.now().strftime("%H:%M:%S")
     with open("./log/%s log.log"%timre, "a") as file:
-        write_str = "%s %s %s"%(time, level2name[level], mes)
+        write_str = mes
         if len(write_str) >= 20:
             write_str = write_str.split("\n")[0]
             if write_str.__len__() >= 20:
                 write_str = write_str[:20]
-        file.write(write_str+"\r\n")
+        file.write("%s %s %s"%(time, level2name[level], write_str)+"\r\n")
 
 init()
 globalConfig.stockMarketOpenFlag=True
