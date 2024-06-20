@@ -19,7 +19,6 @@ playerTax:float=config['tax']['player']
 deposit:float=config["deposit"]
 groupIDs:list=config['group_ids']
 adminIDs:list=config['admin_ids']
-botID:str=config['bot_id']
 mysql:bool=(env=='prod')
 effisItemCount:int=config["effis_item_count"]
 effisDailyDecreaseRate:float=config["effis_daily_decrease_rate"]
@@ -28,6 +27,8 @@ permitGradient:float=config["permit_gradient"]
 factoryWUR=config['factory_wur']
 robotWUR=config['robot_wur']
 mesLength:int=config["message_maxLength"]
+
+bots_id = config["bot_id"][env]
 
 stockMarketOpenFlag = False
 
