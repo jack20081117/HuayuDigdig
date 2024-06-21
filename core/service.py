@@ -219,22 +219,31 @@ class UserService(object):
     @staticmethod
     def factorsLookup(messageList:list[str],qid:str):
         """
-        :param messageList: 因子查询
+        :param messageList: 因子查询 （目标矿石）
         :param qid: 支付者的qq号
         :return: 支付提示信息
         """
-        user: User = User.find(qid, mysql)
-        indicatorList = indicators(user.schoolID)
-        ans = '您的天赋代码的%s个判定段和其质因子如下：\n' % len(indicatorList)
-        allFactorList = []
-        for i in indicatorList:
-            primeFactors, Factors = factors(i)
-            ans += '%s:' % i
-            ans+=' '.join('%s'%p for p in sorted(primeFactors))
-            ans += '\n'
-            allFactorList += Factors
-        ans+= '所有可供您兑换的矿石编号如下：\n'
-        ans+=','.join(['%s'%factor for factor in sorted(set(allFactorList)) if factor!=1])
+        if len(messageList) == 1:
+            user: User = User.find(qid, mysql)
+            indicatorList = indicators(user.schoolID)
+            ans = '您的天赋代码的%s个判定段和其质因子如下：\n' % len(indicatorList)
+            allFactorList = []
+            for i in indicatorList:
+                primeFactors, Factors = factors(i)
+                ans += '%s:' % i
+                ans+=' '.join('%s'%p for p in sorted(primeFactors))
+                ans += '\n'
+                allFactorList += Factors
+            ans+= '所有可供您兑换的矿石编号如下：\n'
+            ans+=','.join(['%s'%factor for factor in sorted(set(allFactorList)) if factor!=1])
+        else:
+            try:
+                mineral: int = int(messageList[1])
+            except ValueError:
+                return "查询失败:您的查询格式不正确！"
+            primeFactors, Factors = factors(mineral)
+            ans = '质因子:'+' '.join('%s' % p for p in sorted(primeFactors))+'\n'+'所有因子:'
+            ans += ','.join(['%s' % factor for factor in sorted(Factors) if factor != 1])
 
         return ans
 

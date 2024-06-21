@@ -88,7 +88,7 @@ class ExtractService():
         user.mineral[0] += collected
         user.save(mysql)
         return "您收集到了%d单位燃料！" % collected
-        
+
     @staticmethod
     def getMineral(messageList:list[str],qid:str):
         """
