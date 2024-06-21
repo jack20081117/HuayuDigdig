@@ -119,6 +119,7 @@ class UserService(object):
             factoryNum=1,
             effis=effis,
             mines=[],
+            expr={},
             stocks={},
             misc={},
             enactedPlanTypes={},

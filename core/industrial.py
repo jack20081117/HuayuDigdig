@@ -114,11 +114,13 @@ def expenseCalculator(multiplier:float,duplication:int,primaryScale:int,secondar
     :param duplication: 加工份数
     :param primaryScale:
     :param secondaryScale:
+    :param detectList:
+    :param exprDict:
     :param tech: 该工种科技
     :param efficiency: 该工种效率
     :param factoryNum: 调拨 工厂数
     :param fuelFactor:
-    :param useLogDivisor:
+    :param useLogDivisor: 是否使用对数除数
     :return: 该加工需要的产能点数、时间与燃油
     """
 
@@ -130,6 +132,17 @@ def expenseCalculator(multiplier:float,duplication:int,primaryScale:int,secondar
 def expr2modifier(expr):return 1-(sigmoid(expr/16)-0.5)/2.5
 
 def WURCalculator(multiplier:float,duplication:int,primaryScale:int,secondaryScale:int,detectList:list[int],exprDict,useLogDivisor=True):
+    """
+    加工所用产能计算函数
+    :param multiplier: 随加工种类变化的因子
+    :param duplication: 加工份数
+    :param primaryScale:
+    :param secondaryScale:
+    :param detectList:
+    :param exprDict:
+    :param useLogDivisor: 是否使用对数除数
+    :return: 该加工需要的产能点数
+    """
     exprModifier = 1
     for mineral in detectList:
         if mineral in exprDict:
