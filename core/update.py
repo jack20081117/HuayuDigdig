@@ -243,7 +243,7 @@ def updateEfficiency(user:User,finishedPlan):
                 tech = user.tech['refine']
             else:
                 tech = user.tech['industrial']
-            effis[i] += 4 * finishedPlan.timeRequired * sqrtmoid(tech) * effisDailyDecreaseRate/86400
+            effis[i] += 8 * finishedPlan.timeRequired * sqrtmoid(tech) * effisDailyDecreaseRate/86400
         elif enactedPlansByType[i] == 0:
             effis[i] -= elapsedTime * effisDailyDecreaseRate/86400
             effis[i] = max(0,effis[i])
@@ -268,6 +268,15 @@ def updatePlan(plan:Plan):
     for mineralID, mineralNum in products.items():
         mineral.setdefault(mineralID,0)
         mineral[mineralID] += mineralNum  # 将矿石增加给生产者
+        if mineralID != 0:
+            user.expr.setdefault(mineralID,0)
+            user.expr[mineralID] += mineralNum
+
+    for mineralID, mineralNum in plan.ingredients.items():
+        if mineralID != 0:
+            user.expr.setdefault(mineralID, 0)
+            user.expr[mineralID] += mineralNum
+
     user.mineral = mineral #更新矿石字典
 
     updateEfficiency(user, plan)  # 效率修正

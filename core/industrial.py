@@ -106,7 +106,7 @@ def enaction(plan: Plan):
 
     send(qid,ans,False)
 
-def expenseCalculator(multiplier:float,duplication:int,primaryScale:int,secondaryScale:int,
+def expenseCalculator(multiplier:float,duplication:int,primaryScale:int,secondaryScale:int,detectList,exprDict,
                        tech:float,efficiency:float,factoryNum:int,fuelFactor:float,useLogDivisor=True):
     """
     加工耗费计算函数
@@ -122,12 +122,22 @@ def expenseCalculator(multiplier:float,duplication:int,primaryScale:int,secondar
     :return: 该加工需要的产能点数、时间与燃油
     """
 
-    workUnitsRequired = multiplier * duplication * primaryScale * log(log(float(secondaryScale)) + 1)
-    if useLogDivisor:
-        workUnitsRequired /= log(float(primaryScale))
+    workUnitsRequired = WURCalculator(multiplier,duplication,primaryScale,secondaryScale,detectList, exprDict, useLogDivisor=useLogDivisor)
     timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuelFactor)
 
     return workUnitsRequired, timeRequired, fuelRequired
+
+def expr2modifier(expr):return 1-(sigmoid(expr/16)-0.5)/2.5
+
+def WURCalculator(multiplier:float,duplication:int,primaryScale:int,secondaryScale:int,detectList:list[int],exprDict,useLogDivisor=True):
+    exprModifier = 1
+    for mineral in detectList:
+        if mineral in exprDict:
+            exprModifier *= expr2modifier(exprDict[mineral])
+    workUnitsRequired = multiplier * duplication * primaryScale * log(log(float(secondaryScale)) + 1) * exprModifier
+    if useLogDivisor:
+        workUnitsRequired /= log(float(primaryScale))
+    return workUnitsRequired
 
 def timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuelFactor):
     adjustedFactoryNum = (1 - sigmoid(tech + 0.25 * efficiency) ** factoryNum) / (1 - sigmoid(tech + 0.25 * efficiency))
@@ -174,7 +184,8 @@ class IndustrialService(object):
         minorProduct = min(divide, ingredient // divide)
 
         workUnitsRequired, timeRequired, fuelRequired = \
-            expenseCalculator(4,duplication,minorProduct,ingredient,user.tech['industrial'],decomp_eff,factoryNum,fuelFactorDict[0])
+            expenseCalculator(4,duplication,minorProduct,ingredient,[ingredient, divide, ingredient // divide],user.expr,
+                              user.tech['industrial'],decomp_eff,factoryNum,fuelFactorDict[0])
 
         products:dict = {divide:duplication, (ingredient // divide):duplication}#生成产品
 
@@ -225,16 +236,28 @@ class IndustrialService(object):
 
         ingredients = {}#所需原料
         finalProduct = 1
+        deductableWUR = 0
         for ingredient in ingredientList:
-
             finalProduct *= ingredient
             ingredients.setdefault(ingredient,0)
             ingredients[ingredient] += duplication
+            if not isPrime(ingredient):
+                deductableWUR += WURCalculator(4, duplication, ingredient, ingredient, [ingredient], user.expr)
 
-        workUnitsRequired, timeRequired, fuelRequired = \
-            expenseCalculator(4,duplication,finalProduct,finalProduct,user.tech['industrial'],synth_eff,factoryNum,fuelFactorDict[1])
+        #workUnitsRequired, timeRequired, fuelRequired = \
+        #    expenseCalculator(4,duplication,finalProduct,finalProduct,user.tech['industrial'],synth_eff,factoryNum,fuelFactorDict[1])
 
-        products:dict = {finalProduct: duplication}#生成产品
+        workUnitsRequired = WURCalculator(4, duplication, finalProduct, (len(ingredientList)-1)*finalProduct, ingredientList+[finalProduct], user.expr)
+        workUnitsRequired -= deductableWUR
+
+        timeRequired, fuelRequired = \
+            timeFuelCalculator(workUnitsRequired,
+                               synth_eff,
+                               user.tech['industrial'],
+                               factoryNum,
+                               fuelFactorDict[1])
+
+        products:dict = {finalProduct: duplication} #生成产品
 
         ingredients[0] = fuelRequired
 
@@ -277,7 +300,7 @@ class IndustrialService(object):
         nowtime: int = getnowtime()
 
         workUnitsRequired, timeRequired, fuelRequired = \
-            expenseCalculator(1,duplication,ingredient+32,ingredient+32,
+            expenseCalculator(1,duplication,ingredient+32,ingredient+32,[ingredient],user.expr,
                             user.tech['industrial'],duplicate_eff,factoryNum,fuelFactorDict[2],useLogDivisor=False)
 
         products: dict = {ingredient: duplication * 2}#生成成品
@@ -323,7 +346,8 @@ class IndustrialService(object):
         nowtime: int = getnowtime()
 
         workUnitsRequired, timeRequired, fuelRequired = \
-            expenseCalculator(1,duplication,ingredient+1,ingredient+1,user.tech['industrial'],decorate_eff,factoryNum,fuelFactorDict[3])
+            expenseCalculator(1,duplication,ingredient+1,ingredient+1,[ingredient,ingredient+1],user.expr,
+                              user.tech['industrial'],decorate_eff,factoryNum,fuelFactorDict[3])
 
         products: dict = {ingredient + 1: duplication}#生成产品
 
@@ -369,7 +393,8 @@ class IndustrialService(object):
 
         nowtime: int = getnowtime()
         workUnitsRequired, timeRequired, fuelRequired = \
-            expenseCalculator(2,duplication,ingredient,ingredient,user.tech['refine'],refine_eff,factoryNum,fuelFactorDict[4])
+            expenseCalculator(2,duplication,ingredient,ingredient,[ingredient],user.expr,
+                              user.tech['refine'],refine_eff,factoryNum,fuelFactorDict[4])
 
         fuelRequired -= 1 # 消除负收益是否采用对数平均
 
@@ -425,7 +450,7 @@ class IndustrialService(object):
         buildeff = user.effis[5]
 
         materialDict = {2:20, 4:10, 6:8, 8:7, 10:6, 12:6}
-        workUnitsRequired = factoryWUR
+        workUnitsRequired = factoryWUR * expr2modifier(material)
         timeRequired, fuelRequired = timeFuelCalculator(factoryWUR,buildeff,0,factoryNum,fuelFactorDict[5])
         ingredients = {0:fuelRequired, material:materialDict[material]}
 
@@ -460,14 +485,14 @@ class IndustrialService(object):
 
         assert factoryNum >= 1, '制定建造计划失败:工厂数无效！'
         assert factoryNum <= user.factoryNum, '制定建造计划失败:您没有足够工厂！'
-        assert material in [2, 4, 6, 8, 10, 12], '制定建造计划失败：您无法使用这种建材！'
+        assert material in [3, 6, 9, 12, 15, 18], '制定建造计划失败：您无法使用这种建材！'
 
         nowtime: int = getnowtime()
 
         buildeff = user.effis[5]
 
-        materialDict = {2: 8, 4: 4, 6: 3, 8: 3, 10: 2, 12: 2}
-        workUnitsRequired = robotWUR
+        materialDict = {3: 7, 6: 4, 9: 3, 12: 3, 15: 2, 18: 2}
+        workUnitsRequired = robotWUR * expr2modifier(material)
         timeRequired, fuelRequired = timeFuelCalculator(robotWUR, buildeff, 0, factoryNum, fuelFactorDict[5])
         ingredients = {0: fuelRequired, material: materialDict[material]}
 
