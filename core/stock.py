@@ -284,6 +284,7 @@ class StockService(object):
                 if lastPrice is None:
                     ys.append(1)
                 else:
+                    lastPrice=max(lastPrice,1.0)
                     ys.append(datum[1]/lastPrice)
                 lastPrice=datum[1]
             plt.plot(xs,ys,linestyle='-',marker=',',label=stockID,alpha=0.5)
@@ -586,8 +587,8 @@ def resolveAuction(aggregate=True, closing=False):
         indexDifferenceNoOil = indexSumNoOil/capitalSumNoOil
         dataEntry.index = indexDifference*index.price
         dataEntry.index2 = indexDifferenceNoOil*index2.price
-        index.price = max(dataEntry.index,0.01)
-        index2.price = max(dataEntry.index2,0.01)
+        index.price = dataEntry.index
+        index2.price = dataEntry.index2
         dataEntry.save(mysql)
         index.save(mysql)
         index2.save(mysql)
