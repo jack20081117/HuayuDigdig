@@ -147,6 +147,7 @@ registerByDict({
     "兑换":     extractSE.exchangeMineral,
     "转让矿井": extractSE.transferMine,
     "机器开采": extractSE.getMineralAuto,
+    "收集燃料": extractSE.getFuel,
     
     "抽奖":     taxSE.lottery,
     
