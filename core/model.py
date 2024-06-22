@@ -12,7 +12,7 @@ class User(Model):
     factoryNum=IntegerField()
     effis=StringField(columnType='varchar(200)')
     mines=StringField(columnType='varchar(200)')
-    expr = StringField(columnType='varchar(2000)')
+    expr=StringField(columnType='varchar(2000)')
     stocks=StringField(columnType='varchar(2000)')
     misc=StringField(columnType='varchar(2000)')
     enactedPlanTypes=StringField(columnType='varchar(200)') #dict for plan types
