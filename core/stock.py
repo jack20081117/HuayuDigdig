@@ -51,6 +51,7 @@ class StockService(object):
                     provisionalFunds=0,
                     issuer=qid,
                     price=price,
+                    openingPrice=price,
                     selfRetain=selfRetain,
                     primaryEndTime=primaryEndTime,
                     bidders=[],
