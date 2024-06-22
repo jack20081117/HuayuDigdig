@@ -469,7 +469,7 @@ def stockMarketClose():
     for order in Order.findAll(mysql):  #清理剩余订单
         qid = order.requester
         requester:User = User.find(qid,mysql)
-        if order.buy:
+        if order.buysell:
             requester.money+=order.funds
             send(qid,"您编号为%s的买入申报有%s股未能成交，%.2f元余额已经退还给您。" % (order.orderID, order.amount, order.funds))
         else:
@@ -575,23 +575,27 @@ def exchangeStock(orders: list[Order], currentPrice:float, openingPrice:float, t
     for order in orders:
         adjustedPrice = order.priceLimit
         #涨跌幅限制
-        if ((order.priceLimit > currentPrice * (1 + threshold)) or (order.priceLimit > openingPrice * (1 + threshold2))) and order.buy:#买入股票且给出的最高价过高
+        if ((order.priceLimit > currentPrice * (1 + threshold)) or (order.priceLimit > openingPrice * (1 + threshold2))) and order.buysell:#买入股票且给出的最高价过高
             adjustedPrice = min(currentPrice * (1 + threshold), openingPrice * (1 + threshold2))
-        if ((order.priceLimit < currentPrice * (1 - threshold)) or (order.priceLimit < openingPrice * (1 - threshold2))) and not order.buy:#抛出股票且给出的最低价过低
+        if ((order.priceLimit < currentPrice * (1 - threshold)) or (order.priceLimit < openingPrice * (1 - threshold2))) and not order.buysell:#抛出股票且给出的最低价过低
             adjustedPrice = max(currentPrice* (1 - threshold), openingPrice * (1 - threshold2))
         if adjustedPrice != lastTier:
-            aligned['buy'][-1].sort(key=lambda order: order.orderID)#对当前的买入股票申报进行排序
-            aligned['sell'][-1].sort(key=lambda order: order.orderID)#对当前的抛出股票申报进行排序
+            if aligned['buy']:
+                aligned['buy'][-1].sort(key=lambda order: order.orderID)#对当前的买入股票申报进行排序
+            if aligned['sell']:
+                aligned['sell'][-1].sort(key=lambda order: order.orderID)#对当前的抛出股票申报进行排序
             aligned['price'].append(adjustedPrice)
             lastTier = adjustedPrice#更新报价
             tierNum += 1#增加报价种数
             aligned['buy'].append([])
             aligned['sell'].append([])
         #将订单分配到成交价
-        if order.buy:
-            aligned['buy'][-1].append(order)
+        if order.buysell:
+            if aligned['buy']:
+                aligned['buy'][-1].append(order)
         else:
-            aligned['sell'][-1].append(order)
+            if aligned['sell']:
+                aligned['sell'][-1].append(order)
     aligned['cumulativeBids'] = [0 for _ in range(tierNum)]#每一成交价上的累积需求
     aligned['cumulativeAsks'] = [0 for _ in range(tierNum)]#每一成交价上的累积供给
     aligned['tiebreaker'] = [0 for _ in range(tierNum)]#tiebreaker的最小项代表成交价所在项
@@ -612,6 +616,7 @@ def exchangeStock(orders: list[Order], currentPrice:float, openingPrice:float, t
         maxExchanged = max(maxExchanged, exchanged)
         aligned['exchanged'].append(exchanged)
     return aligned, tierNum, maxExchanged
+
 def brokerage(stockID:int, orders:list, currentPrice:float, openingPrice:float,aggregate:bool):
     """
     :param stockID:
@@ -623,7 +628,7 @@ def brokerage(stockID:int, orders:list, currentPrice:float, openingPrice:float,a
     """
     aligned, tierNum, maxExchanged = exchangeStock(orders, currentPrice, openingPrice)
     if maxExchanged == 0:    #没有新成交，新股价等于当前股价，成交量等于0
-        return currentPrice, 0
+        return Stock.find(stockID,mysql)
     #nowtime = 100
     # 集合竞价中，如遇多个成交价可实现同样的最大成交量，以最接近上一期收盘价的成交价为成交价。
     # 连续竞价中，以具有较新申报的成交价为成交价。
