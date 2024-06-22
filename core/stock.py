@@ -5,62 +5,9 @@ from typing import TypedDict
 
 from staticFunctions import drawtable, setTimeTask, getnowtime, getnowdate,send
 from model import User, Stock, Order, StockData
+from update import updateStock
 from globalConfig import mysql, groupIDs
 import globalConfig
-
-def primaryClosing(stock: Stock):
-    stockNum = stock.stockNum
-    openStockNum = stock.openStockNum
-    selfRetain = stock.selfRetain
-    price = stock.price
-    soldNum = stockNum - openStockNum - selfRetain
-    # if stock.primaryClosed:
-    #     return None
-    if soldNum / (stockNum - selfRetain) * price < 1:  # 调整价格小于每股1元
-        send(stock.issuer, "您的股票%s在一级市场按%.2f认购了%s，调整后股价过低，上市失败！募集的资本将被退还给投资者。" % (stock.stockName, soldNum, price))
-        shareholders: dict = stock.shareholders
-        for holderID, amount in shareholders.items():
-            holder = User.find(holderID, mysql)
-            holder.stock.pop(stock.stockID)
-            if holderID != stock.issuer:
-                send(holderID, "股票%s发行失败！您的%.2f元资本已被退还给您。" % (stock.stockName, amount * price))
-                holder.money += amount * price
-            holder.save(mysql)
-        stock.remove(mysql)
-    else:
-        if openStockNum == 0:
-            newprice = price
-            send(stock.issuer, "您的股票%s在一级市场已按%.2f一股全部认购完毕，上市成功！%.2f元资本已转移给您，股票将在下一次开盘进入二级市场交易！"
-                % (stock.stockName, price, stock.provisionalFunds))
-        else:
-            newprice = soldNum / (stockNum - selfRetain) * price
-            send(stock.issuer, "您的股票%s在一级市场按%.2f认购了%s，调整后股价为%.2f，上市成功！%.2f元资本已转移给您，股票将在下一次开盘进入二级市场交易！"
-                % (stock.stockName, price, soldNum, newprice, stock.provisionalFunds))
-            roundedSum = 0
-            for holderID, amount in stock.shareholders.items():
-                holder = User.find(holderID, mysql)
-                if holderID != stock.issuer:
-                    newAmount = round(amount * (stockNum - selfRetain) / soldNum)
-                    roundedSum += newAmount
-                    send(holderID,
-                        "股票%s未认购完，您的%s股将等比扩增为%s，发行价调整为%.2f。" % (stock.stockName, amount, newAmount, newprice))
-                    holder.stock[stock.stockID] = newAmount
-                    stock.shareholders[holderID] = newAmount
-                holder.save(mysql)
-            selfRetain -= roundedSum - (stockNum - selfRetain)  # 四舍五入后的误差从自留股份中找补
-            stock.selfRetain = selfRetain
-            stock.shareholders[stock.issuer] = selfRetain
-            holder = User.find(stock.issuer, mysql)
-            holder.stock[stock.stockID] = selfRetain
-            
-        stock.primaryClosed=True
-        stock.secondaryOpen=True
-        stock.histprice['adjustedIssuePrice'] = newprice
-        issuer: User = User.find(stock.issuer, mysql)
-        issuer.money += stock.provisionalFunds
-        stock.provisionalFunds = 0
-        stock.save(mysql)
-        issuer.save(mysql)
 
 class StockService(object):
     def __init__(self):
@@ -117,7 +64,7 @@ class StockService(object):
         stock.add(mysql)
         issuer.stocks[stockID] = selfRetain
         issuer.save(mysql)
-        setTimeTask(primaryClosing, primaryEndTime, stock)  # 一级市场认购结束事件
+        setTimeTask(updateStock, primaryEndTime, stock)  # 一级市场认购结束事件
         ans = '发行成功！您的股票将在一级市场开放认购24小时，随后开始在二级市场流通。'
         return ans
 
@@ -165,7 +112,7 @@ class StockService(object):
         stock.shareholders[acquirer.qid] += stockNum
         stock.openStockNum -= stockNum
         if stock.openStockNum<=0:
-            primaryClosing(stock)
+            updateStock(stock)
         stock.save(mysql)
 
         ans = '认购成功！'

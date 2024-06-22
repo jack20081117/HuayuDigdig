@@ -14,6 +14,7 @@ def init():
     endedPurchases:list[Purchase]=Purchase.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预订
     endedAuctions:list[Auction]=Auction.findAll(mysql,'endtime<?',(nowtime,)) #已经结束的拍卖
     endedDebts:list[Debt]=Debt.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的债券
+    closedPrimary:list[Stock]=Stock.findAll(mysql,'primaryEndTime<?',(nowtime,)) #已经结束的一级市场股票
 
     for user in User.findAll(mysql):
         updateForbidTime(user)
@@ -29,6 +30,8 @@ def init():
         updateAuction(auction)
     for debt in endedDebts:
         updateDebt(debt)
+    for stock in closedPrimary:
+        updateStock(stock)
 
 def assetCalculation(user:User):
     assets = user.money
@@ -365,3 +368,56 @@ def updatePlan(plan:Plan):
     user.save(mysql)
     plan.remove(mysql)
 
+def updateStock(stock: Stock):
+    stockNum=stock.stockNum
+    openStockNum=stock.openStockNum
+    selfRetain=stock.selfRetain
+    price=stock.price
+    soldNum=stockNum-openStockNum-selfRetain
+    if stock.primaryClosed:
+        return None
+    if soldNum/(stockNum-selfRetain)*price<1:  # 调整价格小于每股1元
+        send(stock.issuer,"您的股票%s在一级市场按%.2f认购了%s，调整后股价过低，上市失败！募集的资本将被退还给投资者。"%(stock.stockName,soldNum,price))
+        shareholders: dict=stock.shareholders
+        for holderID,amount in shareholders.items():
+            holder=User.find(holderID,mysql)
+            holder.stocks.pop(stock.stockID)
+            if holderID!=stock.issuer:
+                send(holderID,"股票%s发行失败！您的%.2f元资本已被退还给您。"%(stock.stockName,amount*price))
+                holder.money+=amount*price
+            holder.save(mysql)
+        stock.remove(mysql)
+    else:
+        if openStockNum==0:
+            newprice=price
+            send(stock.issuer,"您的股票%s在一级市场已按%.2f一股全部认购完毕，上市成功！%.2f元资本已转移给您，股票将在下一次开盘进入二级市场交易！"
+                 %(stock.stockName,price,stock.provisionalFunds))
+        else:
+            newprice=soldNum/(stockNum-selfRetain)*price
+            send(stock.issuer,"您的股票%s在一级市场按%.2f认购了%s，调整后股价为%.2f，上市成功！%.2f元资本已转移给您，股票将在下一次开盘进入二级市场交易！"
+                 %(stock.stockName,price,soldNum,newprice,stock.provisionalFunds))
+            roundedSum=0
+            for holderID,amount in stock.shareholders.items():
+                holder=User.find(holderID,mysql)
+                if holderID!=stock.issuer:
+                    newAmount=round(amount*(stockNum-selfRetain)/soldNum)
+                    roundedSum+=newAmount
+                    send(holderID,
+                         "股票%s未认购完，您的%s股将等比扩增为%s，发行价调整为%.2f。"%(stock.stockName,amount,newAmount,newprice))
+                    holder.stocks[stock.stockID]=newAmount
+                    stock.shareholders[holderID]=newAmount
+                holder.save(mysql)
+            selfRetain-=roundedSum-(stockNum-selfRetain)  # 四舍五入后的误差从自留股份中找补
+            stock.selfRetain=selfRetain
+            stock.shareholders[stock.issuer]=selfRetain
+            holder=User.find(stock.issuer,mysql)
+            holder.stocks[stock.stockID]=selfRetain
+
+        stock.primaryClosed=True
+        stock.secondaryOpen=True
+        stock.histprice['adjustedIssuePrice']=newprice
+        issuer: User=User.find(stock.issuer,mysql)
+        issuer.money+=stock.provisionalFunds
+        stock.provisionalFunds=0
+        stock.save(mysql)
+        issuer.save(mysql)
