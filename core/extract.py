@@ -169,10 +169,56 @@ class ExtractService(object):
         user.outputTax += mineralID * vatRate #增值税
         user.save(mysql)
 
+        bank: User = user.find('treasury', mysql)
+        bank.mineral.setdefault(mineralID, 0)
+        bank.mineral[mineralID] += 1
+        bank.save(mysql)
+
         Statistics(timestamp=nowtime,money=mineralID,fuel=0).add(mysql)
 
         ans='兑换成功！'
         return ans
+
+    @staticmethod
+    def buybackMineral(messageList:list[str],qid:str):
+        """
+        回购矿石
+        :param messageList: 回购 矿石编号
+        :param qid: 兑换者的qq号
+        :return: 兑换提示信息
+        """
+        assert len(messageList) == 2, '回购失败:请指定要回购的矿石！'
+        nowtime: int = getnowtime()
+        try:
+            mineralID: int = int(messageList[1])
+        except ValueError:
+            return '回购失败:您的回购格式不正确！'
+        user: User = User.find(qid, mysql)
+        bank: User = User.find('treasury', mysql)
+        schoolID: str = user.schoolID
+        mineral = bank.mineral
+        assert mineralID in mineral, '回购失败:储备中目前无此种矿石！'
+        assert exchangeable(schoolID, mineralID), '回购失败:您不能够回购此矿石！'
+        assert user.money >= float(mineralID)*1.025, '回购失败：您的余额不足！加上手续费，回购需要%.2f元！' % float(mineralID)*1.025
+
+        mineral[mineralID] -= 1
+        if mineral[mineralID] <= 0:
+            mineral.pop(mineralID)
+
+        bank.money += float(mineralID)*0.025
+        bank.mineral = mineral
+        bank.save(mysql)
+
+        user.money -= float(mineralID)*1.025
+        user.mineral.setdefault(mineralID, 0)
+        user.mineral[mineralID] += 1
+        user.save(mysql)
+
+        Statistics(timestamp=nowtime, money=-mineralID, fuel=0).add(mysql)
+
+        ans = '回购成功！'
+        return ans
+
 
     @staticmethod
     def openMine(messageList:list[str],qid:str):
