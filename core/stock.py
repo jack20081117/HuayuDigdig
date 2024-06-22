@@ -559,7 +559,7 @@ def exchangeStock(orders: list[Order], currentPrice:float, openingPrice:float, t
     :param threshold2:
     :return:
     """
-    orders.sort(key=lambda order: order.price, reverse=True)#对所有申报按价格从高到低排序
+    orders.sort(key=lambda order: order.priceLimit, reverse=True)#对所有申报按价格从高到低排序
     aligned: Aligned = {
         'buy': [],
         'sell': [],
@@ -572,11 +572,11 @@ def exchangeStock(orders: list[Order], currentPrice:float, openingPrice:float, t
     lastTier = 0#存储最后一次更新的报价
     tierNum = 0#报价的种数
     for order in orders:
-        adjustedPrice = order.price
+        adjustedPrice = order.priceLimit
         #涨跌幅限制
-        if (order.price > currentPrice * (1 + threshold) or order.price > openingPrice * (1 + threshold2)) and order.buy:#买入股票且给出的最高价过高
+        if (order.priceLimit > currentPrice * (1 + threshold) or order.priceLimit > openingPrice * (1 + threshold2)) and order.buy:#买入股票且给出的最高价过高
             adjustedPrice = min(currentPrice * (1 + threshold), openingPrice * (1 + threshold2))
-        if (order.price < currentPrice * (1 - threshold) or order.price < openingPrice * (1 - threshold2)) and not order.buy:#抛出股票且给出的最低价过低
+        if (order.priceLimit < currentPrice * (1 - threshold) or order.priceLimit < openingPrice * (1 - threshold2)) and not order.buy:#抛出股票且给出的最低价过低
             adjustedPrice = max(currentPrice* (1 - threshold), openingPrice * (1 - threshold2))
         if adjustedPrice != lastTier:
             aligned['buy'][-1].sort(key=lambda order: order.orderID)#对当前的买入股票申报进行排序
