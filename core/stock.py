@@ -574,9 +574,9 @@ def exchangeStock(orders: list[Order], currentPrice:float, openingPrice:float, t
     for order in orders:
         adjustedPrice = order.priceLimit
         #涨跌幅限制
-        if (order.priceLimit > currentPrice * (1 + threshold) or order.priceLimit > openingPrice * (1 + threshold2)) and order.buy:#买入股票且给出的最高价过高
+        if ((order.priceLimit > currentPrice * (1 + threshold)) or (order.priceLimit > openingPrice * (1 + threshold2))) and order.buy:#买入股票且给出的最高价过高
             adjustedPrice = min(currentPrice * (1 + threshold), openingPrice * (1 + threshold2))
-        if (order.priceLimit < currentPrice * (1 - threshold) or order.priceLimit < openingPrice * (1 - threshold2)) and not order.buy:#抛出股票且给出的最低价过低
+        if ((order.priceLimit < currentPrice * (1 - threshold)) or (order.priceLimit < openingPrice * (1 - threshold2))) and not order.buy:#抛出股票且给出的最低价过低
             adjustedPrice = max(currentPrice* (1 - threshold), openingPrice * (1 - threshold2))
         if adjustedPrice != lastTier:
             aligned['buy'][-1].sort(key=lambda order: order.orderID)#对当前的买入股票申报进行排序
