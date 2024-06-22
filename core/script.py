@@ -66,7 +66,7 @@ def handle(res,group, message, qid):
             return ans
         except AssertionError as err:
             send(qid,err,group=False)
-            return err
+            return str(err)
 
 def distraint(messageList:list[str],qid:str):
     """
@@ -144,6 +144,7 @@ registerByDict({
     
     "开采":     extractSE.getMineral,
     "开放":     extractSE.openMine,
+    "关闭":     extractSE.closeMine,
     "兑换":     extractSE.exchangeMineral,
     "转让矿井": extractSE.transferMine,
     "机器开采": extractSE.getMineralAuto,
