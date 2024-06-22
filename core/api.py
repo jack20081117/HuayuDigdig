@@ -61,7 +61,8 @@ def post():
             result = handle(res,group=True, message=message,qid=qid)
         else:
             return "KO"
-        log("收到来自%s的消息:%s.回复了:%s"%(qid, shorten(message), shorten(result)))
+        if message and result:
+            log("收到来自%s的消息:%s.回复了:%s"%(qid, shorten(message), shorten(result)))
     except BaseException as err:
         log(str(err), level=4)
 

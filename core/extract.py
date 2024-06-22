@@ -67,7 +67,7 @@ def extractMineral(qid:str,mineralID:int,mine:Mine,useRobot:bool=False, robotID:
 
     return ans
 
-class ExtractService():
+class ExtractService(object):
     def __init__(self):
         pass
 
@@ -177,7 +177,7 @@ class ExtractService():
     @staticmethod
     def openMine(messageList:list[str],qid:str):
         """
-        根据传入的信息开放私有矿井
+        开放私有矿井
         :param messageList: 开放 矿井编号 收费
         :param qid: qq号
         :return: 提示信息
@@ -196,6 +196,31 @@ class ExtractService():
 
         mine.open = True
         mine.fee = fee
+
+        mine.save(mysql)
+
+        return '开放成功！'
+
+    @staticmethod
+    def closeMine(messageList: list[str],qid: str):
+        """
+        关闭私有矿井
+        :param messageList: 关闭 矿井编号
+        :param qid: qq号
+        :return: 提示信息
+        """
+        assert len(messageList)==2,'关闭失败:请按照格式输入！'
+        try:
+            mineID: int=int(messageList[1])
+        except ValueError:
+            return '关闭失败:请按照规定格式进行关闭！'
+
+        user=User.find(qid,mysql)
+        assert mineID in user.mines,'您不拥有该矿井！'
+
+        mine=Mine.find(mineID,mysql)
+
+        mine.open=False
 
         mine.save(mysql)
 
