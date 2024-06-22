@@ -146,6 +146,7 @@ registerByDict({
     "开放":     extractSE.openMine,
     "关闭":     extractSE.closeMine,
     "兑换":     extractSE.exchangeMineral,
+    "回购":     extractSE.buybackMineral,
     "转让矿井": extractSE.transferMine,
     "机器开采": extractSE.getMineralAuto,
     "收集燃料": extractSE.getFuel,
