@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.ticker import FuncFormatter
 from datetime import datetime
 from typing import TypedDict
 
@@ -234,11 +235,13 @@ class StockService(object):
                 if lastPrice is None:
                     ys.append(1)
                 else:
-                    lastPrice=max(lastPrice,1.0)
-                    ys.append(datum[1]/lastPrice)
+                    nowPrice=datum[1] or 1
+                    lastPrice=lastPrice or nowPrice
+                    ys.append(nowPrice/lastPrice)
                 lastPrice=datum[1]
             plt.plot(xs,ys,linestyle='-',marker=',',label=stockID,alpha=0.5)
         plt.legend(loc='upper right')
+        plt.gca().yaxis.set_major_formatter(FuncFormatter(lambda x,_:'%.1f%%'%(100*x)))
 
         plt.savefig('../go-cqhttp/data/images/stockprices.png')
         ans+='[CQ:image,file=stockprices.png]\n'
