@@ -204,7 +204,9 @@ class StockService(object):
         stockTable = [['股票名称', '股票缩写', '发行量', '可购量','当前股价','股票状态']]
         for stock in stocks:
             status:str='证券指数' if stock.isIndex else (('开放交易' if stock.secondaryOpen else '认购结束') if stock.primaryClosed else '开放认购')
-            stockTable.append([stock.stockName, stock.stockID, stock.stockNum,stock.openStockNum,stock.price,status])
+            stock.histprice.setdefault('adjustedIssuePrice',0)
+            price:float=round(stock.histprice['adjustedIssuePrice'] if stock.primaryClosed and stock.secondaryOpen else stock.histprice['designatedIssuePrice'],2)
+            stockTable.append([stock.stockName, stock.stockID, stock.stockNum,stock.openStockNum,price,status])
         drawtable(stockTable, 'stock.png')
         ans += '[CQ:image,file=stock.png]\n'
 
@@ -442,6 +444,11 @@ def resolveOrder(stock:Stock, order: Order, price:float)->tuple[Stock,float]: #�
     return stock, stockTax # 为了避免瞬时频繁更新stock，它将被传递直到Brokerage完成
 
 def stockMarketOpen():
+    """
+    开放股市
+    """
+    if globalConfig.stockMarketOpenFlag:
+        return None
     globalConfig.stockMarketOpenFlag = True
     groupMessage = ""
     for stock in Stock.findAll(mysql):
@@ -458,8 +465,9 @@ def stockMarketOpen():
 def stockMarketClose():
     """
     关闭股市
-    :return:
     """
+    if not globalConfig.stockMarketOpenFlag:
+        return None
     globalConfig.stockMarketOpenFlag = False#股市休市
     for stock in Stock.findAll(mysql):
         stockID = stock.stockID
@@ -478,70 +486,70 @@ def stockMarketClose():
             send(qid, "您编号为%s的卖出申报有%s股未能成交，已经退还给您。" % (order.orderID, order.amount))
         requester.save(mysql)
         order.remove(mysql)
+    for groupID in groupIDs:
+        send(groupID,"股市已进入休市期！",group=True)
         
 def resolveAuction(aggregate=True, closing=False):
-        nowtime = getnowtime()
-        dataEntry = StockData(
-            timestamp=nowtime,
-            prices={},
-            volumes={},
-            opening=aggregate,
-            closing=closing,
-            index=100,
-            index2=100,
-        )
-        dataEntry.add(mysql)
-        capitalSum = 0
-        capitalSumNoOil = 0
-        indexSum = 0
-        indexSumNoOil = 0
-        for stock in Stock.findAll(mysql):
-            if stock.isIndex:
-                continue
-            stockID = stock.stockID
-            oldPrice = stock.price
-            oldCapital = stock.price*stock.stockNum
-            capitalSum += oldCapital
-            if not stockID=='pfu':
-                capitalSumNoOil += oldCapital
-            if not stock.secondaryOpen:
-                continue
-            orders = Order.findAll(mysql, 'stockID=?', (stockID,), OrderBy='timestamp')
-            if not orders:
-                stock.volume = 0
-                dataEntry.prices[stock.stockID] = stock.price
-                dataEntry.volumes[stock.stockID] = stock.volume
-                if aggregate:
-                    stock.openingPrice = stock.price
-                stock.save(mysql)
-                dataEntry.save(mysql)
-                continue
-            if aggregate:
-                stock = brokerage(stockID, orders, stock.price, stock.price, aggregate)
-            else:
-                stock = brokerage(stockID, orders, stock.price, stock.openingPrice, aggregate)
-
-            difference = stock.price/oldPrice
-            indexSum += difference*oldCapital
-            if not stockID=='pfu':
-                indexSumNoOil += difference*oldCapital
+    nowtime = getnowtime()
+    dataEntry = StockData(
+        timestamp=nowtime,
+        prices={},
+        volumes={},
+        opening=aggregate,
+        closing=closing,
+        index=100,
+        index2=100,
+    )
+    dataEntry.add(mysql)
+    capitalSum = 0
+    capitalSumNoOil = 0
+    indexSum = 0
+    indexSumNoOil = 0
+    for stock in Stock.findAll(mysql):
+        if stock.isIndex:
+            continue
+        stockID = stock.stockID
+        oldPrice = stock.price
+        oldCapital = stock.price*stock.stockNum
+        capitalSum += oldCapital
+        if not stockID=='pfu':
+            capitalSumNoOil += oldCapital
+        if not stock.secondaryOpen:
+            continue
+        orders = Order.findAll(mysql, 'stockID=?', (stockID,), OrderBy='timestamp')
+        if not orders:
+            stock.volume = 0
             dataEntry.prices[stock.stockID] = stock.price
             dataEntry.volumes[stock.stockID] = stock.volume
+            if aggregate:
+                stock.openingPrice = stock.price
             stock.save(mysql)
+            dataEntry.save(mysql)
+            continue
+        if aggregate:
+            stock = brokerage(stockID, orders, stock.price, stock.price, aggregate)
+        else:
+            stock = brokerage(stockID, orders, stock.price, stock.openingPrice, aggregate)
 
-        index = Stock.find('loi',mysql)
-        index2 = Stock.find('lyi',mysql)
-        indexDifference = indexSum/capitalSum
-        indexDifferenceNoOil = indexSumNoOil/capitalSumNoOil
-        dataEntry.index = indexDifference*index.price
-        dataEntry.index2 = indexDifferenceNoOil*index2.price
-        index.price = dataEntry.index
-        index2.price = dataEntry.index2
-        dataEntry.save(mysql)
-        index.save(mysql)
-        index2.save(mysql)
+        difference = stock.price/oldPrice
+        indexSum += difference*oldCapital
+        if not stockID=='pfu':
+            indexSumNoOil += difference*oldCapital
+        dataEntry.prices[stock.stockID] = stock.price
+        dataEntry.volumes[stock.stockID] = stock.volume
+        stock.save(mysql)
 
-        return None
+    index = Stock.find('loi',mysql)
+    index2 = Stock.find('lyi',mysql)
+    indexDifference = indexSum/capitalSum
+    indexDifferenceNoOil = indexSumNoOil/capitalSumNoOil
+    dataEntry.index = indexDifference*index.price
+    dataEntry.index2 = indexDifferenceNoOil*index2.price
+    index.price = dataEntry.index
+    index2.price = dataEntry.index2
+    dataEntry.save(mysql)
+    index.save(mysql)
+    index2.save(mysql)
     
 class Aligned(TypedDict):
     buy:list[list[Order]]
@@ -551,6 +559,7 @@ class Aligned(TypedDict):
     cumulativeAsks:list[int]
     exchanged:list
     tiebreaker:list
+
 def exchangeStock(orders: list[Order], currentPrice:float, openingPrice:float, threshold=0.1, threshold2=0.2):
     """
     :param orders:

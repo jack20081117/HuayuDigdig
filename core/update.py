@@ -416,6 +416,8 @@ def updateStock(stock: Stock):
         stock.primaryClosed=True
         stock.secondaryOpen=True
         stock.histprice['adjustedIssuePrice']=newprice
+        stock.price=newprice
+        stock.openStockNum=0
         issuer: User=User.find(stock.issuer,mysql)
         issuer.money+=stock.provisionalFunds
         stock.provisionalFunds=0
