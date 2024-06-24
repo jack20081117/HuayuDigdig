@@ -18,9 +18,6 @@ def init():
 
     for user in User.findAll(mysql):
         updateForbidTime(user)
-    for debt in Debt.findAll(mysql):
-        debt.money=round(debt.money*(1+debt.interest))
-        debt.save(mysql)
 
     for sale in endedSales:
         updateSale(sale)

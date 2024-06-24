@@ -214,7 +214,7 @@ class DebtService(object):
                     debttime+='%d分钟'%((debt.duration%3600)//60)
                 starttime:str=generateTimeStr(debt.starttime)
                 endtime:str=generateTimeStr(debt.endtime)
-                hourly_interest = ('%.2f' % 100*debt.interest/((debt.endtime - debt.starttime)/3600)) + "%"
+                hourly_interest = ('%.2f' % (100*debt.interest/((debt.endtime - debt.starttime)/3600))) + "%"
                 debtData.append([debt.debtID,debt.money,debt.creditor,debttime,debt.interest,hourly_interest,starttime,endtime])
             drawtable(debtData,'debt.png')
             ans+='[CQ:image,file=debt.png]'

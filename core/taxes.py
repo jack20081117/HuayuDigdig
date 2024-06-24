@@ -1,9 +1,15 @@
-from model import User
+from model import User,Debt
 from globalConfig import mysql,groupIDs
 from staticFunctions import getnowtime,send
 from numpy import random
 
 def taxUpdate():
+    for debt in Debt.findAll(mysql):
+        if debt.debitor=='nobody':
+            continue
+        debt.money=round(debt.money*(1+debt.interest))
+        debt.save(mysql)
+
     treasury:User=User.find('treasury',mysql)
     preTaxAmount = treasury.money
     for user in User.findAll(mysql):
