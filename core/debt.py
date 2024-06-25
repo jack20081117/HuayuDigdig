@@ -107,24 +107,31 @@ class DebtService(object):
             return '还款失败:您的还款格式不正确！'
         debt=Debt.find(debtID,mysql)
         debitor=User.find(qid,mysql)
+        creditor=User.find(debt.creditor,mysql)
         assert debt is not None,"还款失败:不存在此债券！"
         assert debt.debitor==qid,'还款失败:您不是此债券的债务人！'
         assert money>0,'还款失败:还款金额必须为正！'
         assert debitor.money>money,'还款失败:您的余额不足！'
         assert debt.endtime>nowtime,'还款失败:此债券已结束还款！'
+        scale=1+(nowtime-debt.starttime)*debt.interest/debt.duration
 
-        if money>=debt.money:
-            debitor.money-=(money-debt.money)#返还多余的还款
+        if money>=round(debt.money*scale):
+            debitor.money-=round(debt.money*scale)
+            creditor.money+=round(debt.money*scale)
             debitor.save(mysql)
+            creditor.save(mysql)
             debt.remove(mysql)
             ans='还款成功！您已还清此贷款！'
-            send(debt.creditor,'您的债券:%s已还款完毕，贷款已送到您的账户'%debtID,False)
+            send(debt.creditor,'您的债券:%s已还款完毕，%d元贷款已送到您的账户'%(debtID,round(debt.money*scale)),False)
         else:
-            debt.money-=money
+            debt.money-=round(money/scale)
+            creditor.money+=money
             debitor.money-=money
             debt.save(mysql)
             debitor.save(mysql)
+            creditor.save(mysql)
             ans='还款成功！剩余贷款金额:%d'%debt.money
+            send(debt.creditor,'您的债券:%s被还款%d元，还剩%d元'%(debtID,money,debt.money))
         return ans
 
     @staticmethod
