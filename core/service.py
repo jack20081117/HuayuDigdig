@@ -5,9 +5,9 @@ from datetime import datetime
 from matplotlib import pyplot as plt
 plt.rcParams['font.family']='Microsoft Yahei'
 
-from staticFunctions import getnowtime,getnowdate,sigmoid,indicators,factors,send
-from globalConfig import mysql,imgkit_config,effisItemCount,effisNameDict,infoMsg,effisStr,playerTax
-from model import User,Statistics
+from staticFunctions import getnowtime,getnowdate,sigmoid,indicators,factors,send,drawtable,generateTimeStr
+from globalConfig import mysql,imgkit_config,effisItemCount,effisNameDict,effisStr,playerTax
+from model import User,Statistics,Debt
 from update import updateEfficiency,assetCalculation
 
 class StaticService(object):
@@ -146,37 +146,102 @@ class UserService(object):
         user:User = User.find(qid, mysql)
         if not user:
             return "[错误] 您尚未注册!"
+        ans='查询到QQ号为%s的用户信息:\n'%qid
         schoolID:str=user.schoolID
         money:int=user.money
-        mineral:str=user.mineral
         industrialTech:float=user.tech['industrial']
         extractTech:float=user.tech['extract']
         refineTech:float=user.tech['refine']
         digable:str='是' if user.forbidtime[0] < getnowtime() else '否'
         mineral:dict[int,int]=user.mineral
-        factoryNum:int=user.factoryNum
-        effis=user.effis
-        mines=user.mines
         sortedMineral:dict[int,int]={key:mineral[key] for key in sorted(mineral.keys())}
+        factoryNum:int=user.factoryNum
 
-        mres:str=""
-        for mid,mnum in sortedMineral.items():
-            if mid==0:
-                mres+="燃油%s个单位；\n"%mnum
+        infoTable=[
+            ['学号','余额','加工科技点','开采科技点','炼油科技点','当前是否可开采','工厂数'],
+            [schoolID,money,industrialTech,extractTech,refineTech,digable,factoryNum]
+        ]
+        drawtable(infoTable,'infoTable.png')
+        ans+='[CQ:image,file=infoTable.png]\n'
+
+        ans+="以下为该玩家拥有的矿石:\n"
+        mineralTable=[['编号','数目']*2]
+        rawMineralTable=[['矿石%s'%key if key else '燃油',value] for key,value in sortedMineral.items()]
+        for i in range(0,len(rawMineralTable),2):
+            if i+1<len(rawMineralTable):
+                mineralTable.append(rawMineralTable[i])
+                mineralTable[-1].extend(rawMineralTable[i+1])
             else:
-                mres+="编号%s的矿石%s个；\n"%(mid,mnum)
+                mineralTable.append(rawMineralTable[i])
+                mineralTable[-1].extend(['',''])
 
-        eres:str=''    #生产效率信息
-        for index in range(effisItemCount):
-            effis.setdefault(index,0.0)
-            eres += effisStr[index]+":%.4f%%\n" % (sigmoid(effis[index])*100)
+        drawtable(mineralTable,'mineralTable.png')
+        ans+='[CQ:image,file=mineralTable.png]\n'
 
-        mineres:str='' #私有矿井信息
-        for mine in mines:
-            mineres+='%s,' % mine
+        ans+="以下为该玩家各工种生产效率:\n"
 
-        ans:str = infoMsg%(qid,schoolID,money,industrialTech,extractTech,refineTech,digable,
-                    mres,factoryNum,eres,mineres)
+        effis=user.effis
+        effisTable=[['工种','生产效率']]
+        effisTable.extend([[effisStr[index],"%.4f%%\n"%(sigmoid(effis[index])*100)] for index in range(effisItemCount)])
+        drawtable(effisTable,'effisTable.png')
+        ans+='[CQ:image,file=effisTable.png]\n'
+
+        debts: list[Debt]=Debt.findAll(mysql,where='creditor=?',args=(qid,))
+
+        if debts:
+            ans+='以下为该玩家借出的贷款:\n'
+            debtData=[['债券编号','金额','债务人','借出时间','利率','时化利率','起始时间','终止时间']]
+            for debt in debts:
+                debttime: str=''
+                if debt.duration//86400:
+                    debttime+='%d天'%(debt.duration//86400)
+                if (debt.duration%86400)//3600:
+                    debttime+='%d小时'%((debt.duration%86400)//3600)
+                if (debt.duration%3600)//60:
+                    debttime+='%d分钟'%((debt.duration%3600)//60)
+                starttime: str=generateTimeStr(debt.starttime)
+                endtime: str=generateTimeStr(debt.endtime)
+                hourly_interest=('%.2f'%(100*debt.interest/((debt.endtime-debt.starttime)/3600)))+"%"
+                debitor='空' if debt.debitor=='nobody' else debt.debitor
+                debtData.append([debt.debtID,debt.money,debitor,debttime,debt.interest,hourly_interest,starttime,endtime])
+            drawtable(debtData,'lend.png')
+            ans+='[CQ:image,file=lend.png]\n'
+        else:
+            ans+='目前该玩家未借出贷款。\n'
+
+        debts:list[Debt]=Debt.findAll(mysql,where='debitor=?',args=(qid,))
+        if debts:
+            ans+='以下为该玩家借入的贷款:\n'
+            debtData=[['债券编号','金额','债权人','借出时间','利率','时化利率','起始时间','终止时间']]
+            for debt in debts:
+                debttime: str=''
+                if debt.duration//86400:
+                    debttime+='%d天'%(debt.duration//86400)
+                if (debt.duration%86400)//3600:
+                    debttime+='%d小时'%((debt.duration%86400)//3600)
+                if (debt.duration%3600)//60:
+                    debttime+='%d分钟'%((debt.duration%3600)//60)
+                starttime: str=generateTimeStr(debt.starttime)
+                endtime: str=generateTimeStr(debt.endtime)
+                hourly_interest=('%.2f'%(100*debt.interest/((debt.endtime-debt.starttime)/3600)))+"%"
+                debtData.append([debt.debtID,debt.money,debt.creditor,debttime,debt.interest,hourly_interest,starttime,endtime])
+            drawtable(debtData,'borrow.png')
+            ans+='[CQ:image,file=borrow.png]\n'
+        else:
+            ans+='目前该玩家未借入贷款。\n'
+
+        stocks:dict[str,int]=user.stocks
+        if stocks:
+            ans+='以下是该玩家持有的股票:\n'
+            stockTable=[['股票名称','持有股数']]
+            stockTable.extend([[stockID,stockNum] for stockID,stockNum in stocks.items()])
+            drawtable(stockTable,'stockTable.png')
+            ans+='[CQ:image,file=stockTable.png]'
+        else:
+            ans+='目前该玩家未持有股票。'
+
+        ans+="以下为该玩家拥有的私人矿井编号:\n"
+        ans+=','.join('%s' for mine in user.mines)
 
         return ans
 

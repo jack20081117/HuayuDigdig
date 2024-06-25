@@ -202,12 +202,10 @@ class StockService(object):
             ans+='目前没有发行的股票！'
             return ans
         ans += '以下是所有目前发行的股票:\n'
-        stockTable = [['股票名称', '股票缩写', '发行量', '可购量','当前股价','股票状态']]
+        stockTable = [['股票名称', '股票缩写', '发行人', '发行量', '可购量','当前股价','股票状态']]
         for stock in stocks:
             status:str='证券指数' if stock.isIndex else (('开放交易' if stock.secondaryOpen else '认购结束') if stock.primaryClosed else '开放认购')
-            stock.histprice.setdefault('adjustedIssuePrice',0)
-            price:float=round(stock.histprice['adjustedIssuePrice'] if stock.primaryClosed and stock.secondaryOpen else stock.histprice['designatedIssuePrice'],2)
-            stockTable.append([stock.stockName, stock.stockID, stock.stockNum,stock.openStockNum,price,status])
+            stockTable.append([stock.stockName,stock.stockID,stock.issuer,stock.stockNum,stock.openStockNum,round(stock.price,2),status])
         drawtable(stockTable, 'stock.png')
         ans += '[CQ:image,file=stock.png]\n'
 
