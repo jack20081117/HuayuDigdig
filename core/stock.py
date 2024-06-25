@@ -288,7 +288,9 @@ class StockService(object):
                 stockVolumes.setdefault(stockID,[])
                 stockVolumes[stockID].append([timestamp,volume])
 
-        plt.figure(figsize=(10,5))
+        fig=plt.figure(figsize=(10,5))
+        axis1=fig.add_axes((0.1,0.1,0.8,0.8))
+        axis2=axis1.twinx()
         stockPrice:list=stockPrices[stock.stockID]
         stockVolume:list=stockVolumes.get(stock.stockID,[])
 
@@ -296,13 +298,13 @@ class StockService(object):
         for datum in stockPrice:
             xs.append(datetime.fromtimestamp(datum[0]))
             ys.append(datum[1])
-        plt.plot(xs,ys,linestyle='-',marker=',',label='股价走势')
+        axis1.plot(xs,ys,linestyle='-',marker=',',label='股价走势')
 
         xs,ys=[],[]
         for datum in stockVolume:
             xs.append(datetime.fromtimestamp(datum[0]))
             ys.append(datum[1])
-        plt.bar(xs,ys,color='green',label='交易量')
+        axis2.bar(xs,ys,color='green',width=0.1,label='交易量')
 
         plt.legend(loc='upper right')
         plt.savefig('../go-cqhttp/data/images/stockinfo.png')
@@ -380,7 +382,7 @@ class StockService(object):
             stock: Stock = Stock.findAll(mysql, 'stockName=?', (stockIdentifier,))[0]
 
         assert stock.secondaryOpen, "卖出失败！该股票还未开始二级市场交易阶段！"
-        assert stockNum <= stock.StockNum, '卖出失败！您想要卖出的股数超过了该股票总股数！'
+        assert stockNum <= stock.stockNum, '卖出失败！您想要卖出的股数超过了该股票总股数！'
         assert not qid in stock.bidders, '您不能在同一期开盘中既买又卖同一只股票！'
         assert 0.75 * stock.price < price < 1.25 * stock.price, '卖出失败！您的报价超出了合理区间，建议重新考虑！'
 
@@ -473,10 +475,11 @@ def pairing(bid: Order,ask:Order, amount: int, price: float): #配对撮合，�
     bid.funds -= amount*price
     ask.amount -= amount
     ask.completedAmount += amount
+    bid.save(mysql)
+    ask.save(mysql)
     
 def resolveOrder(stock:Stock, order: Order, price:float)->tuple[Stock,float]: #成交写入User
     requester:User = User.find(order.requester)
-    order.completedAmount = 0
     stockTax = 0
     if order.buysell:
         requester.stocks.setdefault(order.stockID, 0)
