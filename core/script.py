@@ -5,7 +5,9 @@ from staticFunctions import send,transferStr
 import service
 commands:dict[str,callable]={}
 replacement:dict[str,str]={
-    "建设":"建造"
+    "建设":"建造",
+    "交税":"缴税",
+    "纳税":"缴税"
 }
 
 from stock import StockService
@@ -153,6 +155,7 @@ registerByDict({
     "收集燃料": extractSE.getFuel,
     
     "抽奖":     taxSE.lottery,
+    "缴税":     taxSE.payTax,
     
     "放贷":     debtSE.prelendDebt,
     "借贷":     debtSE.borrowDebt,
