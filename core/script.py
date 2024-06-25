@@ -138,6 +138,7 @@ registerByDict({
     "买入":     stockSE.buyStock,
     "抛出":     stockSE.sellStock,
     "股市":     stockSE.stockMarket,
+    "股票走势":  stockSE.stockInfo,
     "分红":     stockSE.giveDividend,
     "兑换纸燃油":stockSE.toPaperFuel,
     "兑换燃油": stockSE.fromPaperFuel,

@@ -248,6 +248,69 @@ class StockService(object):
         return ans
 
     @staticmethod
+    def stockInfo(messageList:list[str],qid:str):
+        """
+        :param messageList: 股票走势 股票名称/缩写
+        :param qid:
+        :return: 提示信息
+        """
+        assert len(messageList)==2,'查询失败：您的查询格式不正确！'
+        stockIdentifier=str(messageList[1])
+
+        if len(stockIdentifier)==3:
+            # 通过股票缩写查找
+            stock:Stock=Stock.find(stockIdentifier,mysql)
+            assert stock,"买入失败:不存在代码为%s的股票！"%stockIdentifier
+        else:
+            # 通过股票名称查找
+            assert Stock.findAll(mysql,'stockName=?',(stockIdentifier,)),"买入失败:不存在代码为%s的股票！"%stockIdentifier
+            stock:Stock=Stock.findAll(mysql,'stockName=?',(stockIdentifier,))[0]
+
+        assert stock.secondaryOpen, "查询失败！该股票还未开始二级市场交易阶段！"
+
+        date=getnowdate()
+        AllStockData:list[StockData]=StockData.findAll(mysql,where='timestamp>=? and timestamp<=?',args=[date-6*86400,date+86400])
+        if not AllStockData:
+            return '无数据'
+        stockPrices:dict[str,list]={'loi':[],'lyi':[]}
+        stockVolumes:dict[str,list]={}
+        for stockData in AllStockData:
+            timestamp=stockData.timestamp
+            prices=stockData.prices
+            volumes=stockData.volumes
+
+            stockPrices['loi'].append([timestamp,stockData.index])
+            stockPrices['lyi'].append([timestamp,stockData.index2])
+
+            for stockID,price in prices.items():
+                stockPrices.setdefault(stockID,[])
+                stockPrices[stockID].append([timestamp,price])
+
+            for stockID,volume in volumes.items():
+                stockVolumes.setdefault(stockID,[])
+                stockVolumes[stockID].append([timestamp,volume])
+
+        plt.figure(figsize=(10,5))
+        stockPrice:list=stockPrices[stock.stockID]
+        stockVolume:list=stockVolumes.get(stock.stockID,[])
+
+        xs,ys=[],[]
+        for datum in stockPrice:
+            xs.append(datetime.fromtimestamp(datum[0]))
+            ys.append(datum[1])
+        plt.plot(xs,ys,linestyle='-',marker=',',label='股价走势')
+
+        xs,ys=[],[]
+        for datum in stockVolume:
+            xs.append(datetime.fromtimestamp(datum[0]))
+            ys.append(datum[1])
+        plt.bar(xs,ys,color='green',label='交易量')
+
+        plt.legend(loc='upper right')
+        plt.savefig('../go-cqhttp/data/images/stockinfo.png')
+        return '[CQ:image,file=stockinfo.png]\n'
+
+    @staticmethod
     def buyStock(messageList: list[str], qid: str):
         """
         :param messageList: 买入 股票名称/缩写 买入量 价格上限
