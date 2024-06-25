@@ -15,6 +15,7 @@ def init():
     endedAuctions:list[Auction]=Auction.findAll(mysql,'endtime<?',(nowtime,)) #已经结束的拍卖
     endedDebts:list[Debt]=Debt.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的债券
     closedPrimary:list[Stock]=Stock.findAll(mysql,'primaryEndTime<?',(nowtime,)) #已经结束的一级市场股票
+    enactedPlans:list[Plan]=Plan.findAll(mysql,'enacted=?',(True,))
 
     for user in User.findAll(mysql):
         updateForbidTime(user)
@@ -29,6 +30,9 @@ def init():
         updateDebt(debt)
     for stock in closedPrimary:
         updateStock(stock)
+    for plan in enactedPlans:
+        if plan.timeEnacted+plan.timeRequired<=nowtime:
+            updatePlan(plan)
 
 def assetCalculation(user:User):
     assets = user.money
