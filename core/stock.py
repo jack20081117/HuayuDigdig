@@ -267,7 +267,7 @@ class StockService(object):
         assert stock.secondaryOpen, "查询失败！该股票还未开始二级市场交易阶段！"
 
         date=getnowdate()
-        AllStockData:list[StockData]=StockData.findAll(mysql,where='timestamp>=? and timestamp<=?',args=[date-6*86400,date+86400])
+        AllStockData:list[StockData]=StockData.findAll(mysql,where='timestamp>=? and timestamp<=?',args=[date-86400,date+86400])
         if not AllStockData:
             return '无数据'
         stockPrices:dict[str,list]={'loi':[],'lyi':[]}
