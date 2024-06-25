@@ -295,18 +295,19 @@ class StockService(object):
         stockVolume:list=stockVolumes.get(stock.stockID,[])
 
         xs,ys=[],[]
+        for datum in stockVolume:
+            xs.append(datetime.fromtimestamp(datum[0]))
+            ys.append(datum[1])
+        axis2.bar(xs,ys,color='green',width=0.05,alpha=0.5,label='交易量')
+        axis2.legend(loc='upper right')
+
+        xs,ys=[],[]
         for datum in stockPrice:
             xs.append(datetime.fromtimestamp(datum[0]))
             ys.append(datum[1])
         axis1.plot(xs,ys,linestyle='-',marker=',',label='股价走势')
+        axis1.legend(loc='upper left')
 
-        xs,ys=[],[]
-        for datum in stockVolume:
-            xs.append(datetime.fromtimestamp(datum[0]))
-            ys.append(datum[1])
-        axis2.bar(xs,ys,color='green',width=0.1,label='交易量')
-
-        plt.legend(loc='upper right')
         plt.savefig('../go-cqhttp/data/images/stockinfo.png')
         return '[CQ:image,file=stockinfo.png]\n'
 
