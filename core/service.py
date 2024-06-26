@@ -57,13 +57,13 @@ class StaticService(object):
             xs.append(datetime.fromtimestamp(datum[0]-8*3600))
             ys.append(datum[1])
         plt.figure(figsize=(10,5))
-        plt.plot(xs,ys,linestyle='-',marker=',',label='矿石',alpha=0.5)
+        plt.plot(xs,ys,linestyle='-',marker=',',label='矿石',alpha=0.5,drawstyle='step')
 
         xs,ys=[],[]
         for datum in fuelData:
             xs.append(datetime.fromtimestamp(datum[0]-8*3600))
             ys.append(datum[1])
-        plt.plot(xs,ys,linestyle='-',marker=',',label='燃油',alpha=0.5)
+        plt.plot(xs,ys,linestyle='-',marker=',',label='燃油',alpha=0.5,drawstyle='step')
 
         plt.legend()
         plt.savefig('../go-cqhttp/data/images/statistics.png')
