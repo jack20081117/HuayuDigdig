@@ -260,7 +260,7 @@ class IndustrialService(object):
         #workUnitsRequired, timeRequired, fuelRequired = \
         #    expenseCalculator(4,duplication,finalProduct,finalProduct,user.tech['industrial'],synth_eff,factoryNum,fuelFactorDict[1])
 
-        workUnitsRequired = WURCalculator(4, duplication, finalProduct, (len(ingredientList)-1)*finalProduct, ingredientList+[finalProduct], user.expr)
+        workUnitsRequired = WURCalculator(2.5, duplication, finalProduct, (len(ingredientList)-1)*finalProduct, ingredientList+[finalProduct], user.expr)
         workUnitsRequired -= deductableWUR
 
         timeRequired, fuelRequired = \
