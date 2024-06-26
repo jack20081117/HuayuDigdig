@@ -201,6 +201,8 @@ class IndustrialService(object):
                               user.tech['industrial'],decomp_eff,factoryNum,fuelFactorDict[0])
 
         products:dict = {divide:duplication, (ingredient // divide):duplication}#生成产品
+        if divide==ingredient//divide:
+            products[divide]*=2
 
         ingredients:dict = {0: fuelRequired, ingredient: duplication}#所需原料
 
