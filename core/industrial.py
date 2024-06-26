@@ -529,7 +529,7 @@ class IndustrialService(object):
         :param qid: 制定者的qq号
         :return: 提示信息
         """
-        assert len(messageList) >= 6, '制定科研计划失败:请按照规定格式进行计划！'
+        assert len(messageList) >= 5, '制定科研计划失败:请按照规定格式进行计划！'
         user: User = User.find(qid, mysql)
         ingredientList = []
 
