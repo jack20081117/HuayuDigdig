@@ -729,7 +729,7 @@ class IndustrialService(object):
                 if mid not in mineral:
                     mineral[mid] = 0
                 if mid == 0:
-                    mineral[mid] += mnum * (nowtime - plan.timeEnacted) / plan.timeRequired  # 燃油按剩余时间比例返还
+                    mineral[mid] += round(mnum * (nowtime - plan.timeEnacted) / plan.timeRequired)  # 燃油按剩余时间比例返还
                 else:
                     mineral[mid] += mnum
             if plan.jobtype == 5: #建工任务特判建筑许可证
