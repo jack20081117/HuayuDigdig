@@ -1,6 +1,6 @@
 import numpy as np
 
-from staticFunctions import send,getnowtime
+from staticFunctions import send,getnowtime,setTimeTask
 from model import User,Mine,Sale,Purchase,Auction,Debt,Plan,Stock
 from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate, factoryWUR, robotWUR
 from staticFunctions import sqrtmoid, tech_validator,mineralSample,mineExpectation
@@ -10,29 +10,40 @@ def init():
     防止由于程序中止而未能成功进行事务更新
     """
     nowtime=getnowtime()
-    endedSales:list[Sale]=Sale.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预售
-    endedPurchases:list[Purchase]=Purchase.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的预订
-    endedAuctions:list[Auction]=Auction.findAll(mysql,'endtime<?',(nowtime,)) #已经结束的拍卖
-    endedDebts:list[Debt]=Debt.findAll(mysql,'endtime<?',(nowtime,))  #已经结束的债券
-    closedPrimary:list[Stock]=Stock.findAll(mysql,'primaryEndTime<?',(nowtime,)) #已经结束的一级市场股票
-    enactedPlans:list[Plan]=Plan.findAll(mysql,'enacted=?',(True,))
 
     for user in User.findAll(mysql):
         updateForbidTime(user)
 
-    for sale in endedSales:
-        updateSale(sale)
-    for purchase in endedPurchases:
-        updatePurchase(purchase)
-    for auction in endedAuctions:
-        updateAuction(auction)
-    for debt in endedDebts:
-        updateDebt(debt)
-    for stock in closedPrimary:
-        updateStock(stock)
-    for plan in enactedPlans:
-        if plan.timeEnacted+plan.timeRequired<=nowtime:
+    for sale in Sale.findAll(mysql):
+        if sale.endtime<=nowtime:
+            updateSale(sale)
+        else:
+            setTimeTask(updateSale,sale.endtime,sale)
+    for purchase in Purchase.findAll(mysql):
+        if purchase.endtime<=nowtime:
+            updatePurchase(purchase)
+        else:
+            setTimeTask(updatePurchase,purchase.endtime,purchase)
+    for auction in Auction.findAll(mysql):
+        if auction.endtime<=nowtime:
+            updateAuction(auction)
+        else:
+            setTimeTask(updateAuction,auction.endtime,auction)
+    for debt in Debt.findAll(mysql):
+        if debt.endtime<=nowtime:
+            updateDebt(debt)
+        else:
+            setTimeTask(updateDebt,debt.endtime,debt)
+    for stock in Stock.findAll(mysql):
+        if stock.primaryEndTime<=nowtime:
+            updateStock(stock)
+        else:
+            setTimeTask(updateStock,stock.primaryEndTime,stock)
+    for plan in Plan.findAll(mysql):
+        if plan.enacted and (plan.timeEnacted+plan.timeRequired<=nowtime):
             updatePlan(plan)
+        elif plan.enacted:
+            setTimeTask(updatePlan,plan.timeEnacted+plan.timeRequired,plan)
 
 def assetCalculation(user:User):
     assets = user.money
