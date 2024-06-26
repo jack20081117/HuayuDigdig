@@ -14,8 +14,11 @@ imgkit_config=imgkit.config(wkhtmltoimage=r'D:/Program Files/wkhtmltopdf/bin/wkh
 with open("./config.json","r",encoding='utf-8') as config:
     config=json.load(config)
 env:str=config["env"]
+
 vatRate:float=config["tax"]["vat"]
 playerTax:float=config['tax']['player']
+stockTaxRate:float=config['tax']['stock']
+
 deposit:float=config["deposit"]
 groupIDs:list=config['group_ids']
 adminIDs:list=config['admin_ids']
