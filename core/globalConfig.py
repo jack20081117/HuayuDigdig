@@ -14,8 +14,11 @@ imgkit_config=imgkit.config(wkhtmltoimage=r'D:/Program Files/wkhtmltopdf/bin/wkh
 with open("./config.json","r",encoding='utf-8') as config:
     config=json.load(config)
 env:str=config["env"]
+
 vatRate:float=config["tax"]["vat"]
 playerTax:float=config['tax']['player']
+stockTaxRate:float=config['tax']['stock']
+
 deposit:float=config["deposit"]
 groupIDs:list=config['group_ids']
 adminIDs:list=config['admin_ids']
@@ -46,8 +49,8 @@ effisValueDict={0:'分解',1:'合成',2:'复制',3:'修饰',4:'炼油',5:'建工
 fuelFactorDict={
     0: 3,
     1: 6,
-    2: 1,
-    3: 2,
+    2: 2,
+    3: 4,
     4: 8,
     5: 4,
     6: 4,

@@ -2,7 +2,8 @@
     "env": "dev",
     "tax":{
         "vat": 0.05,
-        "player": 0.01
+        "player": 0.005,
+        "stock": 0.005
     },
     "deposit": 0.3,
     "group_ids": [

@@ -7,7 +7,7 @@ from typing import TypedDict
 from staticFunctions import drawtable, setTimeTask, getnowtime, getnowdate,send
 from model import User, Stock, Order, StockData
 from update import updateStock
-from globalConfig import mysql, groupIDs
+from globalConfig import mysql, groupIDs, stockTaxRate
 import globalConfig
 
 class StockService(object):
@@ -496,7 +496,7 @@ def resolveOrder(stock:Stock, order: Order, price:float)->tuple[Stock,float]: #�
             order.save(mysql)
     else:
         money = order.completedAmount*price
-        stockTax = 0.005 * money
+        stockTax = stockTaxRate * money
         requester.money += money - stockTax
         #shareholders更新具有滞后性，在提出申请时，User里的股数已经扣除（失败返还），但是在卖出成功之前，Stock中的字典不会改变
         #treasury.save(mysql)

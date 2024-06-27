@@ -136,6 +136,18 @@ class UserService(object):
         return ans
 
     @staticmethod
+    def getMoneyInfo(messageList:list[str],qid:str):
+        """
+        仅查询用户余额
+        :param messageList: 查询余额
+        :param qid: 查询者的qq号
+        :return: 查询提示信息
+        """
+        user: User = User.find(qid, mysql)
+        money: float = user.money
+        return "您的余额为：%.2f元。" % money
+
+    @staticmethod
     def getUserInfo(messageList:list[str],qid:str):
         """
         查询用户个人信息
@@ -148,7 +160,7 @@ class UserService(object):
             return "[错误] 您尚未注册!"
         ans='查询到QQ号为%s的用户信息:\n'%qid
         schoolID:str=user.schoolID
-        money:int=user.money
+        money:float=user.money
         industrialTech:float=user.tech['industrial']
         extractTech:float=user.tech['extract']
         refineTech:float=user.tech['refine']
@@ -277,6 +289,10 @@ class UserService(object):
         user.money-=money
         tuser.money+=round(money*(1-playerTax))
 
+        treasury:User=User.find('treasury', mysql)
+        treasury.money+=playerTax*money
+
+        treasury.save(mysql)
         user.save(mysql)
         tuser.save(mysql)
 

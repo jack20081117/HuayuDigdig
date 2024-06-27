@@ -129,6 +129,7 @@ registerByDict({
     
     "注册":     userSE.signup,
     "查询":     userSE.getUserInfo,
+    "查询余额": userSE.getMoneyInfo,
     "支付":     userSE.pay,
     "因子查询": userSE.factorsLookup,
     "允许学习": userSE.allowLearning,
