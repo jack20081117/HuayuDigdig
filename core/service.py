@@ -39,11 +39,13 @@ class StaticService(object):
         moneyData=[]
         fuelData=[]
         nowdate=getnowdate()
+        moneyData.append([nowdate-6*86400,0])
+        fuelData.append([nowdate-6*86400,0])
         for i in range(6,-1,-1):
             date=nowdate-86400*i
-            stats = Statistics.findAll(mysql, where='timestamp>=? and timestamp<=?', args=[date,date+86400])
-            moneyData.append([date,0])
-            fuelData.append([date,0])
+            stats=Statistics.findAll(mysql,where='timestamp>=? and timestamp<=?',args=[date,date+86400])
+            # moneyData.append([date,0])
+            # fuelData.append([date,0])
             for stat in stats:
                 if stat.money:
                     moneyData.append([stat.timestamp,0])
@@ -160,14 +162,18 @@ class UserService(object):
             return "[错误] 您尚未注册!"
         ans='查询到QQ号为%s的用户信息:\n'%qid
         schoolID:str=user.schoolID
-        money:float=user.money
+        money:float=round(user.money,2)
         industrialTech:float=user.tech['industrial']
         extractTech:float=user.tech['extract']
         refineTech:float=user.tech['refine']
         digable:str='是' if user.forbidtime[0] < getnowtime() else '否'
         mineral:dict[int,int]=user.mineral
-        sortedMineral:dict[int,int]={key:mineral[key] for key in sorted(mineral.keys())}
+        sortedMineral:dict[int,int]={key:round(mineral[key]) for key in sorted(mineral.keys())}
         factoryNum:int=user.factoryNum
+
+        user.money=money
+        user.mineral=sortedMineral
+        user.save(mysql)
 
         infoTable=[
             ['学号','余额','加工科技点','开采科技点','炼油科技点','当前是否可开采','工厂数'],
