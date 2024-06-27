@@ -1,5 +1,5 @@
 from staticFunctions import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp,generateTimeStr
-from model import User, Plan,Statistics
+from model import User, Plan
 from update import updateEfficiency, updatePlan
 from globalConfig import mysql,effisValueDict, fuelFactorDict, permitBase, permitGradient, factoryWUR, robotWUR
 #from numpy import log
@@ -64,10 +64,7 @@ def enaction(plan: Plan):
         send(qid,ans,False)
         return None
 
-    if plan.jobtype==4:
-        Statistics(timestamp=nowtime,money=0,fuel=products[0]).add(mysql)
-
-    if plan.jobtype == 5 and plan.workUnitsRequired == factoryWUR:
+    if plan.jobtype == 5 and 'factory' in plan.products:
         if 1 in user.misc:
             ans += '由于您有未使用的工厂建设许可证，此次不需要重新置办！\n'
             user.misc[1] -= 1

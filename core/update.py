@@ -1,8 +1,8 @@
 import numpy as np
 
 from staticFunctions import send,getnowtime,setTimeTask
-from model import User,Mine,Sale,Purchase,Auction,Debt,Plan,Stock
-from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate, factoryWUR, robotWUR
+from model import User,Mine,Sale,Purchase,Auction,Debt,Plan,Stock,Statistics
+from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate
 from staticFunctions import sqrtmoid, tech_validator,mineralSample,mineExpectation
 
 def init():
@@ -298,6 +298,9 @@ def updatePlan(plan:Plan):
             if mineralID!=0:
                 user.expr.setdefault(mineralID,0)
                 user.expr[mineralID]+=mineralNum
+
+        if plan.jobtype==4:
+            Statistics(timestamp=getnowtime(),money=0,fuel=products[0]).add(mysql)
 
         user.mineral=mineral  #更新矿石字典
         ans='您的生产:%s成功完成,矿石已增加到您的账户！'%planID
