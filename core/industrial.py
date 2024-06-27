@@ -1,4 +1,4 @@
-from staticFunctions import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp
+from staticFunctions import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp,generateTimeStr
 from model import User, Plan,Statistics
 from update import updateEfficiency, updatePlan
 from globalConfig import mysql,effisValueDict, fuelFactorDict, permitBase, permitGradient, factoryWUR, robotWUR
@@ -7,12 +7,17 @@ from math import log
 import numpy as np
 
 def enaction(plan: Plan):
+    plan=Plan.find(plan.planID)
+    if plan is None:#防止计划已经被取消
+        return None
     qid = plan.qid
     user: User = User.find(qid, mysql)
     nowtime:int=getnowtime()
     requiredFactoryNum = plan.factoryNum
     idleFactoryNum = user.factoryNum - user.busyFactoryNum
-    assert requiredFactoryNum <= idleFactoryNum, "计划执行失败：工厂不足！"
+    if requiredFactoryNum > idleFactoryNum:
+        send("计划执行失败：工厂不足！",qid,False)
+        return None
     updateEfficiency(user, 0)
 
     mineral: dict = user.mineral
@@ -471,7 +476,7 @@ class IndustrialService(object):
 
         planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
         plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=5, factoryNum=factoryNum,
-                        ingredients=ingredients, products={}, timeEnacted=nowtime, timeRequired=timeRequired,
+                        ingredients=ingredients, products={'factory':1}, timeEnacted=nowtime, timeRequired=timeRequired,
                         workUnitsRequired=workUnitsRequired, enacted=False)
         plan.add(mysql)
 
@@ -513,7 +518,7 @@ class IndustrialService(object):
 
         planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
         plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=5, factoryNum=factoryNum,
-                        ingredients=ingredients, products={}, timeEnacted=nowtime, timeRequired=timeRequired,
+                        ingredients=ingredients, products={'robot':1}, timeEnacted=nowtime, timeRequired=timeRequired,
                         workUnitsRequired=workUnitsRequired, enacted=False)
         plan.add(mysql)
 
@@ -761,7 +766,7 @@ class IndustrialService(object):
         :return: 自己拥有的生产计划
         """
         plans:list[Plan]=Plan.findAll(mysql,where='qid=?',args=(qid,))
-        planData=[["计划编号","生产类型","调拨工厂数","原料","产品","用时"]]
+        planData=[["计划编号","生产类型","调拨工厂数","原料","产品","用时","状态","结束时间"]]
         if not plans:
             return '您目前未制定生产计划！'
         for plan in plans:
@@ -772,14 +777,25 @@ class IndustrialService(object):
                 else:
                     ingredients.append('矿石%s:%s个'%(iId,iNum))
             products=[]
-            if plan.jobtype==5:
-                products=['工厂:1个']
             for pId,pNum in plan.products.items():
                 if pId==0:
                     products.append('燃油:%s单位'%pNum)
+                elif pId=='factory':
+                    products.append('工厂:1个')
+                elif pId=='robot':
+                    products.append('采矿机器人:1个')
                 else:
                     products.append('矿石%s:%s个'%(pId,pNum))
-            planData.append([plan.planID,effisValueDict[plan.jobtype],plan.factoryNum,','.join(ingredients),','.join(products),smartInterval(plan.timeRequired)])
+            planData.append([
+                plan.planID,
+                effisValueDict[plan.jobtype],
+                plan.factoryNum,
+                ','.join(ingredients),
+                ','.join(products),
+                smartInterval(plan.timeRequired),
+                '已开工' if plan.enacted else '未开工',
+                generateTimeStr(plan.timeEnacted+plan.timeRequired) if plan.enacted else '无'
+            ])
         drawtable(planData,'plan.png')
 
         ans='[CQ:image,file=plan.png]'

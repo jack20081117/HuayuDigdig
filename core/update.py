@@ -279,35 +279,37 @@ def updatePlan(plan:Plan):
         return None
 
     products:dict=plan.products
-    mineral:dict[int,int]=user.mineral
-    for mineralID, mineralNum in products.items():
-        mineral.setdefault(mineralID,0)
-        mineral[mineralID] += mineralNum  # 将矿石增加给生产者
-        if mineralID != 0:
-            user.expr.setdefault(mineralID,0)
-            user.expr[mineralID] += mineralNum
-
-    for mineralID, mineralNum in plan.ingredients.items():
-        if mineralID != 0:
-            user.expr.setdefault(mineralID, 0)
-            user.expr[mineralID] += mineralNum
-
-    user.mineral = mineral #更新矿石字典
 
     updateEfficiency(user, plan)  # 效率修正
     user.enactedPlanTypes[plan.jobtype] -= 1  # 取消当前门类的生产状态
     user.busyFactoryNum -= plan.factoryNum  # 释放被占用的工厂
 
     ans = ''
-    if plan.jobtype == 5:
-        if plan.workUnitsRequired == factoryWUR:
-            ans = '您的工厂建设计划%s已完成！您的工厂数量已增加1'
+    if 0<=plan.jobtype<=4:
+        mineral: dict[int,int]=user.mineral
+        for mineralID,mineralNum in products.items():
+            mineral.setdefault(mineralID,0)
+            mineral[mineralID]+=mineralNum  # 将矿石增加给生产者
+            if mineralID!=0:
+                user.expr.setdefault(mineralID,0)
+                user.expr[mineralID]+=mineralNum
+
+        for mineralID,mineralNum in plan.ingredients.items():
+            if mineralID!=0:
+                user.expr.setdefault(mineralID,0)
+                user.expr[mineralID]+=mineralNum
+
+        user.mineral=mineral  #更新矿石字典
+        ans='您的生产:%s成功完成,矿石已增加到您的账户！'%planID
+    elif plan.jobtype == 5:
+        if 'factory' in products:
+            ans = '您的工厂建设计划%s已完成！您的工厂数量已增加1'%planID
             user.misc[1] -= 1
             if user.misc[1] == 0:
                 user.misc.pop(1)
             user.factoryNum += 1
-        elif plan.workUnitsRequired == robotWUR:
-            ans = '您的机器人建设计划%s已完成！您的采矿机器人数量已增加1'
+        elif 'robot' in products:
+            ans = '您的机器人建设计划%s已完成！您的采矿机器人数量已增加1'%planID
             user.robotNum += 1
             user.forbidTime.append(getnowtime())
     elif plan.jobtype == 6:
@@ -372,8 +374,6 @@ def updatePlan(plan:Plan):
             ).add(mysql)
             user.mines.append(mineID)
             ans = '您的勘探:%s成功！矿井%s号已建立，为均匀分布类型，最小值%s，最大值%s。' % planID, mineID, lower, upper
-    else:
-        ans='您的生产:%s成功完成,矿石已增加到您的账户！' % planID
 
     send(qid, ans, False)
     
