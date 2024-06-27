@@ -34,7 +34,7 @@ def extractMineral(qid:str,mineralID:int,mine:Mine,useRobot:bool=False, robotID:
         prob=round(abundance*sqrtmoid(extractTech),2)
 
     if useRobot:
-        fuelUsage = 10 * np.log(mineralID) / sqrtmoid(extractTech)
+        fuelUsage = round(10 * np.log(mineralID) / sqrtmoid(extractTech))
         assert 0 in user.mineral, "您没有燃油，无法使用采矿机器人！"
         assert user.mineral[0] >= fuelUsage, "本次机器开采预计需要消耗%.2f单位燃油，您的燃油不充足！" % fuelUsage
         user.mineral[0] -= fuelUsage
