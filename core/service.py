@@ -192,6 +192,7 @@ class UserService(object):
 
         ans+="以下为该玩家各工种生产效率:\n"
 
+        updateEfficiency(user,0)
         effis=user.effis
         effisTable=[['工种','生产效率']]
         effisTable.extend([[effisStr[index],"%.4f%%\n"%(sigmoid(effis[index])*100)] for index in range(effisItemCount)])
