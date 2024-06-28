@@ -85,6 +85,7 @@ class MarketService(object):
         assert nowtime>=starttime,'购买失败:尚未到开始购买时间！'
         assert nowtime<=endtime,'购买失败:此商品预售已结束！'
         assert user.money>=price,'购买失败:您的余额不足！'
+        assert user.capacity >= stored(user.mineral), '购买失败:您的仓库容量已超上限%s，请清理或扩容后再来购买！' % user.capacity
 
         user.money-=price#付钱
         user.inputTax += price*vatRate
@@ -134,6 +135,7 @@ class MarketService(object):
         assert user.money>=price,'预订失败:您的余额不足！'
         assert price>0,'预订失败:预订价格必须为正数！'
         assert endtime>nowtime,'预订失败:已经超过截止期限！'
+        assert user.capacity >= stored(user.mineral), '预定失败:您的仓库容量已超上限%s，请清理或扩容后再来预定！' % user.capacity
         starttime=max(nowtime,starttime)
         user.money-=price
 
@@ -289,6 +291,7 @@ class MarketService(object):
         assert userprice>0,'投标失败:您的出价必须为正数！'
         assert userprice>=price,'投标失败:您的出价低于底价！'
         assert user.money>=round(userprice*deposit),'投标失败:您的余额不足以支付押金！'
+        assert user.capacity >= stored(user.mineral), '投标失败:您的仓库容量已超上限%s，请清理或扩容后再来投标！' % user.capacity
 
         if secret:#对出价保密
             user.money-=round(userprice*deposit)#支付押金

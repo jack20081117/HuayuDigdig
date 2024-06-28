@@ -5,7 +5,7 @@ from datetime import datetime
 from matplotlib import pyplot as plt
 plt.rcParams['font.family']='Microsoft Yahei'
 
-from staticFunctions import getnowtime,getnowdate,sigmoid,indicators,factors,send,drawtable,generateTimeStr
+from staticFunctions import getnowtime,getnowdate,sigmoid,indicators,factors,send,drawtable,generateTimeStr,stored
 from globalConfig import mysql,imgkit_config,effisItemCount,effisNameDict,effisStr,playerTax
 from model import User,Statistics,Debt
 from update import updateEfficiency,assetCalculation
@@ -132,6 +132,7 @@ class UserService(object):
             effisFee=0.0,
             allowLearning=False,
             robotNum=0,
+            capacity=4000,
         )#注册新用户
         user.add(mysql)
         ans="注册成功！"
@@ -195,6 +196,8 @@ class UserService(object):
 
         drawtable(mineralTable,'mineralTable.png')
         ans+='[CQ:image,file=mineralTable.png]\n'
+
+        ans += "仓库容量上限%s,已占用%s。\n" % (user.capacity, stored(user.mineral))
 
         ans+="以下为该玩家各工种生产效率:\n"
 

@@ -26,7 +26,9 @@ def createTreasury():
         lastEffisUpdateTime=getnowtime(),
         inputTax=0.0,  # 进项税额（抵扣）
         outputTax=0.0,  # 销项税额
-        paidTaxes=True
+        paidTaxes=True,
+        robotNum=0,
+        capacity=100000
     )
     user.add(mysql)
 

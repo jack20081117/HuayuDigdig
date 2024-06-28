@@ -315,6 +315,9 @@ def updatePlan(plan:Plan):
             ans = '您的机器人建设计划%s已完成！您的采矿机器人数量已增加1'%planID
             user.robotNum += 1
             user.forbidtime.append(getnowtime())
+        elif 'storage' in products:
+            ans = '您的仓库建设计划%s已完成！您的仓库容量已增加2000' % planID
+            user.capacity += 2000
     elif plan.jobtype == 6:
         validated_levels = tech_validator(plan.techName, plan.techPath, user.schoolID) #验证机返回给定技术路径前几级取得了成功
         if validated_levels == 0:  #第一级就验证失败

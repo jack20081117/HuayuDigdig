@@ -13,6 +13,15 @@ def sigmoid(x:float)->float:return 1/(1+np.exp(-x))
 
 digest = lambda s: md5(s.encode('ascii')).hexdigest()
 
+def stored(minerals:dict):
+    storedAmount = 0
+    for mineralID, amount in minerals.items():
+        if mineralID == 0:
+            storedAmount += round(amount/50)
+        else:
+            storedAmount += np.floor(10*np.log2(mineralID))*amount
+    return storedAmount
+
 def prime_sieve(n):
     is_prime = [True] * (n + 1)
     is_prime[0] = is_prime[1] = False

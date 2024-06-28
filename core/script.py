@@ -7,7 +7,8 @@ commands:dict[str,callable]={}
 replacement:dict[str,str]={
     "建设":"建造",
     "交税":"缴税",
-    "纳税":"缴税"
+    "纳税":"缴税",
+    "取消计划":"取消"
 }
 
 from stock import StockService
@@ -172,6 +173,7 @@ registerByDict({
     "炼化":     industrialSE.refine,
     "建造":     industrialSE.build,
     "建造机器人":industrialSE.buildRobot,
+    "建造仓库":  industrialSE.buildStorage,
     "科研":     industrialSE.research,
     "勘探":     industrialSE.discover,
     "取消":     industrialSE.cancelPlan,

@@ -1,6 +1,6 @@
 import numpy as np
 
-from staticFunctions import sigmoid,sqrtmoid,getnowtime,generateTimeStr,setTimeTask, mineralSample,exchangeable
+from staticFunctions import sigmoid,sqrtmoid,getnowtime,generateTimeStr,setTimeTask, mineralSample,exchangeable,stored
 from model import User,Mine,Statistics
 from globalConfig import mysql,vatRate
 
@@ -105,6 +105,7 @@ class ExtractService(object):
         nowtime = getnowtime()
         user = User.find(qid, mysql)
         assert nowtime >= user.forbidtime[0], '开采失败:您必须等到%s才能再次手动开采矿井！' % generateTimeStr(user.forbidtime[0])
+        assert user.capacity >= stored(user.mineral), '开采失败:您的仓库容量已超上限%s，请清理或扩容后再来开采！' % user.capacity
         mineralID = mineralSample(mine.lower,mine.upper,logUniform=mine.logUniform)
         ans = extractMineral(qid,mineralID,mine)
         return ans
@@ -125,6 +126,7 @@ class ExtractService(object):
         nowtime = getnowtime()
         user = User.find(qid, mysql)
         assert user.robotNum > 0,'您没有采矿机器人！'
+        assert user.capacity >= stored(user.mineral), '开采失败:您的仓库容量已超上限%s，请清理或扩容后再来开采！' % user.capacity
         vacancy:bool = False
         vacantID:int = 0
         busymessage = ''
@@ -199,6 +201,7 @@ class ExtractService(object):
         mineral = bank.mineral
         assert mineralID in mineral, '回购失败:储备中目前无此种矿石！'
         assert exchangeable(schoolID, mineralID), '回购失败:您不能够回购此矿石！'
+        assert user.capacity >= stored(user.mineral), '回购失败:您的仓库容量已超上限%s，请清理或扩容后再来回购！' % user.capacity
         assert user.money >= float(mineralID)*1.025, '回购失败：您的余额不足！加上手续费，回购需要%.2f元！' % float(mineralID)*1.025
 
         mineral[mineralID] -= 1
