@@ -25,6 +25,7 @@ class User(Model):
     effisFee=FloatField()
     allowLearning=BooleanField()
     robotNum=IntegerField()
+    capacity=FloatField()
 
 class Plan(Model):
     __table__='plans'

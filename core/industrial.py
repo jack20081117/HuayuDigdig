@@ -1,7 +1,7 @@
 from staticFunctions import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp,generateTimeStr
 from model import User, Plan
 from update import updateEfficiency, updatePlan
-from globalConfig import mysql,effisValueDict, fuelFactorDict, permitBase, permitGradient, factoryWUR, robotWUR
+from globalConfig import mysql,effisValueDict, fuelFactorDict, permitBase, permitGradient, factoryWUR, robotWUR, storageWUR
 #from numpy import log
 from math import log
 import numpy as np
@@ -467,7 +467,7 @@ class IndustrialService(object):
 
         buildeff = user.effis[5]
 
-        materialDict = {2:20, 4:10, 6:8, 8:7, 10:6, 12:6}
+        materialDict = {2:25, 4:12, 6:9, 8:8, 10:7, 12:7}
         workUnitsRequired = factoryWUR * expr2modifier(material)
         timeRequired, fuelRequired = timeFuelCalculator(factoryWUR,buildeff,0,factoryNum,fuelFactorDict[5])
         ingredients = {0:fuelRequired, material:materialDict[material]}
@@ -509,7 +509,7 @@ class IndustrialService(object):
 
         buildeff = user.effis[5]
 
-        materialDict = {3: 7, 6: 4, 9: 3, 12: 3, 15: 2, 18: 2}
+        materialDict = {3: 9, 6: 7, 9: 4, 12: 4, 15: 3, 18: 3}
         workUnitsRequired = robotWUR * expr2modifier(material)
         timeRequired, fuelRequired = timeFuelCalculator(robotWUR, buildeff, 0, factoryNum, fuelFactorDict[5])
         ingredients = {0: fuelRequired, material: materialDict[material]}
@@ -525,6 +525,49 @@ class IndustrialService(object):
                                                                 )
 
         return ans
+
+    @staticmethod
+    def buildStorage(messageList: list[str], qid: str):
+        """
+        制定仓库建造计划
+        :param messageList: 建造仓库 建材 调拨工厂数
+        :param qid: 制定者的qq号
+        :return: 提示信息
+        """
+
+        assert len(messageList) == 3, '制定建造计划失败:请按照规定格式进行计划！'
+        user: User = User.find(qid, mysql)
+        try:
+            material: int = int(messageList[1])
+            factoryNum: int = int(messageList[-1])
+        except ValueError:
+            return '制定建造计划失败:请按照规定格式进行计划！'
+
+        assert factoryNum >= 1, '制定建造计划失败:工厂数无效！'
+        assert factoryNum <= user.factoryNum, '制定建造计划失败:您没有足够工厂！'
+        assert material in [4, 9, 16, 25, 36, 49], '制定建造计划失败：您无法使用这种建材！'
+
+        nowtime: int = getnowtime()
+
+        buildeff = user.effis[5]
+
+        materialDict = {4: 12, 9: 6, 16: 4, 25: 3, 36: 2, 49: 2}
+        workUnitsRequired = robotWUR * expr2modifier(material)
+        timeRequired, fuelRequired = timeFuelCalculator(storageWUR, buildeff, 0, factoryNum, fuelFactorDict[5])
+        ingredients = {0: fuelRequired, material: materialDict[material]}
+
+        planID: int = max([0] + [plan.planID for plan in Plan.findAll(mysql)]) + 1
+        plan: Plan = Plan(planID=planID, qid=qid, schoolID=user.schoolID, jobtype=5, factoryNum=factoryNum,
+                        ingredients=ingredients, products={'storage':1}, timeEnacted=nowtime, timeRequired=timeRequired,
+                        workUnitsRequired=workUnitsRequired, enacted=False)
+        plan.add(mysql)
+
+        ans = '编号为%s的建造计划制定成功！按照此计划，%s个工厂将被调用，预估消耗%s单位燃油和%s时间！' % (planID, factoryNum,
+                                                                fuelRequired, smartInterval(timeRequired),
+                                                                )
+
+        return ans
+
 
     @staticmethod
     def research(messageList:list[str], qid: str):
@@ -782,6 +825,8 @@ class IndustrialService(object):
                     products.append('工厂:1个')
                 elif pId=='robot':
                     products.append('采矿机器人:1个')
+                elif pId=='storage':
+                    products.append('仓库:1片')
                 else:
                     products.append('矿石%s:%s个'%(pId,pNum))
             planData.append([
