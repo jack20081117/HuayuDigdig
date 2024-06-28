@@ -148,6 +148,7 @@ registerByDict({
     "兑换燃油": stockSE.fromPaperFuel,
     
     "开采":     extractSE.getMineral,
+    "丢弃":     extractSE.throwMineral,
     "开放":     extractSE.openMine,
     "关闭":     extractSE.closeMine,
     "兑换":     extractSE.exchangeMineral,

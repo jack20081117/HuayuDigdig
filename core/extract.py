@@ -182,6 +182,36 @@ class ExtractService(object):
         return ans
 
     @staticmethod
+    def throwMineral(messageList:list[str],qid:str):
+        """
+        丢弃矿石
+        :param messageList: 丢弃 矿石编号 个数
+        :param qid: 丢弃者的qq号
+        :return: 丢弃提示信息
+        """
+        assert len(messageList)==3,'丢弃失败:您的丢弃格式不正确！'
+        try:
+            mineralID:int=int(messageList[1])
+            mineralNum:int=int(messageList[2])
+        except ValueError:
+            return '丢弃失败:您的丢弃格式不正确！'
+        user:User=User.find(qid,mysql)
+        schoolID:str=user.schoolID
+        mineral=user.mineral
+        assert mineralID in mineral,'丢弃失败:您不具备此矿石！'
+        assert mineral[mineralID]>=mineralNum,'丢弃失败:您的矿石数量不足！'
+
+        mineral[mineralID]-=mineralNum
+        if mineral[mineralID]<=0:
+            mineral.pop(mineralID)
+
+        user.mineral=mineral
+        user.save(mysql)
+
+        ans='丢弃成功！'
+        return ans
+
+    @staticmethod
     def buybackMineral(messageList:list[str],qid:str):
         """
         回购矿石
