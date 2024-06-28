@@ -79,6 +79,8 @@ def updateSale(sale:Sale):
     user:User=User.find(qid,mysql)
     if Sale.find(tradeID,mysql) is None:#预售已成功进行
         return None
+    if Sale.find(tradeID,mysql).starttime!=sale.starttime:
+        return None
 
     mineralID:int=sale.mineralID
     mineralNum:int=sale.mineralNum
@@ -100,6 +102,8 @@ def updatePurchase(purchase:Purchase):
     tradeID:int=purchase.tradeID
     user:User=User.find(qid,mysql)
     if Purchase.find(tradeID,mysql) is None:#预订已成功进行
+        return None
+    if Purchase.find(tradeID,mysql).starttime!=purchase.starttime:
         return None
 
     price:int=purchase.price

@@ -159,9 +159,9 @@ class MarketService(object):
         try:
             tradeID:int=int(messageList[1])
         except ValueError:
-            return '购买失败:请按照规定格式进行购买！'
+            return '售卖失败:请按照规定格式进行售卖！'
         purchase:Purchase=Purchase.find(tradeID,mysql)
-        assert purchase,'购买失败:不存在此卖品！'
+        assert purchase,'售卖失败:不存在此卖品！'
         user:User=User.find(qid,mysql)
 
         tqid:str=purchase.qid
