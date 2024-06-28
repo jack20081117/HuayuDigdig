@@ -70,6 +70,7 @@ def enaction(plan: Plan):
             user.misc[1] -= 1
             if user.misc[1] == 0:
                 user.misc.pop(1)
+            user.misc.setdefault(2,0)
             user.misc[2] += 1
         else:
             permitCost = permitBase + (user.factoryNum-1)*permitGradient

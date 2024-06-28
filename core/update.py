@@ -307,14 +307,14 @@ def updatePlan(plan:Plan):
     elif plan.jobtype == 5:
         if 'factory' in products:
             ans = '您的工厂建设计划%s已完成！您的工厂数量已增加1'%planID
-            user.misc[1] -= 1
-            if user.misc[1] == 0:
-                user.misc.pop(1)
+            user.misc[2] -= 1
+            if user.misc[2] == 0:
+                user.misc.pop(2)
             user.factoryNum += 1
         elif 'robot' in products:
             ans = '您的机器人建设计划%s已完成！您的采矿机器人数量已增加1'%planID
             user.robotNum += 1
-            user.forbidTime.append(getnowtime())
+            user.forbidtime.append(getnowtime())
     elif plan.jobtype == 6:
         validated_levels = tech_validator(plan.techName, plan.techPath, user.schoolID) #验证机返回给定技术路径前几级取得了成功
         if validated_levels == 0:  #第一级就验证失败
