@@ -58,16 +58,20 @@ class StaticService(object):
         for datum in moneyData:
             xs.append(datetime.fromtimestamp(datum[0]-8*3600))
             ys.append(datum[1])
-        plt.figure(figsize=(10,5))
-        plt.plot(xs,ys,linestyle='-',marker=',',label='矿石',alpha=0.5,drawstyle='step')
+        fig=plt.figure(figsize=(10,5))
+        axis1=fig.add_axes((0.1,0.1,0.8,0.8))
+        axis2=axis1.twinx()
+
+        axis1.plot(xs,ys,linestyle='-',marker=',',label='矿石',alpha=0.5,drawstyle='steps-post')
+        axis1.legend(loc='upper left')
 
         xs,ys=[],[]
         for datum in fuelData:
             xs.append(datetime.fromtimestamp(datum[0]-8*3600))
             ys.append(datum[1])
-        plt.plot(xs,ys,linestyle='-',marker=',',label='燃油',alpha=0.5,drawstyle='step')
+        axis2.plot(xs,ys,linestyle='-',marker=',',label='燃油',alpha=0.5,color='green',drawstyle='steps-post')
+        axis2.legend(loc='upper right')
 
-        plt.legend()
         plt.savefig('../go-cqhttp/data/images/statistics.png')
         ans+='[CQ:image,file=statistics.png]\n'
 
