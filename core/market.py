@@ -1,4 +1,4 @@
-from staticFunctions import drawtable,setTimeTask,send,generateTime,getnowtime,generateTimeStr,generateTimeStamp
+from staticFunctions import drawtable,setTimeTask,send,generateTime,getnowtime,generateTimeStr,generateTimeStamp,store
 from model import User,Sale,Purchase,Auction
 from globalConfig import mysql,deposit,vatRate
 from update import updateSale,updatePurchase,updateAuction
