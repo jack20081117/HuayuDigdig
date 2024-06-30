@@ -163,6 +163,7 @@ registerByDict({
     "放贷":     debtSE.prelendDebt,
     "借贷":     debtSE.borrowDebt,
     "还款":     debtSE.repayDebt,
+    "撤销":     debtSE.withdrawDebt,
     "转让债务": debtSE.transferDebt,
     "免除":     debtSE.forgiveDebt,
     "债市":     debtSE.debtMarket,

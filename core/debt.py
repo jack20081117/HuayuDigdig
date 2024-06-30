@@ -135,6 +135,31 @@ class DebtService(object):
         return ans
 
     @staticmethod
+    def withdrawDebt(messageList:list[str],qid:str):
+        """
+        :param messageList: 撤销 债券编号
+        :param qid: 撤销者的qq号
+        :return: 撤销提示信息
+        """
+        assert len(messageList)==2,'撤销失败:您的撤销格式不正确！'
+        try:
+            debtID=int(messageList[1])
+        except ValueError:
+            return '撤销失败:您的撤销格式不正确！'
+        debt=Debt.find(debtID,mysql)
+        assert debt is not None,'撤销失败:不存在此债券！'
+        assert debt.creditor==qid,'撤销失败:您不是此债券的债权人！'
+        assert debt.debitor=='nobody','撤销失败:此债券已被借出！'
+
+        creditor=User.find(qid,mysql)
+        creditor.money+=debt.money
+        creditor.save(mysql)
+        debt.remove(mysql)
+
+        ans='撤销成功！'
+        return ans
+
+    @staticmethod
     def transferDebt(messageList:list[str],qid:str):
         """
         :param messageList: 转让债务 债券编号 转让对象(学号/q+QQ号）
