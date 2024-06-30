@@ -1,8 +1,8 @@
 import numpy as np
 
-from staticFunctions import send,getnowtime,setTimeTask
+from staticFunctions import send,getnowtime,setTimeTask,timeFuelCalculator,smartInterval
 from model import User,Mine,Sale,Purchase,Auction,Debt,Plan,Stock,Statistics
-from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate
+from globalConfig import mysql,deposit,effisItemCount,effisDailyDecreaseRate,vatRate,permitBase,permitGradient,fuelFactorDict
 from staticFunctions import sqrtmoid, tech_validator,mineralSample,mineExpectation
 
 def init():
@@ -40,7 +40,9 @@ def init():
         else:
             setTimeTask(updateStock,stock.primaryEndTime,stock)
     for plan in Plan.findAll(mysql):
-        if plan.enacted and (plan.timeEnacted+plan.timeRequired<=nowtime):
+        if plan.timeRequired==0:
+            setTimeTask(updateEnaction,plan.timeEnacted,plan)
+        elif plan.enacted and (plan.timeEnacted+plan.timeRequired<=nowtime):
             updatePlan(plan)
         elif plan.enacted:
             setTimeTask(updatePlan,plan.timeEnacted+plan.timeRequired,plan)
@@ -77,9 +79,7 @@ def updateSale(sale:Sale):
     qid:str=sale.qid
     tradeID:int=sale.tradeID
     user:User=User.find(qid,mysql)
-    if Sale.find(tradeID,mysql) is None:#预售已成功进行
-        return None
-    if Sale.find(tradeID,mysql).starttime!=sale.starttime:
+    if Sale.find(tradeID,mysql)!=sale:#预售已成功进行
         return None
 
     mineralID:int=sale.mineralID
@@ -101,9 +101,7 @@ def updatePurchase(purchase:Purchase):
     qid:str=purchase.qid
     tradeID:int=purchase.tradeID
     user:User=User.find(qid,mysql)
-    if Purchase.find(tradeID,mysql) is None:#预订已成功进行
-        return None
-    if Purchase.find(tradeID,mysql).starttime!=purchase.starttime:
+    if Purchase.find(tradeID,mysql)!=purchase:#预订已成功进行
         return None
 
     price:int=purchase.price
@@ -186,7 +184,7 @@ def updateDebt(debt:Debt):
     debtID:int=debt.debtID
     money:int=round(debt.money*(1+interest))
 
-    if Debt.find(debtID,mysql) is None:#债务已还清
+    if Debt.find(debtID,mysql)!=debt:#债务已还清
         return None
 
     creditor:User=User.find(creditorID)
@@ -270,7 +268,108 @@ def updateEfficiency(user:User,finishedPlan):
     user.lastEffisUpdateTime = nowtime
     user.effis = effis
     user.save(mysql)
-    
+
+def updateEnaction(plan: Plan):
+    if Plan.find(plan.planID)!=plan:#防止计划已经被取消
+        return None
+    qid = plan.qid
+    user: User = User.find(qid, mysql)
+    nowtime:int=getnowtime()
+    requiredFactoryNum = plan.factoryNum
+    idleFactoryNum = user.factoryNum - user.busyFactoryNum
+    if requiredFactoryNum > idleFactoryNum:
+        send("计划执行失败：工厂不足！",qid,False)
+        return None
+    updateEfficiency(user, 0)
+
+    mineral: dict = user.mineral
+    products: dict = plan.products
+    ingredients: dict = plan.ingredients
+
+    if plan.jobtype == 4:  # 特判炼油科技
+        tech = user.tech['refine']
+    else:
+        tech = user.tech['industrial']
+
+    timeRequired, fuelRequired = \
+    timeFuelCalculator(plan.workUnitsRequired,
+                         user.effis[plan.jobtype],
+                         tech,
+                         requiredFactoryNum,
+                         fuelFactorDict[plan.jobtype])
+
+    fuelRequired-=1
+
+    if fuelRequired>64:
+        ingredients[0] = fuelRequired
+    if plan.jobtype == 4:
+        if products[0] < 128:
+            used_oil = ingredients[0] - 1
+            ingredients[0] = 0
+            products[0] -= used_oil
+
+    success: bool = True
+    ans = ""
+
+    for mId, mNum in ingredients.items():
+        if mId == 0:
+            mName = "燃油"
+        else:
+            mName = "矿物%s" % mId
+        if mId not in mineral:
+            mineral[mId]=0
+        if mineral[mId] < mNum:
+            ans += "%s不足！您目前有%d，计划%d需要%d单位。\n" % (mName, mineral[mId], plan.planID, mNum)
+            success = False
+
+    if not success:
+        send(qid,ans,False)
+        return None
+
+    if plan.jobtype == 5 and 'factory' in plan.products:
+        if 1 in user.misc:
+            ans += '由于您有未使用的工厂建设许可证，此次不需要重新置办！\n'
+            user.misc[1] -= 1
+            if user.misc[1] == 0:
+                user.misc.pop(1)
+            user.misc.setdefault(2,0)
+            user.misc[2] += 1
+        else:
+            permitCost = permitBase + (user.factoryNum-1)*permitGradient
+            if permitCost > user.money:
+                ans += '余额不足！建设新工厂需要许可证，由于您已经有%s座工厂，新许可证的费用为%s元，您目前有%.2f元！\n'% (user.factoryNum, permitCost, user.money)
+                success = False
+            else:
+                treasury: User = User.find('treasury', mysql)
+                user.money -= permitCost
+                treasury.money += permitCost
+                treasury.save(mysql)
+                user.misc.setdefault(2,0)
+                user.misc[2] += 1
+                ans += '由于您已经有%s座工厂，新许可证的费用为%s元！\n' % (user.factoryNum, permitCost)
+
+    if success:
+        ans += "计划%s成功开工！按照当前效率条件，需消耗%s时间，%s单位燃油。" % (plan.planID,
+                                                      smartInterval(timeRequired), round(fuelRequired))
+        for mId, mNum in ingredients.items():
+            mineral[mId] -= mNum
+            if mineral[mId] <= 0: mineral.pop(mId)
+
+        user.mineral = mineral
+        user.busyFactoryNum += requiredFactoryNum
+        user.enactedPlanTypes.setdefault(plan.jobtype, 0)
+        user.enactedPlanTypes[plan.jobtype] += 1
+        user.save(mysql)
+
+        nowtime = getnowtime()
+        plan.enacted = True
+        plan.timeEnacted = nowtime
+        plan.timeRequired = timeRequired
+        plan.save(mysql)
+
+        setTimeTask(updatePlan, nowtime + round(timeRequired), plan)
+
+    send(qid,ans,False)
    
 def updatePlan(plan:Plan):
     """
@@ -279,7 +378,7 @@ def updatePlan(plan:Plan):
     qid: str = plan.qid
     planID: int = plan.planID
     user: User = User.find(qid, mysql)
-    if Plan.find(planID, mysql) is None:  # 计划已取消
+    if Plan.find(planID, mysql)!=plan:  # 计划已取消
         return None
 
     products:dict=plan.products

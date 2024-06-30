@@ -232,6 +232,59 @@ def drawtable(data:list,filename:str):
     html+='</table>'
     imgkit.from_string(html,'../go-cqhttp/data/images/%s'%filename,config=globalConfig.imgkit_config,css='./style.css')
 
+def expenseCalculator(multiplier:float,duplication:int,primaryScale:int,secondaryScale:int,detectList,exprDict,
+                       tech:float,efficiency:float,factoryNum:int,fuelFactor:float,useLogDivisor=True):
+    """
+    加工耗费计算函数
+    :param multiplier: 随加工种类变化的因子
+    :param duplication: 加工份数
+    :param primaryScale:
+    :param secondaryScale:
+    :param detectList:
+    :param exprDict:
+    :param tech: 该工种科技
+    :param efficiency: 该工种效率
+    :param factoryNum: 调拨 工厂数
+    :param fuelFactor:
+    :param useLogDivisor: 是否使用对数除数
+    :return: 该加工需要的产能点数、时间与燃油
+    """
+
+    workUnitsRequired = WURCalculator(multiplier,duplication,primaryScale,secondaryScale,detectList, exprDict, useLogDivisor=useLogDivisor)
+    timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuelFactor)
+
+    return workUnitsRequired, timeRequired, fuelRequired
+
+def expr2modifier(expr):return 1-(sigmoid(expr/16)-0.5)/2.5
+
+def WURCalculator(multiplier:float,duplication:int,primaryScale:int,secondaryScale:int,detectList:list[int],exprDict,useLogDivisor=True):
+    """
+    加工所用产能计算函数
+    :param multiplier: 随加工种类变化的因子
+    :param duplication: 加工份数
+    :param primaryScale:
+    :param secondaryScale:
+    :param detectList:
+    :param exprDict:
+    :param useLogDivisor: 是否使用对数除数
+    :return: 该加工需要的产能点数
+    """
+    exprModifier = 1
+    for mineral in detectList:
+        if mineral in exprDict:
+            exprModifier *= expr2modifier(exprDict[mineral])
+    workUnitsRequired = multiplier * duplication * primaryScale * np.log(np.log(float(secondaryScale)) + 1) * exprModifier
+    if useLogDivisor:
+        workUnitsRequired /= np.log(float(primaryScale))
+    return workUnitsRequired
+
+def timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuelFactor):
+    adjustedFactoryNum = (1 - sigmoid(tech + 0.25 * efficiency) ** factoryNum) / (1 - sigmoid(tech + 0.25 * efficiency))
+    timeRequired = workUnitsRequired / (sigmoid(efficiency+0.25*tech) * adjustedFactoryNum)
+    fuelRequired = workUnitsRequired / (sigmoid(efficiency) * fuelFactor * sqrtmoid(tech))#所用燃油
+
+    return round(timeRequired), round(fuelRequired)
+
 def setInterval(func:callable,interval:int,*args,**kwargs):
     """
     定时触发任务

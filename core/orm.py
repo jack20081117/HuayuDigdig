@@ -128,6 +128,18 @@ class Model(dict,metaclass=ModelMetaclass):
         else:
             raise AttributeError(r"'%s' object has no attribute '%s'"%(self.__class__.__name__ or 'Model',key))
 
+    def __eq__(self, other):
+        if not isinstance(other,Model):
+            return False
+        if self[self.__primaryKey__]!=other[other.__primaryKey__]:
+            return False
+        if self.__fields__!=other.__fields__:
+            return False
+        for field in self.__fields__:
+            if self[field]!=other[field]:
+                return False
+        return True
+
     def getValue(self,key):
         return getattr(self,key,None)
 

@@ -1,166 +1,10 @@
-from staticFunctions import setTimeTask, drawtable, send, sigmoid, sqrtmoid, smartInterval, generateTime, isPrime, getnowtime, generateTimeStamp,generateTimeStr
+from staticFunctions import setTimeTask,drawtable,isPrime,\
+    getnowtime, generateTimeStamp,generateTimeStr,generateTime,smartInterval,\
+    expenseCalculator,timeFuelCalculator,WURCalculator,expr2modifier
 from model import User, Plan
-from update import updateEfficiency, updatePlan
-from globalConfig import mysql,effisValueDict, fuelFactorDict, permitBase, permitGradient, factoryWUR, robotWUR, storageWUR
-#from numpy import log
-from math import log
+from update import updateEfficiency, updateEnaction
+from globalConfig import mysql,effisValueDict, fuelFactorDict, factoryWUR, robotWUR, storageWUR
 import numpy as np
-
-def enaction(plan: Plan):
-    plan=Plan.find(plan.planID)
-    if plan is None:#防止计划已经被取消
-        return None
-    qid = plan.qid
-    user: User = User.find(qid, mysql)
-    nowtime:int=getnowtime()
-    requiredFactoryNum = plan.factoryNum
-    idleFactoryNum = user.factoryNum - user.busyFactoryNum
-    if requiredFactoryNum > idleFactoryNum:
-        send("计划执行失败：工厂不足！",qid,False)
-        return None
-    updateEfficiency(user, 0)
-
-    mineral: dict = user.mineral
-    products: dict = plan.products
-    ingredients: dict = plan.ingredients
-
-    if plan.jobtype == 4:  # 特判炼油科技
-        tech = user.tech['refine']
-    else:
-        tech = user.tech['industrial']
-
-    timeRequired, fuelRequired = \
-    timeFuelCalculator(plan.workUnitsRequired,
-                         user.effis[plan.jobtype],
-                         tech,
-                         requiredFactoryNum,
-                         fuelFactorDict[plan.jobtype])
-
-    fuelRequired-=1
-
-    if fuelRequired>64:
-        ingredients[0] = fuelRequired
-    if plan.jobtype == 4:
-        if products[0] < 128:
-            used_oil = ingredients[0] - 1
-            ingredients[0] = 0
-            products[0] -= used_oil
-
-    success: bool = True
-    ans = ""
-
-    for mId, mNum in ingredients.items():
-        if mId == 0:
-            mName = "燃油"
-        else:
-            mName = "矿物%s" % mId
-        if mId not in mineral:
-            mineral[mId]=0
-        if mineral[mId] < mNum:
-            ans += "%s不足！您目前有%d，计划%d需要%d单位。\n" % (mName, mineral[mId], plan.planID, mNum)
-            success = False
-
-    if not success:
-        send(qid,ans,False)
-        return None
-
-    if plan.jobtype == 5 and 'factory' in plan.products:
-        if 1 in user.misc:
-            ans += '由于您有未使用的工厂建设许可证，此次不需要重新置办！\n'
-            user.misc[1] -= 1
-            if user.misc[1] == 0:
-                user.misc.pop(1)
-            user.misc.setdefault(2,0)
-            user.misc[2] += 1
-        else:
-            permitCost = permitBase + (user.factoryNum-1)*permitGradient
-            if permitCost > user.money:
-                ans += '余额不足！建设新工厂需要许可证，由于您已经有%s座工厂，新许可证的费用为%s元，您目前有%.2f元！\n'% (user.factoryNum, permitCost, user.money)
-                success = False
-            else:
-                treasury: User = User.find('treasury', mysql)
-                user.money -= permitCost
-                treasury.money += permitCost
-                treasury.save(mysql)
-                user.misc.setdefault(2,0)
-                user.misc[2] += 1
-                ans += '由于您已经有%s座工厂，新许可证的费用为%s元！\n' % (user.factoryNum, permitCost)
-
-    if success:
-        ans += "计划%s成功开工！按照当前效率条件，需消耗%s时间，%s单位燃油。" % (plan.planID,
-                                                      smartInterval(timeRequired), round(fuelRequired))
-        for mId, mNum in ingredients.items():
-            mineral[mId] -= mNum
-            if mineral[mId] <= 0: mineral.pop(mId)
-
-        user.mineral = mineral
-        user.busyFactoryNum += requiredFactoryNum
-        user.enactedPlanTypes.setdefault(plan.jobtype, 0)
-        user.enactedPlanTypes[plan.jobtype] += 1
-        user.save(mysql)
-
-        nowtime = getnowtime()
-        plan.enacted = True
-        plan.timeEnacted = nowtime
-        plan.timeRequired = timeRequired
-        plan.save(mysql)
-
-        setTimeTask(updatePlan, nowtime + round(timeRequired), plan)
-
-    send(qid,ans,False)
-
-def expenseCalculator(multiplier:float,duplication:int,primaryScale:int,secondaryScale:int,detectList,exprDict,
-                       tech:float,efficiency:float,factoryNum:int,fuelFactor:float,useLogDivisor=True):
-    """
-    加工耗费计算函数
-    :param multiplier: 随加工种类变化的因子
-    :param duplication: 加工份数
-    :param primaryScale:
-    :param secondaryScale:
-    :param detectList:
-    :param exprDict:
-    :param tech: 该工种科技
-    :param efficiency: 该工种效率
-    :param factoryNum: 调拨 工厂数
-    :param fuelFactor:
-    :param useLogDivisor: 是否使用对数除数
-    :return: 该加工需要的产能点数、时间与燃油
-    """
-
-    workUnitsRequired = WURCalculator(multiplier,duplication,primaryScale,secondaryScale,detectList, exprDict, useLogDivisor=useLogDivisor)
-    timeRequired, fuelRequired = timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuelFactor)
-
-    return workUnitsRequired, timeRequired, fuelRequired
-
-def expr2modifier(expr):return 1-(sigmoid(expr/16)-0.5)/2.5
-
-def WURCalculator(multiplier:float,duplication:int,primaryScale:int,secondaryScale:int,detectList:list[int],exprDict,useLogDivisor=True):
-    """
-    加工所用产能计算函数
-    :param multiplier: 随加工种类变化的因子
-    :param duplication: 加工份数
-    :param primaryScale:
-    :param secondaryScale:
-    :param detectList:
-    :param exprDict:
-    :param useLogDivisor: 是否使用对数除数
-    :return: 该加工需要的产能点数
-    """
-    exprModifier = 1
-    for mineral in detectList:
-        if mineral in exprDict:
-            exprModifier *= expr2modifier(exprDict[mineral])
-    workUnitsRequired = multiplier * duplication * primaryScale * log(log(float(secondaryScale)) + 1) * exprModifier
-    if useLogDivisor:
-        workUnitsRequired /= log(float(primaryScale))
-    return workUnitsRequired
-
-def timeFuelCalculator(workUnitsRequired, efficiency, tech, factoryNum, fuelFactor):
-    adjustedFactoryNum = (1 - sigmoid(tech + 0.25 * efficiency) ** factoryNum) / (1 - sigmoid(tech + 0.25 * efficiency))
-    timeRequired = workUnitsRequired / (sigmoid(efficiency+0.25*tech) * adjustedFactoryNum)
-    fuelRequired = workUnitsRequired / (sigmoid(efficiency) * fuelFactor * sqrtmoid(tech))#所用燃油
-
-    return round(timeRequired), round(fuelRequired)
 
 
 class IndustrialService(object):
@@ -740,7 +584,11 @@ class IndustrialService(object):
         if idleFactoryNum < plan.factoryNum and starttime != nowtime:
             ans += '提醒：您现在工厂数量不足，请确保计划执行时您有足够空闲工厂。\n'
 
-        setTimeTask(enaction, starttime, plan)
+        plan.timeEnacted=starttime
+        plan.timeRequired=0
+        plan.save(mysql)
+
+        setTimeTask(updateEnaction, starttime, plan)
 
         ans += '设置成功！该计划将在指定时间开始执行。编号:%d' % planID
 
